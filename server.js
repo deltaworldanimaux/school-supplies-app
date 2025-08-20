@@ -17,7 +17,7 @@ app.use(express.static('public'));
 app.use('/uploads', express.static('uploads'));
 
 // MongoDB Connection
-const MONGODB_URI = process.env.MONGODB_URI;
+const MONGODB_URI = "mongodb+srv://deltaworldanimaux:SYQ0SLzI97c73EKS@supply.v7ebphf.mongodb.net/?retryWrites=true&w=majority&appName=supply";
 
 mongoose.connect(MONGODB_URI, {
   useNewUrlParser: true,
