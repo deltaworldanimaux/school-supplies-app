@@ -23,6 +23,8 @@
         body {
             background-color: #f5f7f9;
             padding: 20px;
+            position: relative;
+            min-height: 100vh;
         }
         
         .container {
@@ -32,6 +34,7 @@
             border-radius: 10px;
             box-shadow: 0 0 20px rgba(0,0,0,0.1);
             overflow: hidden;
+            position: relative;
         }
         
         header {
@@ -73,6 +76,8 @@
         
         .admin-content {
             padding: 20px;
+            position: relative;
+            z-index: 1;
         }
         
         .stats-cards {
@@ -188,6 +193,8 @@
             padding: 30px;
             border-radius: 15px;
             box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            position: relative;
+            z-index: 2;
         }
         
         .form-group {
@@ -217,7 +224,7 @@
             border-radius: 10px;
             font-size: 18px;
             cursor: pointer;
-            transition: all 极速快3s;
+            transition: all 0.3s;
             display: block;
             width: 100%;
             font-weight: bold;
@@ -276,7 +283,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20极速快3;
+            margin-bottom: 20px;
             padding-bottom: 15px;
             border-bottom: 1px solid #eee;
         }
@@ -380,7 +387,7 @@
                         <th>اسم التلميذ</th>
                         <th>الهاتف</th>
                         <th>المستوى الدراسي</th>
-                        <th>الحالة</极速快3>
+                        <th>الحالة</th>
                         <th>التاريخ</th>
                         <th>الإجراءات</th>
                     </tr>
@@ -390,16 +397,17 @@
                 </tbody>
             </table>
         </div>
-    </div>
 
-    <div id="orderDetailsModal" class="order-details-modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>تفاصيل الطلب</h2>
-                <button class="close-btn" id="closeModalBtn">&times;</button>
-            </div>
-            <div id="orderDetailsContent">
-                <!-- Order details will be populated here -->
+        <!-- Modal placed inside admin page so it's hidden when admin page is hidden -->
+        <div id="orderDetailsModal" class="order-details-modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>تفاصيل الطلب</h2>
+                    <button class="close-btn" id="closeModalBtn">&times;</button>
+                </div>
+                <div id="orderDetailsContent">
+                    <!-- Order details will be populated here -->
+                </div>
             </div>
         </div>
     </div>
@@ -667,7 +675,7 @@
                     </div>
                     <div class="detail-row">
                         <div class="detail-label">تاريخ الطلب:</div>
-                        <div class="detail-value">${orderDate}</极速快3div>
+                        <div class="detail-value">${orderDate}</div>
                     </div>
                     <div class="detail-row">
                         <div class="detail-label">قائمة اللوازم:</div>
