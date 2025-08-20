@@ -1,4 +1,3 @@
-// server.js - Main server file
 const express = require('express');
 const mongoose = require('mongoose');
 const multer = require('multer');
@@ -6,7 +5,6 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const path = require('path');
 const cors = require('cors');
-require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -17,8 +15,9 @@ app.use(express.json());
 app.use(express.static('public'));
 app.use('/uploads', express.static('uploads'));
 
-// MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/school_supplies', {
+// MongoDB Connection - Use MongoDB Atlas for Replit
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/school_supplies';
+mongoose.connect(MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
@@ -77,6 +76,11 @@ const authenticateAdmin = async (req, res, next) => {
 
 // Routes
 
+// Serve frontend
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 // Submit order
 app.post('/api/orders', upload.single('suppliesList'), async (req, res) => {
   try {
@@ -89,15 +93,20 @@ app.post('/api/orders', upload.single('suppliesList'), async (req, res) => {
       grade,
       location: {
         type: 'Point',
-        coordinates: [longitude, latitude]
+        coordinates: [parseFloat(longitude), parseFloat(latitude)]
       },
       suppliesList: req.file ? req.file.filename : null,
       status: 'pending'
     });
     
     await order.save();
-    res.status(201).json({ message: 'Order submitted successfully!', orderId: order._id });
+    res.status(201).json({ 
+      message: 'Order submitted successfully!', 
+      orderId: order._id,
+      orderNumber: Math.floor(1000 + Math.random() * 9000) // Simple order number
+    });
   } catch (error) {
+    console.error('Order submission error:', error);
     res.status(500).json({ message: 'Error submitting order', error: error.message });
   }
 });
@@ -126,8 +135,13 @@ app.post('/api/admin/login', async (req, res) => {
       { expiresIn: '24h' }
     );
     
-    res.json({ token, admin: { id: admin._id, username: admin.username } });
+    res.json({ 
+      token, 
+      admin: { id: admin._id, username: admin.username },
+      message: 'Login successful'
+    });
   } catch (error) {
+    console.error('Login error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -138,6 +152,7 @@ app.get('/api/orders', authenticateAdmin, async (req, res) => {
     const orders = await Order.find().sort({ createdAt: -1 });
     res.json(orders);
   } catch (error) {
+    console.error('Fetch orders error:', error);
     res.status(500).json({ message: 'Error fetching orders', error: error.message });
   }
 });
@@ -158,6 +173,7 @@ app.put('/api/orders/:id/status', authenticateAdmin, async (req, res) => {
     
     res.json({ message: 'Order status updated', order });
   } catch (error) {
+    console.error('Update order error:', error);
     res.status(500).json({ message: 'Error updating order', error: error.message });
   }
 });
@@ -173,6 +189,7 @@ app.get('/api/orders/:id', authenticateAdmin, async (req, res) => {
     
     res.json(order);
   } catch (error) {
+    console.error('Fetch order error:', error);
     res.status(500).json({ message: 'Error fetching order', error: error.message });
   }
 });
@@ -194,14 +211,56 @@ app.post('/api/admin/init', async (req, res) => {
     });
     
     await admin.save();
-    res.json({ message: 'Default admin created', username: 'admin', password: 'admin123' });
+    res.json({ 
+      message: 'Default admin created', 
+      username: 'admin', 
+      password: 'admin123',
+      note: 'Please change the password after first login'
+    });
   } catch (error) {
+    console.error('Admin init error:', error);
     res.status(500).json({ message: 'Error creating admin', error: error.message });
   }
 });
 
+// Change admin password
+app.post('/api/admin/change-password', authenticateAdmin, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    
+    // Check current password
+    const isMatch = await bcrypt.compare(currentPassword, req.admin.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Current password is incorrect' });
+    }
+    
+    // Update password
+    req.admin.password = await bcrypt.hash(newPassword, 12);
+    await req.admin.save();
+    
+    res.json({ message: 'Password changed successfully' });
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({ message: 'Error changing password', error: error.message });
+  }
+});
+
+// Create uploads directory if it doesn't exist
+const fs = require('fs');
+if (!fs.existsSync('uploads')) {
+  fs.mkdirSync('uploads');
+}
+
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
+  console.log(`Local: http://localhost:${PORT}`);
   console.log('Make sure to run /api/admin/init to create the default admin account');
+});
+
+// Handle process termination
+process.on('SIGINT', async () => {
+  console.log('Shutting down server...');
+  await mongoose.connection.close();
+  process.exit(0);
 });
