@@ -5,6 +5,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const path = require('path');
 const cors = require('cors');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -15,7 +16,7 @@ app.use(express.json());
 app.use(express.static('public'));
 app.use('/uploads', express.static('uploads'));
 
-// MongoDB Connection - Use MongoDB Atlas for Replit
+// MongoDB Connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/school_supplies';
 mongoose.connect(MONGODB_URI, {
   useNewUrlParser: true,
@@ -74,11 +75,14 @@ const authenticateAdmin = async (req, res, next) => {
   }
 };
 
-// Routes
-
 // Serve frontend
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Serve admin page
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
 // Submit order
@@ -103,7 +107,7 @@ app.post('/api/orders', upload.single('suppliesList'), async (req, res) => {
     res.status(201).json({ 
       message: 'Order submitted successfully!', 
       orderId: order._id,
-      orderNumber: Math.floor(1000 + Math.random() * 9000) // Simple order number
+      orderNumber: Math.floor(1000 + Math.random() * 9000)
     });
   } catch (error) {
     console.error('Order submission error:', error);
@@ -194,6 +198,29 @@ app.get('/api/orders/:id', authenticateAdmin, async (req, res) => {
   }
 });
 
+// Delete order (admin only)
+app.delete('/api/orders/:id', authenticateAdmin, async (req, res) => {
+  try {
+    const order = await Order.findByIdAndDelete(req.params.id);
+    
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+    
+    // Delete associated file if exists
+    if (order.suppliesList) {
+      fs.unlink(path.join(__dirname, 'uploads', order.suppliesList), (err) => {
+        if (err) console.error('Error deleting file:', err);
+      });
+    }
+    
+    res.json({ message: 'Order deleted successfully' });
+  } catch (error) {
+    console.error('Delete order error:', error);
+    res.status(500).json({ message: 'Error deleting order', error: error.message });
+  }
+});
+
 // Initialize admin user (run once)
 app.post('/api/admin/init', async (req, res) => {
   try {
@@ -246,7 +273,6 @@ app.post('/api/admin/change-password', authenticateAdmin, async (req, res) => {
 });
 
 // Create uploads directory if it doesn't exist
-const fs = require('fs');
 if (!fs.existsSync('uploads')) {
   fs.mkdirSync('uploads');
 }

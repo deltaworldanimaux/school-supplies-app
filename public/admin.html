@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم مدرستي - إدارة الطلبات</title>
+    <style>
+        :root {
+            --primary: #4CAF50;
+            --secondary: #FF9800;
+            --accent: #2196F3;
+            --light: #F5F5F5;
+            --dark: #333;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7f9;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .auth-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .admin-content {
+            padding: 20px;
+        }
+        
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin: 10px 0;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .orders-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        
+        .orders-table th, .orders-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .orders-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .orders-table tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .status-pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-confirmed {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status-processing {
+            background-color: #cce5ff;
+            color: #004085;
+        }
+        
+        .status-delivered {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .status-select {
+            padding: 6px 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            background: white;
+        }
+        
+        .action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 5px;
+            font-size: 0.8rem;
+        }
+        
+        .view-btn {
+            background-color: var(--accent);
+            color: white;
+        }
+        
+        .delete-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--dark);
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+        
+        .login-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: block;
+            width: 100%;
+            font-weight: bold;
+        }
+        
+        .login-btn:hover {
+            background: #3d8b40;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .order-details-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        .detail-row {
+            display: flex;
+            margin-bottom: 15px;
+        }
+        
+        .detail-label {
+            font-weight: 600;
+            width: 150px;
+            color: #666;
+        }
+        
+        .detail-value {
+            flex: 1;
+        }
+        
+        .file-link {
+            color: var(--accent);
+            text-decoration: none;
+        }
+        
+        .file-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div id="loginPage" class="login-container">
+        <h2 style="text-align: center; margin-bottom: 30px;">تسجيل الدخول إلى لوحة التحكم</h2>
+        <div id="loginAlert" class="alert hidden"></div>
+        <div class="form-group">
+            <label for="adminUsername">اسم المستخدم</label>
+            <input type="text" id="adminUsername" required>
+        </div>
+        <div class="form-group">
+            <label for="adminPassword">كلمة المرور</label>
+            <input type="password" id="adminPassword" required>
+        </div>
+        <button id="adminLoginBtn" class="login-btn">دخول</button>
+    </div>
+
+    <div id="adminPage" class="container hidden">
+        <header>
+            <div class="logo">
+                <span>📊 لوحة تحكم مدرستي</span>
+            </div>
+            <div class="auth-info">
+                <span>مرحباً, <span id="adminName">Admin</span></span>
+                <button id="logoutBtn" class="btn">تسجيل الخروج</button>
+            </div>
+        </header>
+
+        <div class="admin-content">
+            <h1>إدارة طلبات اللوازم المدرسية</h1>
+            
+            <div class="stats-cards">
+                <div class="stat-card">
+                    <div class="stat-label">إجمالي الطلبات</div>
+                    <div class="stat-number" id="totalOrders">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">طلبات قيد المعالجة</div>
+                    <div class="stat-number" id="pendingOrders">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">طلبات تم تأكيدها</div>
+                    <div class="stat-number" id="confirmedOrders">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">طلبات تم توصيلها</div>
+                    <div class="stat-number" id="deliveredOrders">0</div>
+                </div>
+            </div>
+
+            <div id="ordersAlert" class="alert hidden"></div>
+            
+            <table class="orders-table">
+                <thead>
+                    <tr>
+                        <th>رقم الطلب</th>
+                        <th>اسم ولي الأمر</th>
+                        <th>اسم التلميذ</th>
+                        <th>الهاتف</th>
+                        <th>المستوى الدراسي</th>
+                        <th>الحالة</th>
+                        <th>التاريخ</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="ordersTableBody">
+                    <!-- Orders will be populated here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="orderDetailsModal" class="order-details-modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>تفاصيل الطلب</h2>
+                <button class="close-btn" id="closeModalBtn">&times;</button>
+            </div>
+            <div id="orderDetailsContent">
+                <!-- Order details will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let authToken = localStorage.getItem('adminToken');
+        const API_BASE = window.location.origin;
+        
+        // Check if user is already logged in
+        if (authToken) {
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('adminPage').classList.remove('hidden');
+            loadOrders();
+        } else {
+            document.getElementById('loginPage').classList.remove('hidden');
+            document.getElementById('adminPage').classList.add('hidden');
+        }
+        
+        // Login functionality
+        document.getElementById('adminLoginBtn').addEventListener('click', function() {
+            const username = document.getElementById('adminUsername').value;
+            const password = document.getElementById('adminPassword').value;
+            
+            if (!username || !password) {
+                showAlert('loginAlert', 'error', 'يرجى ملء جميع الحقول');
+                return;
+            }
+            
+            fetch(`${API_BASE}/api/admin/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({username, password})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.token) {
+                    localStorage.setItem('adminToken', data.token);
+                    authToken = data.token;
+                    document.getElementById('loginPage').classList.add('hidden');
+                    document.getElementById('adminPage').classList.remove('hidden');
+                    document.getElementById('adminName').textContent = data.admin.username;
+                    loadOrders();
+                } else {
+                    showAlert('loginAlert', 'error', data.message || 'فشل تسجيل الدخول');
+                }
+            })
+            .catch(error => {
+                showAlert('loginAlert', 'error', 'خطأ في الاتصال بالخادم');
+                console.error('Login error:', error);
+            });
+        });
+        
+        // Logout functionality
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+            localStorage.removeItem('adminToken');
+            document.getElementById('loginPage').classList.remove('hidden');
+            document.getElementById('adminPage').classList.add('hidden');
+        });
+        
+        // Load orders from server
+        function loadOrders() {
+            fetch(`${API_BASE}/api/orders`, {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            })
+            .then(response => {
+                if (response.status === 401) {
+                    // Token expired or invalid
+                    localStorage.removeItem('adminToken');
+                    document.getElementById('loginPage').classList.remove('hidden');
+                    document.getElementById('adminPage').classList.add('hidden');
+                    showAlert('loginAlert', 'error', 'انتهت جلسة العمل، يرجى تسجيل الدخول مرة أخرى');
+                    return Promise.reject('Unauthorized');
+                }
+                return response.json();
+            })
+            .then(orders => {
+                updateStats(orders);
+                renderOrdersTable(orders);
+            })
+            .catch(error => {
+                if (error !== 'Unauthorized') {
+                    showAlert('ordersAlert', 'error', 'فشل في تحميل الطلبات');
+                    console.error('Error loading orders:', error);
+                }
+            });
+        }
+        
+        // Update statistics
+        function updateStats(orders) {
+            document.getElementById('totalOrders').textContent = orders.length;
+            document.getElementById('pendingOrders').textContent = orders.filter(o => o.status === 'pending').length;
+            document.getElementById('confirmedOrders').textContent = orders.filter(o => o.status === 'confirmed').length;
+            document.getElementById('deliveredOrders').textContent = orders.filter(o => o.status === 'delivered').length;
+        }
+        
+        // Render orders table
+        function renderOrdersTable(orders) {
+            const tbody = document.getElementById('ordersTableBody');
+            tbody.innerHTML = '';
+            
+            if (orders.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">لا توجد طلبات</td></tr>';
+                return;
+            }
+            
+            orders.forEach(order => {
+                const tr = document.createElement('tr');
+                
+                // Format date
+                const orderDate = new Date(order.createdAt).toLocaleDateString('ar-MA');
+                
+                // Status badge
+                let statusClass = 'status-pending';
+                let statusText = 'قيد المعالجة';
+                
+                if (order.status === 'confirmed') {
+                    statusClass = 'status-confirmed';
+                    statusText = 'تم التأكيد';
+                } else if (order.status === 'processing') {
+                    statusClass = 'status-processing';
+                    statusText = 'قيد التجهيز';
+                } else if (order.status === 'delivered') {
+                    statusClass = 'status-delivered';
+                    statusText = 'تم التوصيل';
+                }
+                
+                tr.innerHTML = `
+                    <td>${order._id}</td>
+                    <td>${order.parentName}</td>
+                    <td>${order.studentName}</td>
+                    <td>${order.phone}</td>
+                    <td>${order.grade}</td>
+                    <td>
+                        <select class="status-select" data-order="${order._id}">
+                            <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>قيد المعالجة</option>
+                            <option value="confirmed" ${order.status === 'confirmed' ? 'selected' : ''}>تم التأكيد</option>
+                            <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>قيد التجهيز</option>
+                            <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>تم التوصيل</option>
+                        </select>
+                    </td>
+                    <td>${orderDate}</td>
+                    <td>
+                        <button class="action-btn view-btn" data-order="${order._id}">عرض</button>
+                        <button class="action-btn delete-btn" data-order="${order._id}">حذف</button>
+                    </td>
+                `;
+                
+                tbody.appendChild(tr);
+            });
+            
+            // Add event listeners for status changes
+            document.querySelectorAll('.status-select').forEach(select => {
+                select.addEventListener('change', function() {
+                    updateOrderStatus(this.dataset.order, this.value);
+                });
+            });
+            
+            // Add event listeners for view buttons
+            document.querySelectorAll('.view-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    viewOrderDetails(this.dataset.order);
+                });
+            });
+            
+            // Add event listeners for delete buttons
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    deleteOrder(this.dataset.order);
+                });
+            });
+        }
+        
+        // Update order status
+        function updateOrderStatus(orderId, status) {
+            fetch(`${API_BASE}/api/orders/${orderId}/status`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                },
+                body: JSON.stringify({ status })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    showAlert('ordersAlert', 'success', 'تم تحديث حالة الطلب بنجاح');
+                    loadOrders(); // Reload orders to reflect changes
+                } else {
+                    showAlert('ordersAlert', 'error', data.message || 'فشل في تحديث حالة الطلب');
+                }
+            })
+            .catch(error => {
+                showAlert('ordersAlert', 'error', 'خطأ في الاتصال بالخادم');
+                console.error('Error updating order status:', error);
+            });
+        }
+        
+        // View order details
+        function viewOrderDetails(orderId) {
+            fetch(`${API_BASE}/api/orders/${orderId}`, {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            })
+            .then(response => response.json())
+            .then(order => {
+                const modal = document.getElementById('orderDetailsModal');
+                const content = document.getElementById('orderDetailsContent');
+                
+                // Format date
+                const orderDate = new Date(order.createdAt).toLocaleDateString('ar-MA');
+                
+                // File link if exists
+                let fileLink = 'لا يوجد ملف';
+                if (order.suppliesList) {
+                    fileLink = `<a href="${API_BASE}/uploads/${order.suppliesList}" target="_blank" class="file-link">عرض الملف</a>`;
+                }
+                
+                content.innerHTML = `
+                    <div class="detail-row">
+                        <div class="detail-label">رقم الطلب:</div>
+                        <div class="detail-value">${order._id}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">اسم ولي الأمر:</div>
+                        <div class="detail-value">${order.parentName}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">هاتف ولي الأمر:</div>
+                        <div class="detail-value">${order.phone}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">اسم التلميذ:</div>
+                        <div class="detail-value">${order.studentName}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">المستوى الدراسي:</div>
+                        <div class="detail-value">${order.grade}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">الحالة:</div>
+                        <div class="detail-value">
+                            <span class="status-badge ${getStatusClass(order.status)}">${getStatusText(order.status)}</span>
+                        </div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">تاريخ الطلب:</div>
+                        <div class="detail-value">${orderDate}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">قائمة اللوازم:</div>
+                        <div class="detail-value">${fileLink}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">الموقع:</div>
+                        <div class="detail-value">${order.location.coordinates[1]}, ${order.location.coordinates[0]}</div>
+                    </div>
+                `;
+                
+                modal.classList.remove('hidden');
+            })
+            .catch(error => {
+                showAlert('ordersAlert', 'error', 'فشل في تحميل تفاصيل الطلب');
+                console.error('Error loading order details:', error);
+            });
+        }
+        
+        // Delete order
+        function deleteOrder(orderId) {
+            if (!confirm('هل أنت متأكد من حذف هذا الطلب؟')) return;
+            
+            fetch(`${API_BASE}/api/orders/${orderId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    showAlert('ordersAlert', 'success', 'تم حذف الطلب بنجاح');
+                    loadOrders(); // Reload orders to reflect changes
+                } else {
+                    showAlert('ordersAlert', 'error', data.message || 'فشل في حذف الطلب');
+                }
+            })
+            .catch(error => {
+                showAlert('ordersAlert', 'error', 'خطأ في الاتصال بالخادم');
+                console.error('Error deleting order:', error);
+            });
+        }
+        
+        // Helper function to get status class
+        function getStatusClass(status) {
+            switch(status) {
+                case 'pending': return 'status-pending';
+                case 'confirmed': return 'status-confirmed';
+                case 'processing': return 'status-processing';
+                case 'delivered': return 'status-delivered';
+                default: return 'status-pending';
+            }
+        }
+        
+        // Helper function to get status text
+        function getStatusText(status) {
+            switch(status) {
+                case 'pending': return 'قيد المعالجة';
+                case 'confirmed': return 'تم التأكيد';
+                case 'processing': return 'قيد التجهيز';
+                case 'delivered': return 'تم التوصيل';
+                default: return 'قيد المعالجة';
+            }
+        }
+        
+        // Show alert message
+        function showAlert(containerId, type, message) {
+            const alert = document.getElementById(containerId);
+            alert.textContent = message;
+            alert.classList.remove('hidden', 'alert-error', 'alert-success');
+            alert.classList.add(`alert-${type}`);
+            
+            // Auto hide after 5 seconds
+            setTimeout(() => {
+                alert.classList.add('hidden');
+            }, 5000);
+        }
+        
+        // Close modal
+        document.getElementById('closeModalBtn').addEventListener('click', function() {
+            document.getElementById('orderDetailsModal').classList.add('hidden');
+        });
+        
+        // Close modal when clicking outside
+        document.getElementById('orderDetailsModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
