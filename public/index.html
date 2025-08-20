@@ -235,19 +235,40 @@
             margin: 40px 0;
         }
         
+        .animation-container {
+            width: 100%;
+            height: 100px;
+            position: relative;
+            overflow: hidden; /* Keep animation within container */
+            border: 2px dashed #ccc;
+            margin: 20px 0;
+        }
+        
         .school-bus {
             font-size: 60px;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
             animation: drive 5s infinite linear;
         }
         
         @keyframes drive {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100vw); }
+            0% { 
+                transform: translateX(-60px) translateY(-50%); /* Start just outside left edge */
+            }
+            100% { 
+                transform: translateX(calc(100vw - 40px)) translateY(-50%); /* End just outside right edge, accounting for padding */
+            }
         }
         
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .demo-content {
+            animation: fadeIn 1s ease-out;
+            margin: 20px 0;
         }
         
         /* Responsive styles */
@@ -320,9 +341,9 @@
             <p data-translate="subtitle">قم برفع قائمة اللوازم المدرسية، حدد موقعك، وسنقوم بتوصيل كل ما يحتاجه طفلك للعام الدراسي</p>
         </section>
 
-        <div class="animation">
-            <div class="school-bus">🚌</div>
-        </div>
+        <div class="animation-container">
+        <div class="school-bus">🚌</div>
+    </div>
 
         <section class="order-steps">
             <div class="step">

@@ -17,7 +17,7 @@ app.use(express.static('public'));
 app.use('/uploads', express.static('uploads'));
 
 // MongoDB Connection
-const MONGODB_URI = "mongodb+srv://deltaworldanimaux:SYQ0SLzI97c73EKS@supply.v7ebphf.mongodb.net/?retryWrites=true&w=majority&appName=supply";
+const MONGODB_URI = "mongodb+srv://deltaworldanimaux:SYQ0SLzI97c73EKS@supply.v7ebphf.mongodb.net/school_supplies?retryWrites=true&w=majority&appName=supply";
 
 mongoose.connect(MONGODB_URI, {
   useNewUrlParser: true,
@@ -229,7 +229,7 @@ app.delete('/api/orders/:id', authenticateAdmin, async (req, res) => {
   }
 });
 
-// Initialize admin user (run once)
+// Initialize admin user (run once) - POST method only
 app.post('/api/admin/init', async (req, res) => {
   try {
     // Check if admin already exists
@@ -256,6 +256,14 @@ app.post('/api/admin/init', async (req, res) => {
     console.error('Admin init error:', error);
     res.status(500).json({ message: 'Error creating admin', error: error.message });
   }
+});
+
+// Add a GET endpoint for easier initialization from browser
+app.get('/api/admin/init', async (req, res) => {
+  res.json({ 
+    message: 'Please use POST method to initialize admin account',
+    example: 'curl -X POST https://your-repl.url/api/admin/init'
+  });
 });
 
 // Change admin password
@@ -289,7 +297,7 @@ if (!fs.existsSync('uploads')) {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Local: http://localhost:${PORT}`);
-  console.log('Make sure to run /api/admin/init to create the default admin account');
+  console.log('Make sure to run POST /api/admin/init to create the default admin account');
 });
 
 // Handle process termination
