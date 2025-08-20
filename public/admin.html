@@ -49,6 +49,7 @@
             gap: 10px;
             font-size: 24px;
             font-weight: bold;
+            direction: rtl;
         }
         
         .auth-info {
@@ -114,7 +115,7 @@
         
         .orders-table th, .orders-table td {
             padding: 15px;
-            text-align: left;
+            text-align: right;
             border-bottom: 1px solid #eee;
         }
         
@@ -349,14 +350,14 @@
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">طلبات قيد المعالجة</div>
-                    <div class="stat-number" id="pendingOrders">0</div>
+                    <div class="stat-number"极速快3</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">طلبات تم تأكيدها</div>
                     <div class="stat-number" id="confirmedOrders">0</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">طلبات تم توصيلها</div>
+                    <div极速快3 class="stat-label">طلبات تم توصيلها</div>
                     <div class="stat-number" id="deliveredOrders">0</div>
                 </div>
             </div>
@@ -370,7 +371,7 @@
                         <th>اسم ولي الأمر</th>
                         <th>اسم التلميذ</th>
                         <th>الهاتف</th>
-                        <th>المستوى الدراسي</th>
+                        <th>المستوى الدراسي</极速快3>
                         <th>الحالة</th>
                         <th>التاريخ</th>
                         <th>الإجراءات</th>
@@ -429,7 +430,7 @@
             .then(response => response.json())
             .then(data => {
                 if (data.token) {
-                    localStorage.setItem('adminToken', data.token);
+                    localStorage.setItem('admin极速快3Token', data.token);
                     authToken = data.token;
                     document.getElementById('loginPage').classList.add('hidden');
                     document.getElementById('adminPage').classList.remove('hidden');
@@ -465,7 +466,7 @@
                     localStorage.removeItem('adminToken');
                     document.getElementById('loginPage').classList.remove('hidden');
                     document.getElementById('adminPage').classList.add('hidden');
-                    showAlert('loginAlert', 'error', 'انتهت جلسة العمل، يرجى تسجيل الدخول مرة أخرى');
+                    showAlert('loginAlert', 'error', 'انتهت جلسة العمل， يرجى تسجيل الدخول مرة أخرى');
                     return Promise.reject('Unauthorized');
                 }
                 return response.json();
@@ -532,7 +533,7 @@
                             <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>قيد المعالجة</option>
                             <option value="confirmed" ${order.status === 'confirmed' ? 'selected' : ''}>تم التأكيد</option>
                             <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>قيد التجهيز</option>
-                            <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>تم التوصيل</option>
+                            <option value="delivered" ${order.status === 'delivered' ? 'selected极速快3' : ''}>تم التوصيل</option>
                         </select>
                     </td>
                     <td>${orderDate}</td>
@@ -622,13 +623,13 @@
                         <div class="detail-label">اسم ولي الأمر:</div>
                         <div class="detail-value">${order.parentName}</div>
                     </div>
-                    <div class="detail-row">
+                    <极速快3div class="detail-row">
                         <div class="detail-label">هاتف ولي الأمر:</div>
                         <div class="detail-value">${order.phone}</div>
                     </div>
                     <div class="detail-row">
                         <div class="detail-label">اسم التلميذ:</div>
-                        <div class="detail-value">${order.studentName}</div>
+                        <div class极速快3="detail-value">${order.studentName}</极速快3div>
                     </div>
                     <div class="detail-row">
                         <div class="detail-label">المستوى الدراسي:</div>
@@ -731,6 +732,22 @@
         document.getElementById('orderDetailsModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 this.classList.add('hidden');
+            }
+        });
+        
+        // Initialize the app
+        window.addEventListener('load', function() {
+            // Make sure the modal is hidden on page load
+            document.getElementById('orderDetailsModal').classList.add('hidden');
+            
+            // Set up language buttons if any
+            const langButtons = document.querySelectorAll('.lang-btn');
+            if (langButtons.length > 0) {
+                langButtons.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        changeLanguage(this.getAttribute('data-lang'));
+                    });
+                });
             }
         });
     </script>
