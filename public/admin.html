@@ -49,7 +49,6 @@
             gap: 10px;
             font-size: 24px;
             font-weight: bold;
-            direction: rtl;
         }
         
         .auth-info {
@@ -218,7 +217,7 @@
             border-radius: 10px;
             font-size: 18px;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 极速快3s;
             display: block;
             width: 100%;
             font-weight: bold;
@@ -277,7 +276,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 20极速快3;
             padding-bottom: 15px;
             border-bottom: 1px solid #eee;
         }
@@ -311,6 +310,13 @@
         
         .file-link:hover {
             text-decoration: underline;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-size: 18px;
+            color: #666;
         }
     </style>
 </head>
@@ -350,19 +356,21 @@
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">طلبات قيد المعالجة</div>
-                    <div class="stat-number"极速快3</div>
+                    <div class="stat-number" id="pendingOrders">0</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">طلبات تم تأكيدها</div>
                     <div class="stat-number" id="confirmedOrders">0</div>
                 </div>
                 <div class="stat-card">
-                    <div极速快3 class="stat-label">طلبات تم توصيلها</div>
+                    <div class="stat-label">طلبات تم توصيلها</div>
                     <div class="stat-number" id="deliveredOrders">0</div>
                 </div>
             </div>
 
             <div id="ordersAlert" class="alert hidden"></div>
+            
+            <div id="ordersLoading" class="loading">جاري تحميل الطلبات...</div>
             
             <table class="orders-table">
                 <thead>
@@ -371,8 +379,8 @@
                         <th>اسم ولي الأمر</th>
                         <th>اسم التلميذ</th>
                         <th>الهاتف</th>
-                        <th>المستوى الدراسي</极速快3>
-                        <th>الحالة</th>
+                        <th>المستوى الدراسي</th>
+                        <th>الحالة</极速快3>
                         <th>التاريخ</th>
                         <th>الإجراءات</th>
                     </tr>
@@ -427,10 +435,15 @@
                 },
                 body: JSON.stringify({username, password})
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.token) {
-                    localStorage.setItem('admin极速快3Token', data.token);
+                    localStorage.setItem('adminToken', data.token);
                     authToken = data.token;
                     document.getElementById('loginPage').classList.add('hidden');
                     document.getElementById('adminPage').classList.remove('hidden');
@@ -455,6 +468,8 @@
         
         // Load orders from server
         function loadOrders() {
+            document.getElementById('ordersLoading').classList.remove('hidden');
+            
             fetch(`${API_BASE}/api/orders`, {
                 headers: {
                     'Authorization': `Bearer ${authToken}`
@@ -466,16 +481,21 @@
                     localStorage.removeItem('adminToken');
                     document.getElementById('loginPage').classList.remove('hidden');
                     document.getElementById('adminPage').classList.add('hidden');
-                    showAlert('loginAlert', 'error', 'انتهت جلسة العمل， يرجى تسجيل الدخول مرة أخرى');
+                    showAlert('loginAlert', 'error', 'انتهت جلسة العمل، يرجى تسجيل الدخول مرة أخرى');
                     return Promise.reject('Unauthorized');
+                }
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
                 }
                 return response.json();
             })
             .then(orders => {
+                document.getElementById('ordersLoading').classList.add('hidden');
                 updateStats(orders);
                 renderOrdersTable(orders);
             })
             .catch(error => {
+                document.getElementById('ordersLoading').classList.add('hidden');
                 if (error !== 'Unauthorized') {
                     showAlert('ordersAlert', 'error', 'فشل في تحميل الطلبات');
                     console.error('Error loading orders:', error);
@@ -485,15 +505,22 @@
         
         // Update statistics
         function updateStats(orders) {
-            document.getElementById('totalOrders').textContent = orders.length;
-            document.getElementById('pendingOrders').textContent = orders.filter(o => o.status === 'pending').length;
-            document.getElementById('confirmedOrders').textContent = orders.filter(o => o.status === 'confirmed').length;
-            document.getElementById('deliveredOrders').textContent = orders.filter(o => o.status === 'delivered').length;
+            const totalOrdersEl = document.getElementById('totalOrders');
+            const pendingOrdersEl = document.getElementById('pendingOrders');
+            const confirmedOrdersEl = document.getElementById('confirmedOrders');
+            const deliveredOrdersEl = document.getElementById('deliveredOrders');
+            
+            if (totalOrdersEl) totalOrdersEl.textContent = orders.length;
+            if (pendingOrdersEl) pendingOrdersEl.textContent = orders.filter(o => o.status === 'pending').length;
+            if (confirmedOrdersEl) confirmedOrdersEl.textContent = orders.filter(o => o.status === 'confirmed').length;
+            if (deliveredOrdersEl) deliveredOrdersEl.textContent = orders.filter(o => o.status === 'delivered').length;
         }
         
         // Render orders table
         function renderOrdersTable(orders) {
             const tbody = document.getElementById('ordersTableBody');
+            if (!tbody) return;
+            
             tbody.innerHTML = '';
             
             if (orders.length === 0) {
@@ -507,39 +534,24 @@
                 // Format date
                 const orderDate = new Date(order.createdAt).toLocaleDateString('ar-MA');
                 
-                // Status badge
-                let statusClass = 'status-pending';
-                let statusText = 'قيد المعالجة';
-                
-                if (order.status === 'confirmed') {
-                    statusClass = 'status-confirmed';
-                    statusText = 'تم التأكيد';
-                } else if (order.status === 'processing') {
-                    statusClass = 'status-processing';
-                    statusText = 'قيد التجهيز';
-                } else if (order.status === 'delivered') {
-                    statusClass = 'status-delivered';
-                    statusText = 'تم التوصيل';
-                }
-                
                 tr.innerHTML = `
-                    <td>${order._id}</td>
-                    <td>${order.parentName}</td>
-                    <td>${order.studentName}</td>
-                    <td>${order.phone}</td>
-                    <td>${order.grade}</td>
+                    <td>${order._id || order.id || 'N/A'}</td>
+                    <td>${order.parentName || 'غير متوفر'}</td>
+                    <td>${order.studentName || 'غير متوفر'}</td>
+                    <td>${order.phone || 'غير متوفر'}</td>
+                    <td>${order.grade || 'غير متوفر'}</td>
                     <td>
-                        <select class="status-select" data-order="${order._id}">
+                        <select class="status-select" data-order="${order._id || order.id}">
                             <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>قيد المعالجة</option>
                             <option value="confirmed" ${order.status === 'confirmed' ? 'selected' : ''}>تم التأكيد</option>
                             <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>قيد التجهيز</option>
-                            <option value="delivered" ${order.status === 'delivered' ? 'selected极速快3' : ''}>تم التوصيل</option>
+                            <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>تم التوصيل</option>
                         </select>
                     </td>
                     <td>${orderDate}</td>
                     <td>
-                        <button class="action-btn view-btn" data-order="${order._id}">عرض</button>
-                        <button class="action-btn delete-btn" data-order="${order._id}">حذف</button>
+                        <button class="action-btn view-btn" data-order="${order._id || order.id}">عرض</button>
+                        <button class="action-btn delete-btn" data-order="${order._id || order.id}">حذف</button>
                     </td>
                 `;
                 
@@ -578,7 +590,12 @@
                 },
                 body: JSON.stringify({ status })
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.message) {
                     showAlert('ordersAlert', 'success', 'تم تحديث حالة الطلب بنجاح');
@@ -600,10 +617,17 @@
                     'Authorization': `Bearer ${authToken}`
                 }
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then(order => {
                 const modal = document.getElementById('orderDetailsModal');
                 const content = document.getElementById('orderDetailsContent');
+                
+                if (!modal || !content) return;
                 
                 // Format date
                 const orderDate = new Date(order.createdAt).toLocaleDateString('ar-MA');
@@ -617,23 +641,23 @@
                 content.innerHTML = `
                     <div class="detail-row">
                         <div class="detail-label">رقم الطلب:</div>
-                        <div class="detail-value">${order._id}</div>
+                        <div class="detail-value">${order._id || order.id || 'N/A'}</div>
                     </div>
                     <div class="detail-row">
                         <div class="detail-label">اسم ولي الأمر:</div>
-                        <div class="detail-value">${order.parentName}</div>
+                        <div class="detail-value">${order.parentName || 'غير متوفر'}</div>
                     </div>
-                    <极速快3div class="detail-row">
+                    <div class="detail-row">
                         <div class="detail-label">هاتف ولي الأمر:</div>
-                        <div class="detail-value">${order.phone}</div>
+                        <div class="detail-value">${order.phone || 'غير متوفر'}</div>
                     </div>
                     <div class="detail-row">
                         <div class="detail-label">اسم التلميذ:</div>
-                        <div class极速快3="detail-value">${order.studentName}</极速快3div>
+                        <div class="detail-value">${order.studentName || 'غير متوفر'}</div>
                     </div>
                     <div class="detail-row">
                         <div class="detail-label">المستوى الدراسي:</div>
-                        <div class="detail-value">${order.grade}</div>
+                        <div class="detail-value">${order.grade || 'غير متوفر'}</div>
                     </div>
                     <div class="detail-row">
                         <div class="detail-label">الحالة:</div>
@@ -643,7 +667,7 @@
                     </div>
                     <div class="detail-row">
                         <div class="detail-label">تاريخ الطلب:</div>
-                        <div class="detail-value">${orderDate}</div>
+                        <div class="detail-value">${orderDate}</极速快3div>
                     </div>
                     <div class="detail-row">
                         <div class="detail-label">قائمة اللوازم:</div>
@@ -651,7 +675,7 @@
                     </div>
                     <div class="detail-row">
                         <div class="detail-label">الموقع:</div>
-                        <div class="detail-value">${order.location.coordinates[1]}, ${order.location.coordinates[0]}</div>
+                        <div class="detail-value">${order.location ? `${order.location.coordinates[1]}, ${order.location.coordinates[0]}` : 'غير متوفر'}</div>
                     </div>
                 `;
                 
@@ -673,7 +697,12 @@
                     'Authorization': `Bearer ${authToken}`
                 }
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.message) {
                     showAlert('ordersAlert', 'success', 'تم حذف الطلب بنجاح');
@@ -713,6 +742,8 @@
         // Show alert message
         function showAlert(containerId, type, message) {
             const alert = document.getElementById(containerId);
+            if (!alert) return;
+            
             alert.textContent = message;
             alert.classList.remove('hidden', 'alert-error', 'alert-success');
             alert.classList.add(`alert-${type}`);
@@ -738,17 +769,8 @@
         // Initialize the app
         window.addEventListener('load', function() {
             // Make sure the modal is hidden on page load
-            document.getElementById('orderDetailsModal').classList.add('hidden');
-            
-            // Set up language buttons if any
-            const langButtons = document.querySelectorAll('.lang-btn');
-            if (langButtons.length > 0) {
-                langButtons.forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        changeLanguage(this.getAttribute('data-lang'));
-                    });
-                });
-            }
+            const modal = document.getElementById('orderDetailsModal');
+            if (modal) modal.classList.add('hidden');
         });
     </script>
 </body>
