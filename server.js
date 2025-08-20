@@ -17,10 +17,18 @@ app.use(express.static('public'));
 app.use('/uploads', express.static('uploads'));
 
 // MongoDB Connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/school_supplies';
+const MONGODB_URI = process.env.MONGODB_URI;
+
 mongoose.connect(MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
+})
+.then(() => {
+  console.log('Connected to MongoDB Atlas');
+})
+.catch((error) => {
+  console.error('MongoDB connection error:', error);
+  process.exit(1); // Exit the process if connection fails
 });
 
 // MongoDB Models
