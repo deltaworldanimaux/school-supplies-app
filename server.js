@@ -147,7 +147,7 @@ app.post('/api/orders', upload.single('suppliesList'), async (req, res) => {
     }
     
     // Generate a consistent order number
-    const orderNumber = 'ORD' + Date.now(); // Using timestamp for uniqueness
+    const orderNumber = 'ORD' + Date.now();
     
     const order = new Order({
       parentName,
@@ -160,14 +160,16 @@ app.post('/api/orders', upload.single('suppliesList'), async (req, res) => {
       },
       suppliesList: fileUrl,
       status: 'pending',
-      orderNumber // Store the order number in the document
+      orderNumber: orderNumber // Store the order number
     });
     
     await order.save();
+    
+    // Return the order number in the response
     res.status(201).json({ 
       message: 'تم إرسال الطلب بنجاح!', 
       orderId: order._id,
-      orderNumber: order.orderNumber // Return the stored order number
+      orderNumber: order.orderNumber // Make sure to return the order number
     });
   } catch (error) {
     if (req.file) {
