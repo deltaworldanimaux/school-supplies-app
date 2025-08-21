@@ -558,17 +558,17 @@
                 <div class="form-group">
                     <label for="grade" data-translate="grade">المستوى الدراسي</label>
                     <select id="grade" required>
-                        <option value="" data-translate="select_grade">اختر المستوى الدراسي</option>
-                        <option value="1">الأولى ابتدائي</option>
-                        <option value="2">الثانية ابتدائي</option>
-                        <option value="3">الثالثة ابتدائي</option>
-                        <option value="4">الرابعة ابتدائي</option>
-                        <option value="5">الخامسة ابتدائي</option>
-                        <option value="6">السادسة ابتدائي</option>
-                        <option value="7">اولى اعدادي</option>
-                        <option value="8">ثاني اعدادي</option>
-                        <option value="9">ثالث اعدادي</option>
-                    </select>
+    <option value="" data-translate="select_grade">اختر المستوى الدراسي</option>
+    <option value="1" data-translate="grade_1">الأولى ابتدائي</option>
+    <option value="2" data-translate="grade_2">الثانية ابتدائي</option>
+    <option value="3" data-translate="grade_3">الثالثة ابتدائي</option>
+    <option value="4" data-translate="grade_4">الرابعة ابتدائي</option>
+    <option value="5" data-translate="grade_5">الخامسة ابتدائي</option>
+    <option value="6" data-translate="grade_6">السادسة ابتدائي</option>
+    <option value="7" data-translate="grade_7">اولى اعدادي</option>
+    <option value="8" data-translate="grade_8">ثاني اعدادي</option>
+    <option value="9" data-translate="grade_9">ثالث اعدادي</option>
+</select>
                 </div>
                 
                 <div class="file-upload" id="fileUpload">
@@ -649,7 +649,16 @@
         order_number: "رقم الطلب:",
         close_btn: "إغلاق",
         order_confirmed: "تم تأكيد طلبك بنجاح. سيتم التواصل معك قريباً لتأكيد التسليم.",
-    order_number_label: "رقم الطلب:"
+    order_number_label: "رقم الطلب:",
+    grade_1: "الأولى ابتدائي",
+    grade_2: "الثانية ابتدائي", 
+    grade_3: "الثالثة ابتدائي",
+    grade_4: "الرابعة ابتدائي",
+    grade_5: "الخامسة ابتدائي",
+    grade_6: "السادسة ابتدائي",
+    grade_7: "اولى اعدادي",
+    grade_8: "ثاني اعدادي",
+    grade_9: "ثالث اعدادي"
             },
             fr: {
                 title: "Achetez des fournitures scolaires sans faire la queue",
@@ -685,7 +694,16 @@
         order_number: "Numéro de commande:",
         close_btn: "Fermer",
         order_confirmed: "Votre commande a été confirmée avec succès. Nous vous contacterons bientôt pour confirmer la livraison.",
-    order_number_label: "Numéro de commande:"
+    order_number_label: "Numéro de commande:",
+    grade_1: "1ère Primaire",
+    grade_2: "2ème Primaire",
+    grade_3: "3ème Primaire", 
+    grade_4: "4ème Primaire",
+    grade_5: "5ème Primaire",
+    grade_6: "6ème Primaire",
+    grade_7: "1ère Collège",
+    grade_8: "2ème Collège", 
+    grade_9: "3ème Collège"
             },
             en: {
                 title: "Shop for school supplies without waiting in lines",
@@ -721,7 +739,16 @@
         order_number: "Order Number:",
         close_btn: "Close",
         order_confirmed: "Your order has been confirmed successfully. We will contact you soon to confirm delivery.",
-    order_number_label: "Order Number:"
+    order_number_label: "Order Number:",
+    grade_1: "1st Grade",
+    grade_2: "2nd Grade",
+    grade_3: "3rd Grade",
+    grade_4: "4th Grade", 
+    grade_5: "5th Grade",
+    grade_6: "6th Grade",
+    grade_7: "7th Grade",
+    grade_8: "8th Grade",
+    grade_9: "9th Grade"
             }
         };
 
@@ -770,7 +797,12 @@ function showToast(message, type = 'success') {
             element.textContent = translations[lang][key];
         }
     });
-    
+     document.querySelectorAll('option[data-translate]').forEach(option => {
+        const key = option.getAttribute('data-translate');
+        if (translations[lang][key]) {
+            option.textContent = translations[lang][key];
+        }
+    });
      if (document.getElementById('orderConfirmation').style.display === 'flex') {
         document.querySelectorAll('#orderConfirmation [data-translate]').forEach(element => {
             const key = element.getAttribute('data-translate');

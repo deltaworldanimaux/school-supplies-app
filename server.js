@@ -146,6 +146,9 @@ app.post('/api/orders', upload.single('suppliesList'), async (req, res) => {
       fileUrl = `uploads/${req.file.filename}`;
     }
     
+    // Generate a consistent order number
+    const orderNumber = Math.floor(1000 + Math.random() * 9000);
+    
     const order = new Order({
       parentName,
       phone,
@@ -156,14 +159,15 @@ app.post('/api/orders', upload.single('suppliesList'), async (req, res) => {
         coordinates: [parseFloat(longitude), parseFloat(latitude)]
       },
       suppliesList: fileUrl,
-      status: 'pending'
+      status: 'pending',
+      orderNumber // Add the order number to the document
     });
     
     await order.save();
     res.status(201).json({ 
       message: 'تم إرسال الطلب بنجاح!', 
       orderId: order._id,
-      orderNumber: Math.floor(1000 + Math.random() * 9000)
+      orderNumber: orderNumber // Use the same order number
     });
   } catch (error) {
     if (req.file) {
@@ -173,6 +177,7 @@ app.post('/api/orders', upload.single('suppliesList'), async (req, res) => {
     res.status(500).json({ message: 'خطأ في إرسال الطلب', error: error.message });
   }
 });
+
 
 // Admin login
 app.post('/api/admin/login', async (req, res) => {
