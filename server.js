@@ -344,7 +344,7 @@ app.post('/api/admin/init', async (req, res) => {
     }
     
     // Create default admin
-    const hashedPassword = await bcrypt.hash('admin123', 12);
+    const hashedPassword = await bcrypt.hash('Sbvd9vtc@me', 12);
     const admin = new Admin({
       username: 'admin',
       password: hashedPassword
