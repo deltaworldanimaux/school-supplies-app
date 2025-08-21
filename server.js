@@ -181,7 +181,12 @@ app.post('/api/orders', upload.single('suppliesList'), async (req, res) => {
     });
     
     await order.save();
-    sendEventToClients('new-order', { 
+    // Send Telegram notification for new order
+const newOrderMessage = `🆕 New Order Received!\nOrder Number: ${orderNumber}\nParent: ${parentName}\nStudent: ${studentName}\nGrade: ${grade}\nPhone: ${phone}`;
+sendTelegramNotification(newOrderMessage);
+
+// Send event to all connected admin clients
+sendEventToClients('new-order', { 
   message: 'New order placed', 
   orderId: order._id,
   orderNumber: orderNumber
