@@ -18,7 +18,21 @@ app.use('/uploads', express.static('uploads'));
 
 // MongoDB Connection
 const MONGODB_URI = "mongodb+srv://deltaworldanimaux:SYQ0SLzI97c73EKS@supply.v7ebphf.mongodb.net/school_supplies?retryWrites=true&w=majority&appName=supply";
+let clients = [];
+const TelegramBot = require('node-telegram-bot-api');
+const TELEGRAM_BOT_TOKEN = '8282280616:AAEILrAJbJ_HnSjPO01HENUYrMHNuoU4cTs';
+const TELEGRAM_CHAT_ID = '7779679746';
+const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, {polling: false});
 
+// Function to send Telegram notification
+async function sendTelegramNotification(message) {
+  try {
+    await bot.sendMessage(TELEGRAM_CHAT_ID, message);
+    console.log('Telegram notification sent');
+  } catch (error) {
+    console.error('Error sending Telegram notification:', error);
+  }
+}
 mongoose.connect(MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -167,6 +181,11 @@ app.post('/api/orders', upload.single('suppliesList'), async (req, res) => {
     });
     
     await order.save();
+    sendEventToClients('new-order', { 
+  message: 'New order placed', 
+  orderId: order._id,
+  orderNumber: orderNumber
+});
     res.status(201).json({ 
       message: 'تم إرسال الطلب بنجاح!', 
       orderId: order._id,
@@ -217,6 +236,29 @@ app.post('/api/admin/login', async (req, res) => {
   }
 });
 
+app.get('/api/orders/events', authenticateAdmin, (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
+  const clientId = Date.now();
+  const newClient = {
+    id: clientId,
+    res
+  };
+  clients.push(newClient);
+
+  req.on('close', () => {
+    console.log(`${clientId} Connection closed`);
+    clients = clients.filter(client => client.id !== clientId);
+  });
+});
+
+// Function to send events to all connected clients
+function sendEventToClients(event, data) {
+  clients.forEach(client => client.res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
+}
 // Get all orders (admin only)
 app.get('/api/orders', authenticateAdmin, async (req, res) => {
   try {
@@ -241,7 +283,10 @@ app.put('/api/orders/:id/status', authenticateAdmin, async (req, res) => {
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
-    
+    if (status === 'confirmed') {
+  const notificationMessage = `✅ Order Confirmed\nOrder Number: ${order.orderNumber}\nParent: ${order.parentName}\nStudent: ${order.studentName}\nGrade: ${order.grade}`;
+  sendTelegramNotification(notificationMessage);
+}
     res.json({ message: 'Order status updated', order });
   } catch (error) {
     console.error('Update order error:', error);

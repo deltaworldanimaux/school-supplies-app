@@ -659,6 +659,8 @@
                     document.getElementById('adminPage').classList.remove('hidden');
                     document.getElementById('adminName').textContent = data.admin.username;
                     loadOrders();
+                    setupEventSource();
+
                 } else {
                     showAlert('loginAlert', 'error', data.message || 'فشل تسجيل الدخول');
                 }
@@ -726,7 +728,26 @@
     if (confirmedOrdersEl) confirmedOrdersEl.textContent = orders.filter(o => o.status === 'confirmed').length;
     if (deliveredOrdersEl) deliveredOrdersEl.textContent = orders.filter(o => o.status === 'delivered').length;
 }
-        
+
+function setupEventSource() {
+  const eventSource = new EventSource(`${API_BASE}/api/orders/events`, {
+    headers: {
+      'Authorization': `Bearer ${authToken}`
+    }
+  });
+
+  eventSource.addEventListener('new-order', function(event) {
+    const data = JSON.parse(event.data);
+    showAlert('ordersAlert', 'success', `New order received: ${data.orderNumber}`);
+    loadOrders(); // Refresh the orders list
+  });
+
+  eventSource.onerror = function(err) {
+    console.error('EventSource failed:', err);
+    // Try to reconnect after 5 seconds
+    setTimeout(setupEventSource, 5000);
+  };
+}
         // Render orders table
         function renderOrdersTable(orders) {
             const tbody = document.getElementById('ordersTableBody');
