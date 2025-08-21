@@ -574,8 +574,20 @@
         });
 
         // Form submission
-        document.getElementById('orderForm').addEventListener('submit', async function(e) {
-e.preventDefault();
+document.getElementById('orderForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  
+  // Validate all fields including file and location
+  const parentName = document.getElementById('parentName').value;
+  const phone = document.getElementById('phone').value;
+  const studentName = document.getElementById('studentName').value;
+  const grade = document.getElementById('grade').value;
+  const file = document.getElementById('fileInput').files[0];
+  
+  if (!parentName || !phone || !studentName || !grade || !file || !latlng) {
+    alert('يرجى ملء جميع الحقول المطلوبة بما في ذلك تحميل الملف وتحديد الموقع');
+    return;
+  }
 
 
 const formData = new FormData();

@@ -468,11 +468,11 @@
         });
         
         // Logout functionality
-        document.getElementById('logoutBtn').addEventListener('click', function() {
-localStorage.removeItem('adminToken');
-document.getElementById('loginPage').classList.remove('hidden');
-document.getElementById('adminPage').classList.add('hidden');
-document.getElementById('orderDetailsModal').classList.add('hidden'); // ✅ hide modal on logout
+document.getElementById('logoutBtn').addEventListener('click', function() {
+  localStorage.removeItem('adminToken');
+  document.getElementById('loginPage').classList.remove('hidden');
+  document.getElementById('adminPage').classList.add('hidden');
+  document.getElementById('orderDetailsModal').classList.add('hidden'); // ✅ hide modal on logout
 });
         
         // Load orders from server
@@ -776,12 +776,15 @@ document.getElementById('orderDetailsModal').classList.add('hidden'); // ✅ hid
         });
         
         // Initialize the app
-        window.addEventListener('load', function() {
-            // Make sure the modal is hidden on page load
-            document.getElementById('orderDetailsModal').classList.add('hidden');
-            const modal = document.getElementById('orderDetailsModal');
-            if (modal) modal.classList.add('hidden');
-        });
+       window.addEventListener('load', function() {
+  // Make sure the modal is hidden on page load
+  document.getElementById('orderDetailsModal').classList.add('hidden');
+  
+  // Additional check to ensure modal doesn't appear on login page
+  if (!authToken) {
+    document.getElementById('orderDetailsModal').classList.add('hidden');
+  }
+});
     </script>
 </body>
 </html>

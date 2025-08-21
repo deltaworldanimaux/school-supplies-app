@@ -93,10 +93,43 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
+const uploadToImgBB = async (filePath) => {
+  try {
+    const formData = new FormData();
+    const fileStream = fs.createReadStream(filePath);
+    formData.append('image', fileStream);
+    
+    const response = await fetch('https://api.imgbb.com/1/upload?key=4398dfbf7f2440db0ca2089e394b4166', {
+      method: 'POST',
+      body: formData
+    });
+    
+    const data = await response.json();
+    return data.data.url;
+  } catch (error) {
+    console.error('ImgBB upload error:', error);
+    throw error;
+  }
+};
+
 // Submit order
 app.post('/api/orders', upload.single('suppliesList'), async (req, res) => {
   try {
     const { parentName, phone, studentName, grade, latitude, longitude } = req.body;
+    
+    // Validate all required fields including file
+    if (!parentName || !phone || !studentName || !grade || !latitude || !longitude || !req.file) {
+      if (req.file) {
+        fs.unlinkSync(req.file.path);
+      }
+      return res.status(400).json({ message: 'جميع الحقول مطلوبة بما في ذلك الملف والموقع' });
+    }
+    
+    // Upload file to ImgBB
+    const fileUrl = await uploadToImgBB(req.file.path);
+    
+    // Delete local file after upload
+    fs.unlinkSync(req.file.path);
     
     const order = new Order({
       parentName,
@@ -107,19 +140,22 @@ app.post('/api/orders', upload.single('suppliesList'), async (req, res) => {
         type: 'Point',
         coordinates: [parseFloat(longitude), parseFloat(latitude)]
       },
-      suppliesList: req.file ? req.file.filename : null,
+      suppliesList: fileUrl, // Store URL instead of filename
       status: 'pending'
     });
     
     await order.save();
     res.status(201).json({ 
-      message: 'Order submitted successfully!', 
+      message: 'تم إرسال الطلب بنجاح!', 
       orderId: order._id,
       orderNumber: Math.floor(1000 + Math.random() * 9000)
     });
   } catch (error) {
+    if (req.file) {
+      fs.unlinkSync(req.file.path);
+    }
     console.error('Order submission error:', error);
-    res.status(500).json({ message: 'Error submitting order', error: error.message });
+    res.status(500).json({ message: 'خطأ في إرسال الطلب', error: error.message });
   }
 });
 
