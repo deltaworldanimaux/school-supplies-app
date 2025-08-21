@@ -393,6 +393,145 @@ app.post('/api/admin/change-password', authenticateAdmin, async (req, res) => {
   }
 });
 
+// Library creation endpoint
+app.post('/api/libraries', authenticateAdmin, async (req, res) => {
+  try {
+    const { name, phone, latitude, longitude, username, password } = req.body;
+    
+    const hashedPassword = await bcrypt.hash(password, 12);
+    
+    const library = new Library({
+      name,
+      phone,
+      location: {
+        type: 'Point',
+        coordinates: [parseFloat(longitude), parseFloat(latitude)]
+      },
+      username,
+      password: hashedPassword
+    });
+    
+    await library.save();
+    
+    res.status(201).json({
+      message: 'Library created successfully',
+      credentials: { username, password }
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error creating library', error: error.message });
+  }
+});
+
+// Library login endpoint
+app.post('/api/library/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const library = await Library.findOne({ username });
+    
+    if (!library || !(await bcrypt.compare(password, library.password))) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+    
+    const token = jwt.sign(
+      { id: library._id },
+      process.env.JWT_SECRET || 'fallback_secret',
+      { expiresIn: '24h' }
+    );
+    
+    res.json({ token, library: { id: library._id, name: library.name } });
+  } catch (error) {
+    res.status(500).json({ message: 'Login error', error: error.message });
+  }
+});
+
+// Assign order to library
+app.post('/api/orders/:id/assign', authenticateAdmin, async (req, res) => {
+  try {
+    const { libraryId } = req.body;
+    const order = await Order.findByIdAndUpdate(
+      req.params.id,
+      { 
+        status: 'confirmed',
+        assignedTo: libraryId 
+      },
+      { new: true }
+    );
+    
+    res.json({ message: 'Order assigned to library', order });
+  } catch (error) {
+    res.status(500).json({ message: 'Error assigning order', error: error.message });
+  }
+});
+const authenticateLibrary = async (req, res, next) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    if (!token) return res.status(401).json({ message: 'Access denied' });
+    
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+    const library = await Library.findById(decoded.id);
+    
+    if (!library) return res.status(401).json({ message: 'Invalid token' });
+    
+    req.library = library;
+    next();
+  } catch (error) {
+    res.status(400).json({ message: 'Invalid token' });
+  }
+};
+// Get library orders
+app.get('/api/library/orders', authenticateLibrary, async (req, res) => {
+  try {
+    const orders = await Order.find({ 
+      assignedTo: req.library._id,
+      status: { $in: ['confirmed', 'processing'] }
+    }).select('-phone -location');
+    
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching orders', error: error.message });
+  }
+});
+
+// Get all libraries (admin only)
+app.get('/api/libraries', authenticateAdmin, async (req, res) => {
+  try {
+    const libraries = await Library.find().select('-password');
+    res.json(libraries);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching libraries', error: error.message });
+  }
+});
+
+// Mark order as received
+app.put('/api/library/orders/:id/receive', authenticateLibrary, async (req, res) => {
+  try {
+    const order = await Order.findOneAndUpdate(
+      { _id: req.params.id, assignedTo: req.library._id },
+      { status: 'processing' },
+      { new: true }
+    );
+    
+    res.json({ message: 'Order received', order });
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating order', error: error.message });
+  }
+});
+
+// Mark order as completed
+app.put('/api/library/orders/:id/complete', authenticateLibrary, async (req, res) => {
+  try {
+    const order = await Order.findOneAndUpdate(
+      { _id: req.params.id, assignedTo: req.library._id },
+      { status: 'completed' },
+      { new: true }
+    );
+    
+    res.json({ message: 'Order completed', order });
+  } catch (error) {
+    res.status(500).json({ message: 'Error completing order', error: error.message });
+  }
+});
+
 // Create uploads directory if it doesn't exist
 if (!fs.existsSync('uploads')) {
   fs.mkdirSync('uploads');

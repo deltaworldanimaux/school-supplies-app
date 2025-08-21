@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <title>لوحة تحكم مدرستي - إدارة الطلبات</title>
     <style>
         :root {
@@ -612,7 +614,40 @@
             </div>
         </div>
     </div>
-
+<div id="libraryCreation" style="margin-bottom: 30px; display: none;">
+    <h2>إدارة المكتبات</h2>
+    
+    <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <h3>إنشاء مكتبة جديدة</h3>
+        <div id="map" style="height: 300px; margin-bottom: 15px; border: 1px solid #ddd;"></div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
+            <div>
+                <label>اسم المكتبة:</label>
+                <input type="text" id="libraryName" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+            </div>
+            <div>
+                <label>هاتف المكتبة:</label>
+                <input type="text" id="libraryPhone" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+            </div>
+            <div>
+                <label>اسم المستخدم:</label>
+                <input type="text" id="libraryUsername" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+            </div>
+            <div>
+                <label>كلمة المرور:</label>
+                <input type="password" id="libraryPassword" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+            </div>
+        </div>
+        <button id="createLibraryBtn" style="background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+            إنشاء المكتبة
+        </button>
+    </div>
+    
+    <div id="librariesList" style="margin-top: 20px;">
+        <h3>المكتبات الموجودة</h3>
+        <div id="librariesContainer"></div>
+    </div>
+</div>
     <script>
         let authToken = localStorage.getItem('adminToken');
         const API_BASE = window.location.origin;
@@ -1069,6 +1104,145 @@ function applyFilters() {
 document.getElementById('applyFilters').addEventListener('click', applyFilters);
 document.getElementById('statusFilter').addEventListener('change', applyFilters);
 document.getElementById('searchInput').addEventListener('input', applyFilters);
+
+// Add to your existing JavaScript
+let map, marker;
+let libraries = [];
+
+// Toggle library creation section
+function toggleLibrarySection() {
+    const librarySection = document.getElementById('libraryCreation');
+    librarySection.style.display = librarySection.style.display === 'none' ? 'block' : 'none';
+    
+    if (librarySection.style.display === 'block') {
+        initMap();
+        loadLibraries();
+    }
+}
+
+// Initialize map
+function initMap() {
+    map = L.map('map').setView([33.5731, -7.5898], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+    
+    map.on('click', function(e) {
+        if (marker) {
+            map.removeLayer(marker);
+        }
+        marker = L.marker(e.latlng).addTo(map);
+    });
+}
+
+// Load libraries
+function loadLibraries() {
+    fetch(`${API_BASE}/api/libraries`, {
+        headers: {
+            'Authorization': `Bearer ${authToken}`
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        libraries = data;
+        renderLibraries();
+    })
+    .catch(error => console.error('Error loading libraries:', error));
+}
+
+// Render libraries list
+function renderLibraries() {
+    const container = document.getElementById('librariesContainer');
+    container.innerHTML = '';
+    
+    libraries.forEach(library => {
+        const libElement = document.createElement('div');
+        libElement.style.background = 'white';
+        libElement.style.padding = '15px';
+        libElement.style.margin = '10px 0';
+        libElement.style.borderRadius = '5px';
+        libElement.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
+        
+        libElement.innerHTML = `
+            <strong>${library.name}</strong> - ${library.phone}
+            <div>اسم المستخدم: ${library.username}</div>
+            <button onclick="assignOrderToLibrary('${library._id}')" style="background: var(--accent); color: white; border: none; padding: 5px 10px; border-radius: 3px; margin-top: 5px; cursor: pointer;">
+                تعيين الطلب الحالي
+            </button>
+        `;
+        
+        container.appendChild(libElement);
+    });
+}
+
+// Create new library
+document.getElementById('createLibraryBtn').addEventListener('click', function() {
+    const name = document.getElementById('libraryName').value;
+    const phone = document.getElementById('libraryPhone').value;
+    const username = document.getElementById('libraryUsername').value;
+    const password = document.getElementById('libraryPassword').value;
+    
+    if (!name || !phone || !username || !password || !marker) {
+        alert('يرجى ملء جميع الحقول وتحديد موقع على الخريطة');
+        return;
+    }
+    
+    const latlng = marker.getLatLng();
+    
+    fetch(`${API_BASE}/api/libraries`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({
+            name,
+            phone,
+            username,
+            password,
+            latitude: latlng.lat,
+            longitude: latlng.lng
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(`تم إنشاء المكتبة بنجاح. بيانات الدخول: ${data.credentials.username} / ${data.credentials.password}`);
+        loadLibraries();
+    })
+    .catch(error => console.error('Error creating library:', error));
+});
+
+// Assign order to library
+function assignOrderToLibrary(libraryId) {
+    if (!currentOrder) {
+        alert('يرجى فتح طلب أولاً');
+        return;
+    }
+    
+    fetch(`${API_BASE}/api/orders/${currentOrder._id}/assign`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({ libraryId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert('تم تعيين الطلب إلى المكتبة');
+        document.getElementById('orderDetailsModal').classList.remove('active');
+        loadOrders();
+    })
+    .catch(error => console.error('Error assigning order:', error));
+}
+
+// Add a button to toggle library section in your admin UI
+const libraryToggleBtn = document.createElement('button');
+libraryToggleBtn.textContent = 'إدارة المكتبات';
+libraryToggleBtn.classList.add('btn');
+libraryToggleBtn.style.marginLeft = '10px';
+libraryToggleBtn.onclick = toggleLibrarySection;
+document.querySelector('.auth-info').appendChild(libraryToggleBtn);
     </script>
 </body>
 </html>

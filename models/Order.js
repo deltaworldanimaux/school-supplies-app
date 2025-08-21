@@ -24,5 +24,6 @@ const orderSchema = new mongoose.Schema({
 });
 
 orderSchema.index({ location: '2dsphere' });
+assignedTo: { type: mongoose.Schema.Types.ObjectId, ref; 'Library' }
 
 module.exports = mongoose.model('Order', orderSchema);

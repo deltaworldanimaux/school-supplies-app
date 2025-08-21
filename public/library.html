@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة المكتبة</title>
+    <style>
+        /* Reuse your admin styles here */
+        :root {
+            --primary: #4CAF50;
+            --secondary: #FF9800;
+            --accent: #2196F3;
+            --light: #F5F5F5;
+            --dark: #333;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7f9;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--dark);
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+        
+        .login-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: block;
+            width: 100%;
+            font-weight: bold;
+        }
+        
+        .orders-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .orders-table th, .orders-table td {
+            padding: 15px;
+            text-align: right;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .orders-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 5px;
+            font-size: 0.8rem;
+        }
+        
+        .view-btn {
+            background-color: var(--accent);
+            color: white;
+        }
+        
+        .receive-btn {
+            background-color: var(--secondary);
+            color: white;
+        }
+        
+        .complete-btn {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="loginPage" class="login-container">
+        <h2 style="text-align: center; margin-bottom: 30px;">تسجيل الدخول إلى منصة المكتبة</h2>
+        <div id="loginAlert" class="alert hidden"></div>
+        <div class="form-group">
+            <label for="libraryUsername">اسم المستخدم</label>
+            <input type="text" id="libraryUsername" required>
+        </div>
+        <div class="form-group">
+            <label for="libraryPassword">كلمة المرور</label>
+            <input type="password" id="libraryPassword" required>
+        </div>
+        <button id="libraryLoginBtn" class="login-btn">دخول</button>
+    </div>
+
+    <div id="libraryPage" class="container hidden">
+        <header>
+            <div class="logo">
+                <span>📚 منصة المكتبة</span>
+            </div>
+            <div class="auth-info">
+                <span>مرحباً, <span id="libraryName">Library</span></span>
+                <button id="logoutBtn" class="btn">تسجيل الخروج</button>
+            </div>
+        </header>
+
+        <div style="padding: 20px;">
+            <h1>الطلبات المخصصة للمكتبة</h1>
+            
+            <table class="orders-table">
+                <thead>
+                    <tr>
+                        <th>رقم الطلب</th>
+                        <th>اسم ولي الأمر</th>
+                        <th>اسم التلميذ</th>
+                        <th>المستوى الدراسي</th>
+                        <th>الحالة</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="ordersTableBody">
+                    <!-- Orders will be populated here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let authToken = localStorage.getItem('libraryToken');
+        let currentLibrary = null;
+        
+        if (authToken) {
+            verifyLibraryToken();
+        }
+        
+        function verifyLibraryToken() {
+            fetch(`${API_BASE}/api/library/orders`, {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    document.getElementById('loginPage').classList.add('hidden');
+                    document.getElementById('libraryPage').classList.remove('hidden');
+                    loadLibraryOrders();
+                } else {
+                    localStorage.removeItem('libraryToken');
+                }
+            })
+            .catch(() => {
+                localStorage.removeItem('libraryToken');
+            });
+        }
+        
+        document.getElementById('libraryLoginBtn').addEventListener('click', function() {
+            const username = document.getElementById('libraryUsername').value;
+            const password = document.getElementById('libraryPassword').value;
+            
+            fetch(`${API_BASE}/api/library/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.token) {
+                    authToken = data.token;
+                    localStorage.setItem('libraryToken', authToken);
+                    currentLibrary = data.library;
+                    document.getElementById('loginPage').classList.add('hidden');
+                    document.getElementById('libraryPage').classList.remove('hidden');
+                    document.getElementById('libraryName').textContent = data.library.name;
+                    loadLibraryOrders();
+                } else {
+                    alert(data.message || 'فشل تسجيل الدخول');
+                }
+            })
+            .catch(error => {
+                alert('خطأ في الاتصال بالخادم');
+            });
+        });
+        
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+            localStorage.removeItem('libraryToken');
+            document.getElementById('loginPage').classList.remove('hidden');
+            document.getElementById('libraryPage').classList.add('hidden');
+        });
+        
+        function loadLibraryOrders() {
+            fetch(`${API_BASE}/api/library/orders`, {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            })
+            .then(response => response.json())
+            .then(orders => {
+                renderLibraryOrders(orders);
+            })
+            .catch(error => {
+                console.error('Error loading orders:', error);
+            });
+        }
+        
+        function renderLibraryOrders(orders) {
+            const tbody = document.getElementById('ordersTableBody');
+            tbody.innerHTML = '';
+            
+            if (orders.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">لا توجد طلبات</td></tr>';
+                return;
+            }
+            
+            orders.forEach(order => {
+                const tr = document.createElement('tr');
+                
+                tr.innerHTML = `
+                    <td>${order.orderNumber || order._id}</td>
+                    <td>${order.parentName || 'غير متوفر'}</td>
+                    <td>${order.studentName || 'غير متوفر'}</td>
+                    <td>${order.grade || 'غير متوفر'}</td>
+                    <td>${getStatusText(order.status)}</td>
+                    <td>
+                        ${order.status === 'confirmed' ? 
+                            `<button class="action-btn receive-btn" data-order="${order._id}">استلام</button>` : ''}
+                        ${order.status === 'processing' ? 
+                            `<button class="action-btn complete-btn" data-order="${order._id}">إكمال</button>` : ''}
+                        <button class="action-btn view-btn" data-order="${order._id}">عرض الملف</button>
+                    </td>
+                `;
+                
+                tbody.appendChild(tr);
+            });
+            
+            // Add event listeners
+            document.querySelectorAll('.receive-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    updateOrderStatus(this.dataset.order, 'processing');
+                });
+            });
+            
+            document.querySelectorAll('.complete-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    updateOrderStatus(this.dataset.order, 'completed');
+                });
+            });
+            
+            document.querySelectorAll('.view-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    viewOrderFile(this.dataset.order);
+                });
+            });
+        }
+        
+        function updateOrderStatus(orderId, status) {
+            const endpoint = status === 'processing' ? 'receive' : 'complete';
+            
+            fetch(`${API_BASE}/api/library/orders/${orderId}/${endpoint}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert('تم تحديث حالة الطلب');
+                loadLibraryOrders();
+            })
+            .catch(error => {
+                alert('خطأ في تحديث حالة الطلب');
+            });
+        }
+        
+        function viewOrderFile(orderId) {
+            fetch(`${API_BASE}/api/orders/${orderId}`, {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            })
+            .then(response => response.json())
+            .then(order => {
+                if (order.suppliesList) {
+                    const isFullUrl = order.suppliesList.startsWith('http');
+                    const fileUrl = isFullUrl ? order.suppliesList : `${API_BASE}/uploads/${order.suppliesList}`;
+                    window.open(fileUrl, '_blank');
+                }
+            })
+            .catch(error => {
+                alert('خطأ في فتح الملف');
+            });
+        }
+        
+        function getStatusText(status) {
+            switch(status) {
+                case 'pending': return 'قيد المعالجة';
+                case 'confirmed': return 'تم التأكيد';
+                case 'processing': return 'قيد التجهيز';
+                case 'completed': return 'مكتمل';
+                default: return status;
+            }
+        }
+    </script>
+</body>
+</html>
