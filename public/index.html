@@ -904,11 +904,11 @@ try {
       
       if (orderNumberElement && confirmationPopup) {
         // Use the orderNumber from the response
-        orderNumberElement.textContent = data.orderNumber || data.orderId;
+        orderNumberElement.textContent = data.orderNumber;
         confirmationPopup.style.display = 'flex';
       } else {
         // Fallback to toast if popup elements aren't found
-        showToast('تم استلام طلبك بنجاح! رقم الطلب: ' + (data.orderNumber || data.orderId));
+        showToast('تم استلام طلبك بنجاح! رقم الطلب: ' + data.orderNumber);
       }
       
       // Reset form

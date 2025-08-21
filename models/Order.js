@@ -1,22 +1,10 @@
 const mongoose = require('mongoose');
 
 const orderSchema = new mongoose.Schema({
-  parentName: {
-    type: String,
-    required: true
-  },
-  phone: {
-    type: String,
-    required: true
-  },
-  studentName: {
-    type: String,
-    required: true
-  },
-  grade: {
-    type: String,
-    required: true
-  },
+  parentName: { type: String, required: true },
+  phone: { type: String, required: true },
+  studentName: { type: String, required: true },
+  grade: { type: String, required: true },
   location: {
     type: {
       type: String,
@@ -28,15 +16,9 @@ const orderSchema = new mongoose.Schema({
       required: true
     }
   },
-  suppliesList: {
-    type: String, // This will store the filename
-    required: true
-  },
-  status: {
-    type: String,
-    enum: ['pending', 'confirmed', 'processing', 'delivered'],
-    default: 'pending'
-  }
+  suppliesList: { type: String, required: true },
+  status: { type: String, default: 'pending' },
+  orderNumber: { type: String, required: true, unique: true } // Add this field
 }, {
   timestamps: true
 });

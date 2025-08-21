@@ -146,8 +146,11 @@ app.post('/api/orders', upload.single('suppliesList'), async (req, res) => {
       fileUrl = `uploads/${req.file.filename}`;
     }
     
-    // Generate a consistent order number
-    const orderNumber = 'ORD' + Date.now();
+    // Generate a proper order number (format: ORD-YYYYMMDD-XXXX)
+    const now = new Date();
+    const datePart = now.toISOString().slice(0, 10).replace(/-/g, '');
+    const randomPart = Math.floor(1000 + Math.random() * 9000);
+    const orderNumber = `ORD-${datePart}-${randomPart}`;
     
     const order = new Order({
       parentName,
@@ -164,12 +167,10 @@ app.post('/api/orders', upload.single('suppliesList'), async (req, res) => {
     });
     
     await order.save();
-    
-    // Return the order number in the response
     res.status(201).json({ 
       message: 'تم إرسال الطلب بنجاح!', 
       orderId: order._id,
-      orderNumber: order.orderNumber // Make sure to return the order number
+      orderNumber: orderNumber // Return the order number
     });
   } catch (error) {
     if (req.file) {
