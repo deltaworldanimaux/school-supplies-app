@@ -424,7 +424,17 @@
                     <div class="stat-number" id="deliveredOrders">0</div>
                 </div>
             </div>
-
+<div class="filters" style="margin-bottom: 20px; display: flex; gap: 10px; align-items: center;">
+    <select id="statusFilter">
+        <option value="">جميع الحالات</option>
+        <option value="pending">قيد المعالجة</option>
+        <option value="confirmed">تم التأكيد</option>
+        <option value="processing">قيد التجهيز</option>
+        <option value="delivered">تم التوصيل</option>
+    </select>
+    <input type="text" id="searchInput" placeholder="بحث باسم ولي الأمر أو التلميذ">
+    <button id="applyFilters">تطبيق</button>
+</div>
             <div id="ordersAlert" class="alert hidden"></div>
             
             <div id="ordersLoading" class="loading">جاري تحميل الطلبات...</div>
@@ -468,17 +478,7 @@
             </div>
         </div>
     </div>
-<div class="filters" style="margin-bottom: 20px; display: flex; gap: 10px; align-items: center;">
-    <select id="statusFilter">
-        <option value="">جميع الحالات</option>
-        <option value="pending">قيد المعالجة</option>
-        <option value="confirmed">تم التأكيد</option>
-        <option value="processing">قيد التجهيز</option>
-        <option value="delivered">تم التوصيل</option>
-    </select>
-    <input type="text" id="searchInput" placeholder="بحث باسم ولي الأمر أو التلميذ">
-    <button id="applyFilters">تطبيق</button>
-</div>
+
     <script>
         let authToken = localStorage.getItem('adminToken');
         const API_BASE = window.location.origin;
