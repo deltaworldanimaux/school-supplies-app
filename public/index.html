@@ -239,28 +239,28 @@
             width: 100%;
             height: 100px;
             position: relative;
-            overflow: hidden;
+            overflow: hidden; /* Keep animation within container */
             border: 2px dashed #ccc;
             margin: 20px 0;
         }
         
         .school-bus {
-            font-size: 60px;
-            position: absolute;
-            top: 50%;
-            left: -60px;
-            transform: translateY(-50%);
-            animation: drive 5s infinite linear;
-        }
+    font-size: 60px;
+    position: absolute;
+    top: 50%;
+    left: -60px; /* Initial position off-screen */
+    transform: translateY(-50%);
+    animation: drive 5s infinite linear;
+}
         
         @keyframes drive {
-            0% { 
-                left: -60px;
-            }
-            100% { 
-                left: 100%;
-            }
-        }
+    0% { 
+        left: -60px; /* Start off-screen left */
+    }
+    100% { 
+        left: 100%; /* End off-screen right */
+    }
+}
         
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
@@ -270,167 +270,6 @@
         .demo-content {
             animation: fadeIn 1s ease-out;
             margin: 20px 0;
-        }
-        
-        /* Enhanced Confirmation Popup Styles */
-        .confirmation-popup {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10000;
-            animation: fadeInOverlay 0.5s ease;
-        }
-
-        .confirmation-content {
-            background: linear-gradient(135deg, #fff 0%, #f8f9ff 100%);
-            padding: 50px 40px;
-            border-radius: 25px;
-            text-align: center;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 450px;
-            width: 90%;
-            position: relative;
-            animation: scaleInBounce 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            border: 3px solid transparent;
-            background-clip: padding-box;
-        }
-
-        .confirmation-content::before {
-            content: '';
-            position: absolute;
-            top: -3px;
-            left: -3px;
-            right: -3px;
-            bottom: -3px;
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            border-radius: 25px;
-            z-index: -1;
-        }
-
-        .confirmation-animation {
-            font-size: 100px;
-            color: #4CAF50;
-            margin-bottom: 25px;
-            animation: successPulse 2s infinite;
-            text-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
-        }
-
-        .confirmation-title {
-            color: #333;
-            margin-bottom: 20px;
-            font-size: 32px;
-            font-weight: bold;
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .confirmation-message {
-            color: #666;
-            margin-bottom: 25px;
-            font-size: 18px;
-            line-height: 1.5;
-        }
-
-        .order-number {
-            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
-            padding: 20px;
-            border-radius: 15px;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 30px;
-            font-size: 20px;
-            border: 2px solid #e1e8ed;
-            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .order-number-label {
-            display: block;
-            font-size: 14px;
-            color: #888;
-            margin-bottom: 8px;
-            font-weight: normal;
-        }
-
-        .order-number-value {
-            font-size: 24px;
-            color: var(--primary);
-            font-weight: bold;
-            letter-spacing: 1px;
-        }
-
-        .confirmation-btn {
-            background: linear-gradient(135deg, var(--primary), #45a049);
-            color: white;
-            border: none;
-            padding: 15px 40px;
-            border-radius: 50px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .confirmation-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(76, 175, 80, 0.4);
-            background: linear-gradient(135deg, #45a049, var(--primary));
-        }
-
-        .confirmation-btn:active {
-            transform: translateY(-1px);
-        }
-
-        /* Enhanced animations */
-        @keyframes fadeInOverlay {
-            from { 
-                opacity: 0;
-                backdrop-filter: blur(0px);
-            }
-            to { 
-                opacity: 1;
-                backdrop-filter: blur(5px);
-            }
-        }
-
-        @keyframes scaleInBounce {
-            0% { 
-                transform: scale(0.3) rotate(-5deg);
-                opacity: 0;
-            }
-            50% {
-                transform: scale(1.05) rotate(2deg);
-                opacity: 0.8;
-            }
-            70% {
-                transform: scale(0.95) rotate(-1deg);
-                opacity: 0.9;
-            }
-            100% { 
-                transform: scale(1) rotate(0deg);
-                opacity: 1;
-            }
-        }
-
-        @keyframes successPulse {
-            0%, 100% { 
-                transform: scale(1);
-                text-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
-            }
-            50% { 
-                transform: scale(1.1);
-                text-shadow: 0 0 30px rgba(76, 175, 80, 0.6);
-            }
         }
         
         /* Responsive styles */
@@ -446,19 +285,6 @@
             .hero h1 {
                 font-size: 2rem;
             }
-            
-            .confirmation-content {
-                padding: 30px 25px;
-                margin: 20px;
-            }
-            
-            .confirmation-title {
-                font-size: 24px;
-            }
-            
-            .confirmation-animation {
-                font-size: 80px;
-            }
         }
         
         /* RTL and LTR support */
@@ -470,19 +296,120 @@
             text-align: left;
         }
         
-        .toast {
-            padding: 15px 20px;
-            margin-bottom: 10px;
+        .confirmation-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    animation: fadeIn 0.3s ease;
+}
+
+.confirmation-content {
+    background: white;
+    padding: 40px;
+    border-radius: 20px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    max-width: 400px;
+    width: 90%;
+    animation: scaleIn 0.5s ease;
+}
+
+.confirmation-animation {
+    font-size: 80px;
+    color: #4CAF50;
+    margin-bottom: 20px;
+    animation: bounce 1s ease;
+}
+
+.confirmation-title {
+    color: #333;
+    margin-bottom: 15px;
+    font-size: 28px;
+}
+
+.confirmation-message {
+    color: #666;
+    margin-bottom: 20px;
+    font-size: 18px;
+}
+
+.order-number {
+    background: #f5f5f5;
+    padding: 15px;
+    border-radius: 10px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 25px;
+    font-size: 18px;
+}
+
+.confirmation-btn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 10px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.confirmation-btn:hover {
+    background: #3d8b40;
+    transform: translateY(-2px);
+}
+
+@keyframes scaleIn {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-20px); }
+    60% { transform: translateY(-10px); }
+}
+        .orders-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .orders-table th, .orders-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .orders-table th {
+            background-color: #f5f5f5;
+        }
+        
+        .status-select {
+            padding: 6px 10px;
             border-radius: 5px;
-            color: white;
-            background: #4CAF50;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            transition: opacity 0.3s;
-            opacity: 0;
+            border: 1px solid #ddd;
         }
-        .toast.error {
-            background: #f44336;
-        }
+        .toast {
+    padding: 15px 20px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    color: white;
+    background: #4CAF50;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    transition: opacity 0.3s;
+    opacity: 0;
+}
+.toast.error {
+    background: #f44336;
+}
     </style>
 </head>
 <body>
@@ -506,9 +433,9 @@
             <p data-translate="subtitle">قم برفع قائمة اللوازم المدرسية، حدد موقعك، وسنقوم بتوصيل كل ما يحتاجه طفلك للعام الدراسي</p>
         </section>
 
-        <div class="animation-container" style="border: none; background: transparent;">
-            <div class="school-bus">🚌</div>
-        </div>
+<div class="animation-container" style="border: none; background: transparent;">
+    <div class="school-bus">🚌</div>
+</div>
 
         <section class="order-steps">
             <div class="step">
@@ -568,10 +495,9 @@
                     <p data-translate="upload_text">انقر لرفع قائمة اللوازم المدرسية (PDF, PNG, JPG)</p>
                     <input type="file" id="fileInput" accept=".pdf,.png,.jpg,.jpeg" style="display: none;">
                 </div>
-                
-                <p style="text-align: center; color: #666; margin-top: -10px; margin-bottom: 20px;" data-translate="map_instruction">
-                    انقر مرتين على الخريطة لتحديد موقعك
-                </p>
+<p style="text-align: center; color: #666; margin-top: -10px; margin-bottom: 20px;" data-translate="map_instruction">
+    انقر مرتين على الخريطة لتحديد موقعك
+</p>
                 <div class="map-container" id="map"></div>
 
                 <div class="form-group">
@@ -584,22 +510,17 @@
                 </div>
             </div>
         </form>
+
     </div>
-    
-    <!-- Enhanced Confirmation Popup -->
     <div id="orderConfirmation" class="confirmation-popup" style="display: none;">
-        <div class="confirmation-content">
-            <div class="confirmation-animation">✅</div>
-            <h2 class="confirmation-title" data-translate="thank_you">شكراً لك!</h2>
-            <p class="confirmation-message" data-translate="order_confirmed">تم تأكيد طلبك بنجاح. سيتم التواصل معك قريباً لتأكيد التسليم.</p>
-            <div class="order-number">
-                <span class="order-number-label" data-translate="order_number_label">رقم الطلب:</span>
-                <div class="order-number-value" id="confirmedOrderNumber">#12345</div>
-            </div>
-            <button class="confirmation-btn" data-translate="close_btn">إغلاق</button>
-        </div>
+    <div class="confirmation-content">
+        <div class="confirmation-animation">✓</div>
+        <h2 class="confirmation-title" data-translate="thank_you">شكراً لك!</h2>
+        <p class="confirmation-message" data-translate="order_confirmed">تم تأكيد طلبك بنجاح</p>
+        <p class="order-number" data-translate="order_number">رقم الطلب: <span id="confirmedOrderNumber"></span></p>
+        <button class="confirmation-btn" data-translate="close_btn">إغلاق</button>
     </div>
-    
+</div>
     <footer>
         <div class="container">
             <p data-translate="footer">جميع الحقوق محفوظة © 2025 - تطبيق مدرستي</p>
@@ -608,7 +529,7 @@
 
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script>
-        // Enhanced Language support with new translations
+        // Language support
         const translations = {
             ar: {
                 title: "تسوق لوازم مدرسية بدون عناء الانتظار في الطوابير",
@@ -628,13 +549,21 @@
                 upload_text: "انقر لرفع قائمة اللوازم المدرسية (PDF, PNG, JPG)",
                 locate_me: "تحديد موقعي الحالي",
                 submit_order: "إرسال الطلب",
+                admin_login: "الدخول إلى لوحة التحكم",
+                username: "اسم المستخدم",
+                password: "كلمة المرور",
+                login: "دخول",
+                admin_panel: "لوحة إدارة الطلبات",
+                order_id: "رقم الطلب",
+                status: "الحالة",
+                actions: "الإجراءات",
                 footer: "جميع الحقوق محفوظة © 2025 - تطبيق مدرستي",
                 map_instruction: "انقر مرتين على الخريطة لتحديد موقعك",
                 delivery_location: "موقع التوصيل",
                 thank_you: "شكراً لك!",
-                order_confirmed: "تم تأكيد طلبك بنجاح. سيتم التواصل معك قريباً لتأكيد التسليم.",
-                order_number_label: "رقم الطلب:",
-                close_btn: "إغلاق"
+        order_confirmed: "تم تأكيد طلبك بنجاح",
+        order_number: "رقم الطلب:",
+        close_btn: "إغلاق"
             },
             fr: {
                 title: "Achetez des fournitures scolaires sans faire la queue",
@@ -654,13 +583,21 @@
                 upload_text: "Cliquez pour uploader la liste des fournitures (PDF, PNG, JPG)",
                 locate_me: "Me localiser",
                 submit_order: "Soumettre la commande",
+                admin_login: "Connexion à l'administration",
+                username: "Nom d'utilisateur",
+                password: "Mot de passe",
+                login: "Connexion",
+                admin_panel: "Panneau d'administration des commandes",
+                order_id: "N° de commande",
+                status: "Statut",
+                actions: "Actions",
                 footer: "Tous droits réservés © 2025 - Mon École App",
                 map_instruction: "Double-cliquez sur la carte pour définir votre position",
                 delivery_location: "Lieu de livraison",
                 thank_you: "Merci!",
-                order_confirmed: "Votre commande a été confirmée avec succès. Nous vous contacterons bientôt pour confirmer la livraison.",
-                order_number_label: "Numéro de commande:",
-                close_btn: "Fermer"
+        order_confirmed: "Votre commande a été confirmée",
+        order_number: "Numéro de commande:",
+        close_btn: "Fermer"
             },
             en: {
                 title: "Shop for school supplies without waiting in lines",
@@ -680,83 +617,89 @@
                 upload_text: "Click to upload supplies list (PDF, PNG, JPG)",
                 locate_me: "Locate Me",
                 submit_order: "Submit Order",
+                admin_login: "Admin Login",
+                username: "Username",
+                password: "Password",
+                login: "Login",
+                admin_panel: "Orders Management Panel",
+                order_id: "Order ID",
+                status: "Status",
+                actions: "Actions",
                 footer: "All rights reserved © 2025 - My School App",
                 map_instruction: "Double-click on the map to set your location",
                 delivery_location: "Delivery location",
                 thank_you: "Thank You!",
-                order_confirmed: "Your order has been confirmed successfully. We will contact you soon to confirm delivery.",
-                order_number_label: "Order Number:",
-                close_btn: "Close"
+        order_confirmed: "Your order has been confirmed",
+        order_number: "Order Number:",
+        close_btn: "Close"
+
             }
         };
 
         // Initialize map
         let map, marker;
-        function initMap() {
-            // Tetouan coordinates [35.5881, -5.3626]
-            map = L.map('map').setView([35.5881, -5.3626], 13);
-            
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap contributors'
-            }).addTo(map);
-            
-            // Get current language
-            const currentLang = document.documentElement.lang;
-            
-            marker = L.marker([35.5881, -5.3626]).addTo(map)
-                .bindPopup(translations[currentLang].delivery_location)
-                .openPopup();
-                
-            map.on('dblclick', function(e) {
-                marker.setLatLng(e.latlng);
-            });
-        }
+function initMap() {
+    // Tetouan coordinates [35.5881, -5.3626]
+    map = L.map('map').setView([35.5881, -5.3626], 13);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+    
+    // Get current language
+    const currentLang = document.documentElement.lang;
+    
+    marker = L.marker([35.5881, -5.3626]).addTo(map)
+        .bindPopup(translations[currentLang].delivery_location)
+        .openPopup();
+        
+    map.on('dblclick', function(e) {
+        marker.setLatLng(e.latlng);
+    });
+}
 
-        function showToast(message, type = 'success') {
-            const toast = document.createElement('div');
-            toast.className = `toast ${type === 'error' ? 'error' : ''}`;
-            toast.textContent = message;
-            document.getElementById('toastContainer').appendChild(toast);
-            
-            setTimeout(() => toast.style.opacity = 1, 10);
-            setTimeout(() => {
-                toast.style.opacity = 0;
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
-
-        // Enhanced language change function
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type === 'error' ? 'error' : ''}`;
+    toast.textContent = message;
+    document.getElementById('toastContainer').appendChild(toast);
+    
+    setTimeout(() => toast.style.opacity = 1, 10);
+    setTimeout(() => {
+        toast.style.opacity = 0;
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+        // Change language
         function changeLanguage(lang) {
-            document.documentElement.lang = lang;
-            document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-            
-            document.querySelectorAll('[data-translate]').forEach(element => {
-                const key = element.getAttribute('data-translate');
-                if (translations[lang][key]) {
-                    element.textContent = translations[lang][key];
-                }
-            });
-            
-            // Update confirmation popup if visible
-            if (document.getElementById('orderConfirmation').style.display === 'flex') {
-                document.querySelectorAll('#orderConfirmation [data-translate]').forEach(element => {
-                    const key = element.getAttribute('data-translate');
-                    if (translations[lang][key]) {
-                        element.textContent = translations[lang][key];
-                    }
-                });
-            }
-            
-            // Update marker popup text
-            if (marker) {
-                marker.setPopupContent(translations[lang].delivery_location);
-            }
-            
-            document.querySelectorAll('.lang-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            document.querySelector(`.lang-btn[data-lang="${lang}"]`).classList.add('active');
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    
+    document.querySelectorAll('[data-translate]').forEach(element => {
+        const key = element.getAttribute('data-translate');
+        if (translations[lang][key]) {
+            element.textContent = translations[lang][key];
         }
+    });
+    
+     if (document.getElementById('orderConfirmation').style.display === 'flex') {
+        document.querySelectorAll('#orderConfirmation [data-translate]').forEach(element => {
+            const key = element.getAttribute('data-translate');
+            if (translations[lang][key]) {
+                element.textContent = translations[lang][key];
+            }
+        });
+    }
+    // Update marker popup text
+    if (marker) {
+        marker.setPopupContent(translations[lang].delivery_location);
+    }
+    
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.querySelector(`.lang-btn[data-lang="${lang}"]`).classList.add('active');
+}
 
         // File upload handling
         document.getElementById('fileUpload').addEventListener('click', function() {
@@ -772,77 +715,96 @@
 
         // Locate me button
         document.getElementById('locateBtn').addEventListener('click', function() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    function(position) {
-                        const latlng = [position.coords.latitude, position.coords.longitude];
-                        map.setView(latlng, 15);
-                        marker.setLatLng(latlng);
-                    },
-                    function(error) {
-                        if (error.code === error.PERMISSION_DENIED) {
-                            showToast('تم رفض طلب الموقع. يرجى تحديد الموقع يدوياً على الخريطة.', 'error');
-                        }
-                    },
-                    {
-                        timeout: 10000,
-                        enableHighAccuracy: false
-                    }
-                );
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                const latlng = [position.coords.latitude, position.coords.longitude];
+                map.setView(latlng, 15);
+                marker.setLatLng(latlng);
+            },
+            function(error) {
+                // Only show error if permission was explicitly denied
+                if (error.code === error.PERMISSION_DENIED) {
+                    showToast('تم رفض طلب الموقع. يرجى تحديد الموقع يدويًا على الخريطة.', 'error');
+                }
+                // Don't show error for other cases (like timeout or position unavailable)
+            },
+            {
+                timeout: 10000, // 10 second timeout
+                enableHighAccuracy: false // Don't require high accuracy
+            }
+        );
+    } else {
+        showToast('متصفحك لا يدعم خاصية تحديد الموقع.', 'error');
+    }
+});
+
+        // Form submission
+document.getElementById('orderForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  
+  // Validate all fields including file and location
+  const parentName = document.getElementById('parentName').value;
+  const phone = document.getElementById('phone').value;
+  const studentName = document.getElementById('studentName').value;
+  const grade = document.getElementById('grade').value;
+  const file = document.getElementById('fileInput').files[0];
+  const latlng = marker.getLatLng();
+  const formData = new FormData();
+formData.append('parentName', document.getElementById('parentName').value);
+formData.append('phone', document.getElementById('phone').value);
+formData.append('studentName', document.getElementById('studentName').value);
+formData.append('grade', document.getElementById('grade').value);
+formData.append('latitude', latlng.lat);
+formData.append('longitude', latlng.lng);
+  
+  if (!parentName || !phone || !studentName || !grade || !file || !latlng) {
+    showToast('يرجى ملء جميع الحقول المطلوبة بما في ذلك تحميل الملف وتحديد الموقع');
+    return;
+  }
+
+
+if (document.getElementById('fileInput').files[0]) {
+formData.append('suppliesList', document.getElementById('fileInput').files[0]);
+}
+
+
+try {
+        const response = await fetch('/api/orders', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await response.json();
+        
+        if (response.ok) {
+            // Ensure the popup elements exist before trying to access them
+            const orderNumberElement = document.getElementById('confirmedOrderNumber');
+            const confirmationPopup = document.getElementById('orderConfirmation');
+            
+            if (orderNumberElement && confirmationPopup) {
+                orderNumberElement.textContent = data.orderNumber;
+                confirmationPopup.style.display = 'flex';
             } else {
-                showToast('متصفحك لا يدعم خاصية تحديد الموقع.', 'error');
+                // Fallback to toast if popup elements aren't found
+                showToast('تم استلام طلبك بنجاح! رقم الطلب: #' + data.orderNumber);
             }
-        });
-
-        // Enhanced form submission with popup
-        document.getElementById('orderForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
             
-            // Validate all fields including file and location
-            const parentName = document.getElementById('parentName').value;
-            const phone = document.getElementById('phone').value;
-            const studentName = document.getElementById('studentName').value;
-            const grade = document.getElementById('grade').value;
-            const file = document.getElementById('fileInput').files[0];
-            const latlng = marker.getLatLng();
-            
-            if (!parentName || !phone || !studentName || !grade || !file || !latlng) {
-                showToast('يرجى ملء جميع الحقول المطلوبة بما في ذلك تحميل الملف وتحديد الموقع', 'error');
-                return;
-            }
+            // Reset form
+            this.reset();
+            document.querySelector('#fileUpload p').textContent = 
+                translations[document.documentElement.lang].upload_text;
+        } else {
+            showToast('فشل إرسال الطلب: ' + data.message, 'error');
+        }
+    } catch (err) {
+        showToast('خطأ في الاتصال بالخادم', 'error');
+        console.error(err);
+    }
+});
 
-            // Simulate order processing
-            try {
-                // Generate a random order number
-                const orderNumber = 'ORD-' + Date.now().toString().slice(-6);
-                
-                // Show success popup
-                document.getElementById('confirmedOrderNumber').textContent = orderNumber;
-                document.getElementById('orderConfirmation').style.display = 'flex';
-                
-                // Reset form
-                this.reset();
-                const currentLang = document.documentElement.lang;
-                document.querySelector('#fileUpload p').textContent = translations[currentLang].upload_text;
-                
-            } catch (err) {
-                showToast('خطأ في الإرسال', 'error');
-                console.error(err);
-            }
-        });
-
-        // Close confirmation popup
-        document.querySelector('.confirmation-btn').addEventListener('click', function() {
-            document.getElementById('orderConfirmation').style.display = 'none';
-        });
-
-        // Close popup when clicking outside
-        document.getElementById('orderConfirmation').addEventListener('click', function(e) {
-            if (e.target === this) {
-                this.style.display = 'none';
-            }
-        });
-
+document.querySelector('.confirmation-btn').addEventListener('click', function() {
+    document.getElementById('orderConfirmation').style.display = 'none';
+});
         // Initialize the app
         window.onload = function() {
             initMap();
@@ -857,3 +819,6 @@
             // Set Arabic as default
             changeLanguage('ar');
         };
+    </script>
+</body>
+</html>
