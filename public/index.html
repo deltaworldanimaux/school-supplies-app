@@ -584,6 +584,11 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
   const grade = document.getElementById('grade').value;
   const file = document.getElementById('fileInput').files[0];
   const latlng = marker.getLatLng();
+  const formData = new FormData();
+formData.append('parentName', document.getElementById('parentName').value);
+formData.append('phone', document.getElementById('phone').value);
+formData.append('studentName', document.getElementById('studentName').value);
+formData.append('grade', document.getElementById('grade').value);
 formData.append('latitude', latlng.lat);
 formData.append('longitude', latlng.lng);
   
@@ -591,14 +596,6 @@ formData.append('longitude', latlng.lng);
     alert('يرجى ملء جميع الحقول المطلوبة بما في ذلك تحميل الملف وتحديد الموقع');
     return;
   }
-
-
-const formData = new FormData();
-formData.append('parentName', document.getElementById('parentName').value);
-formData.append('phone', document.getElementById('phone').value);
-formData.append('studentName', document.getElementById('studentName').value);
-formData.append('grade', document.getElementById('grade').value);
-
 
 
 if (document.getElementById('fileInput').files[0]) {
