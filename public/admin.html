@@ -716,16 +716,16 @@
         
         // Update statistics
         function updateStats(orders) {
-            const totalOrdersEl = document.getElementById('totalOrders');
-            const pendingOrdersEl = document.getElementById('pendingOrders');
-            const confirmedOrdersEl = document.getElementById('confirmedOrders');
-            const deliveredOrdersEl = document.getElementById('deliveredOrders');
-            
-            if (totalOrdersEl) totalOrdersEl.textContent = orders.length;
-            if (pendingOrdersEl) pendingOrdersEl.textContent = orders.filter(o => o.status === 'pending').length;
-            if (confirmedOrdersEl) confirmedOrdersEl.textContent = orders.filter(o => o.status === 'confirmed').length;
-            if (deliveredOrdersEl) deliveredOrdersEl.textContent = orders.filter(o => o.status === 'delivered').length;
-        }
+    const totalOrdersEl = document.getElementById('totalOrders');
+    const pendingOrdersEl = document.getElementById('pendingOrders');
+    const confirmedOrdersEl = document.getElementById('confirmedOrders');
+    const deliveredOrdersEl = document.getElementById('deliveredOrders');
+    
+    if (totalOrdersEl) totalOrdersEl.textContent = orders.length;
+    if (pendingOrdersEl) pendingOrdersEl.textContent = orders.filter(o => o.status === 'pending').length;
+    if (confirmedOrdersEl) confirmedOrdersEl.textContent = orders.filter(o => o.status === 'confirmed').length;
+    if (deliveredOrdersEl) deliveredOrdersEl.textContent = orders.filter(o => o.status === 'delivered').length;
+}
         
         // Render orders table
         function renderOrdersTable(orders) {
@@ -1043,6 +1043,7 @@ function applyFilters() {
     }
     
     renderOrdersTable(filteredOrders);
+    updateStats(allOrders); // Add this line to update stats with all orders (not filtered)
 }
 document.getElementById('applyFilters').addEventListener('click', applyFilters);
 document.getElementById('statusFilter').addEventListener('change', applyFilters);
