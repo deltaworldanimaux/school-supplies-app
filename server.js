@@ -96,19 +96,25 @@ app.get('/admin', (req, res) => {
 const uploadToImgBB = async (filePath) => {
   try {
     const formData = new FormData();
-    const fileStream = fs.createReadStream(filePath);
-    formData.append('image', fileStream);
+    const imageBuffer = fs.readFileSync(filePath);
+    formData.append('image', imageBuffer.toString('base64'));
     
-    const response = await fetch('https://api.imgbb.com/1/upload?key=4398dfbf7f2440db0ca2089e394b4166', {
+    const response = await fetch(`https://api.imgbb.com/1/upload?key=4398dfbf7f2440db0ca2089e394b4166`, {
       method: 'POST',
       body: formData
     });
     
     const data = await response.json();
-    return data.data.url;
+    
+    if (data.success) {
+      return data.data.url;
+    } else {
+      throw new Error(data.error.message || 'ImgBB upload failed');
+    }
   } catch (error) {
     console.error('ImgBB upload error:', error);
-    throw error;
+    // Fallback to local storage if ImgBB fails
+    return `uploads/${path.basename(filePath)}`;
   }
 };
 
@@ -125,11 +131,20 @@ app.post('/api/orders', upload.single('suppliesList'), async (req, res) => {
       return res.status(400).json({ message: 'جميع الحقول مطلوبة بما في ذلك الملف والموقع' });
     }
     
-    // Upload file to ImgBB
-    const fileUrl = await uploadToImgBB(req.file.path);
-    
-    // Delete local file after upload
-    fs.unlinkSync(req.file.path);
+    let fileUrl;
+    try {
+      // Try to upload to ImgBB
+      fileUrl = await uploadToImgBB(req.file.path);
+      
+      // If successful, delete local file
+      if (fileUrl.startsWith('http')) {
+        fs.unlinkSync(req.file.path);
+      }
+    } catch (uploadError) {
+      console.error('File upload error:', uploadError);
+      // Fallback to local file path
+      fileUrl = `uploads/${req.file.filename}`;
+    }
     
     const order = new Order({
       parentName,
@@ -140,7 +155,7 @@ app.post('/api/orders', upload.single('suppliesList'), async (req, res) => {
         type: 'Point',
         coordinates: [parseFloat(longitude), parseFloat(latitude)]
       },
-      suppliesList: fileUrl, // Store URL instead of filename
+      suppliesList: fileUrl,
       status: 'pending'
     });
     
