@@ -288,10 +288,6 @@ app.put('/api/orders/:id/status', authenticateAdmin, async (req, res) => {
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
-    if (status === 'confirmed') {
-  const notificationMessage = `✅ Order Confirmed\nOrder Number: ${order.orderNumber}\nParent: ${order.parentName}\nStudent: ${order.studentName}\nGrade: ${order.grade}`;
-  sendTelegramNotification(notificationMessage);
-}
     res.json({ message: 'Order status updated', order });
   } catch (error) {
     console.error('Update order error:', error);

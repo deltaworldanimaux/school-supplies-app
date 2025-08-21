@@ -336,6 +336,41 @@
     z-index: -1;
 }
 
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.loading-content {
+    text-align: center;
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 5px 25px rgba(0,0,0,0.2);
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
 .confirmation-animation {
     font-size: 100px;
     color: #4CAF50;
@@ -593,6 +628,12 @@
         </form>
 
     </div>
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+    <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <p data-translate="loading_text">جاري معالجة طلبك، يرجى الانتظار...</p>
+    </div>
+</div>
 <div id="orderConfirmation" class="confirmation-popup" style="display: none;">
     <div class="confirmation-content">
         <div class="confirmation-animation">✅</div>
@@ -658,7 +699,8 @@
     grade_6: "السادسة ابتدائي",
     grade_7: "اولى اعدادي",
     grade_8: "ثاني اعدادي",
-    grade_9: "ثالث اعدادي"
+    grade_9: "ثالث اعدادي",
+    loading_text: "جاري معالجة طلبك، يرجى الانتظار..."
             },
             fr: {
                 title: "Achetez des fournitures scolaires sans faire la queue",
@@ -703,7 +745,9 @@
     grade_6: "6ème Primaire",
     grade_7: "1ère Collège",
     grade_8: "2ème Collège", 
-    grade_9: "3ème Collège"
+    grade_9: "3ème Collège",
+    loading_text: "Traitement de votre commande, veuillez patienter..." // French
+
             },
             en: {
                 title: "Shop for school supplies without waiting in lines",
@@ -748,7 +792,8 @@
     grade_6: "6th Grade",
     grade_7: "7th Grade",
     grade_8: "8th Grade",
-    grade_9: "9th Grade"
+    grade_9: "9th Grade",
+    loading_text: "Processing your order, please wait..." // English
             }
         };
 
@@ -878,7 +923,7 @@ formData.append('studentName', document.getElementById('studentName').value);
 formData.append('grade', document.getElementById('grade').value);
 formData.append('latitude', latlng.lat);
 formData.append('longitude', latlng.lng);
-  
+  document.getElementById('loadingOverlay').style.display = 'flex';
   if (!parentName || !phone || !studentName || !grade || !file || !latlng) {
     showToast('يرجى ملء جميع الحقول المطلوبة بما في ذلك تحميل الملف وتحديد الموقع');
     return;
@@ -896,7 +941,8 @@ try {
       body: formData
     });
     const data = await response.json();
-    
+    document.getElementById('loadingOverlay').style.display = 'none';
+
     if (response.ok) {
       // Ensure the popup elements exist before trying to access them
       const orderNumberElement = document.getElementById('confirmedOrderNumber');
@@ -919,6 +965,7 @@ try {
       showToast('فشل إرسال الطلب: ' + data.message, 'error');
     }
   } catch (err) {
+    document.getElementById('loadingOverlay').style.display = 'none'
     showToast('خطأ في الاتصال بالخادم', 'error');
     console.error(err);
   }
