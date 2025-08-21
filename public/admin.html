@@ -468,7 +468,17 @@
             </div>
         </div>
     </div>
-
+<div class="filters" style="margin-bottom: 20px; display: flex; gap: 10px; align-items: center;">
+    <select id="statusFilter">
+        <option value="">جميع الحالات</option>
+        <option value="pending">قيد المعالجة</option>
+        <option value="confirmed">تم التأكيد</option>
+        <option value="processing">قيد التجهيز</option>
+        <option value="delivered">تم التوصيل</option>
+    </select>
+    <input type="text" id="searchInput" placeholder="بحث باسم ولي الأمر أو التلميذ">
+    <button id="applyFilters">تطبيق</button>
+</div>
     <script>
         let authToken = localStorage.getItem('adminToken');
         const API_BASE = window.location.origin;
@@ -557,10 +567,10 @@
                 return response.json();
             })
             .then(orders => {
-                document.getElementById('ordersLoading').classList.add('hidden');
-                updateStats(orders);
-                renderOrdersTable(orders);
-            })
+    document.getElementById('ordersLoading').classList.add('hidden');
+    allOrders = orders;
+    applyFilters(); // Apply initial filters
+})
             .catch(error => {
                 document.getElementById('ordersLoading').classList.add('hidden');
                 if (error !== 'Unauthorized') {
@@ -877,6 +887,31 @@
             // Make sure the modal is hidden on page load
             document.getElementById('orderDetailsModal').classList.remove('active');
         });
+        // Add after the existing JavaScript code
+let allOrders = [];
+
+function applyFilters() {
+    const statusFilter = document.getElementById('statusFilter').value;
+    const searchFilter = document.getElementById('searchInput').value.toLowerCase();
+    
+    let filteredOrders = allOrders;
+    
+    if (statusFilter) {
+        filteredOrders = filteredOrders.filter(order => order.status === statusFilter);
+    }
+    
+    if (searchFilter) {
+        filteredOrders = filteredOrders.filter(order => 
+            order.parentName.toLowerCase().includes(searchFilter) || 
+            order.studentName.toLowerCase().includes(searchFilter)
+        );
+    }
+    
+    renderOrdersTable(filteredOrders);
+}
+document.getElementById('applyFilters').addEventListener('click', applyFilters);
+document.getElementById('statusFilter').addEventListener('change', applyFilters);
+document.getElementById('searchInput').addEventListener('input', applyFilters);
     </script>
 </body>
 </html>

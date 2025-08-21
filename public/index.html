@@ -317,7 +317,19 @@
             border-radius: 5px;
             border: 1px solid #ddd;
         }
-        
+        .toast {
+    padding: 15px 20px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    color: white;
+    background: #4CAF50;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    transition: opacity 0.3s;
+    opacity: 0;
+}
+.toast.error {
+    background: #f44336;
+}
     </style>
 </head>
 <body>
@@ -341,9 +353,9 @@
             <p data-translate="subtitle">قم برفع قائمة اللوازم المدرسية، حدد موقعك، وسنقوم بتوصيل كل ما يحتاجه طفلك للعام الدراسي</p>
         </section>
 
-        <div class="animation-container">
-        <div class="school-bus">🚌</div>
-    </div>
+<div class="animation-container" style="border: none; background: transparent;">
+    <div class="school-bus">🚌</div>
+</div>
 
         <section class="order-steps">
             <div class="step">
@@ -402,11 +414,14 @@
                 </div>
                 
                 <div class="map-container" id="map"></div>
-                
+                <p style="text-align: center; color: #666; margin-top: -10px; margin-bottom: 20px;">
+    انقر مرتين على الخريطة لتحديد موقعك
+</p>
                 <div class="form-group">
                     <button type="button" class="btn" id="locateBtn" data-translate="locate_me">تحديد موقعي الحالي</button>
                 </div>
-                
+                <div id="toastContainer" style="position: fixed; top: 20px; right: 20px; z-index: 1000;"></div>
+
                 <div class="form-group">
                     <button type="submit" class="btn" data-translate="submit_order">إرسال الطلب</button>
                 </div>
@@ -528,6 +543,18 @@
             });
         }
 
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type === 'error' ? 'error' : ''}`;
+    toast.textContent = message;
+    document.getElementById('toastContainer').appendChild(toast);
+    
+    setTimeout(() => toast.style.opacity = 1, 10);
+    setTimeout(() => {
+        toast.style.opacity = 0;
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
         // Change language
         function changeLanguage(lang) {
             document.documentElement.lang = lang;
@@ -566,10 +593,10 @@
                     map.setView(latlng, 15);
                     marker.setLatLng(latlng);
                 }, function(error) {
-                    alert('تعذر الحصول على الموقع. يرجى المحاولة مرة أخرى أو تحديد الموقع يدويًا على الخريطة.');
+                    showToast('تعذر الحصول على الموقع. يرجى المحاولة مرة أخرى أو تحديد الموقع يدويًا على الخريطة.');
                 });
             } else {
-                alert('متصفحك لا يدخدم خاصية تحديد الموقع.');
+                showToast('متصفحك لا يدخدم خاصية تحديد الموقع.');
             }
         });
 
@@ -593,7 +620,7 @@ formData.append('latitude', latlng.lat);
 formData.append('longitude', latlng.lng);
   
   if (!parentName || !phone || !studentName || !grade || !file || !latlng) {
-    alert('يرجى ملء جميع الحقول المطلوبة بما في ذلك تحميل الملف وتحديد الموقع');
+    showToast('يرجى ملء جميع الحقول المطلوبة بما في ذلك تحميل الملف وتحديد الموقع');
     return;
   }
 
@@ -612,14 +639,14 @@ const data = await response.json();
 
 
 if (response.ok) {
-alert('تم استلام طلبك بنجاح! رقم الطلب: #' + data.orderNumber);
+showToast('تم استلام طلبك بنجاح! رقم الطلب: #' + data.orderNumber);
 this.reset();
 document.querySelector('#fileUpload p').textContent = translations[document.documentElement.lang].upload_text;
 } else {
-alert('فشل إرسال الطلب: ' + data.message);
+showToast('فشل إرسال الطلب: ' + data.message);
 }
 } catch (err) {
-alert('خطأ في الاتصال بالخادم');
+showToast('خطأ في الاتصال بالخادم');
 console.error(err);
 }
 });
