@@ -470,8 +470,9 @@
                 order_id: "رقم الطلب",
                 status: "الحالة",
                 actions: "الإجراءات",
-                footer: "جميع الحقوق محفوظة © 2023 - تطبيق مدرستي",
-                map_instruction: "انقر مرتين على الخريطة لتحديد موقعك"
+                footer: "جميع الحقوق محفوظة © 2025 - تطبيق مدرستي",
+                map_instruction: "انقر مرتين على الخريطة لتحديد موقعك",
+                delivery_location: "موقع التوصيل"
             },
             fr: {
                 title: "Achetez des fournitures scolaires sans faire la queue",
@@ -499,8 +500,9 @@
                 order_id: "N° de commande",
                 status: "Statut",
                 actions: "Actions",
-                footer: "Tous droits réservés © 2023 - Mon École App",
-                map_instruction: "Double-cliquez sur la carte pour définir votre position"
+                footer: "Tous droits réservés © 2025 - Mon École App",
+                map_instruction: "Double-cliquez sur la carte pour définir votre position",
+                delivery_location: "Lieu de livraison"
             },
             en: {
                 title: "Shop for school supplies without waiting in lines",
@@ -528,15 +530,16 @@
                 order_id: "Order ID",
                 status: "Status",
                 actions: "Actions",
-                footer: "All rights reserved © 2023 - My School App",
-                map_instruction: "Double-click on the map to set your location"
+                footer: "All rights reserved © 2025 - My School App",
+                map_instruction: "Double-click on the map to set your location",
+                delivery_location: "Delivery location"
 
             }
         };
 
         // Initialize map
         let map, marker;
-        function initMap() {
+function initMap() {
     // Tetouan coordinates [35.5881, -5.3626]
     map = L.map('map').setView([35.5881, -5.3626], 13);
     
@@ -544,8 +547,11 @@
         attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
     
+    // Get current language
+    const currentLang = document.documentElement.lang;
+    
     marker = L.marker([35.5881, -5.3626]).addTo(map)
-        .bindPopup('موقع التوصيل')
+        .bindPopup(translations[currentLang].delivery_location)
         .openPopup();
         
     map.on('dblclick', function(e) {
@@ -567,21 +573,26 @@ function showToast(message, type = 'success') {
 }
         // Change language
         function changeLanguage(lang) {
-            document.documentElement.lang = lang;
-            document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-            
-            document.querySelectorAll('[data-translate]').forEach(element => {
-                const key = element.getAttribute('data-translate');
-                if (translations[lang][key]) {
-                    element.textContent = translations[lang][key];
-                }
-            });
-            
-            document.querySelectorAll('.lang-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            document.querySelector(`.lang-btn[data-lang="${lang}"]`).classList.add('active');
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    
+    document.querySelectorAll('[data-translate]').forEach(element => {
+        const key = element.getAttribute('data-translate');
+        if (translations[lang][key]) {
+            element.textContent = translations[lang][key];
         }
+    });
+    
+    // Update marker popup text
+    if (marker) {
+        marker.setPopupContent(translations[lang].delivery_location);
+    }
+    
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.querySelector(`.lang-btn[data-lang="${lang}"]`).classList.add('active');
+}
 
         // File upload handling
         document.getElementById('fileUpload').addEventListener('click', function() {
@@ -597,18 +608,29 @@ function showToast(message, type = 'success') {
 
         // Locate me button
         document.getElementById('locateBtn').addEventListener('click', function() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(function(position) {
-                    const latlng = [position.coords.latitude, position.coords.longitude];
-                    map.setView(latlng, 15);
-                    marker.setLatLng(latlng);
-                }, function(error) {
-                    showToast('تعذر الحصول على الموقع. يرجى المحاولة مرة أخرى أو تحديد الموقع يدويًا على الخريطة.');
-                });
-            } else {
-                showToast('متصفحك لا يدخدم خاصية تحديد الموقع.');
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                const latlng = [position.coords.latitude, position.coords.longitude];
+                map.setView(latlng, 15);
+                marker.setLatLng(latlng);
+            },
+            function(error) {
+                // Only show error if permission was explicitly denied
+                if (error.code === error.PERMISSION_DENIED) {
+                    showToast('تم رفض طلب الموقع. يرجى تحديد الموقع يدويًا على الخريطة.', 'error');
+                }
+                // Don't show error for other cases (like timeout or position unavailable)
+            },
+            {
+                timeout: 10000, // 10 second timeout
+                enableHighAccuracy: false // Don't require high accuracy
             }
-        });
+        );
+    } else {
+        showToast('متصفحك لا يدعم خاصية تحديد الموقع.', 'error');
+    }
+});
 
         // Form submission
 document.getElementById('orderForm').addEventListener('submit', async function(e) {
