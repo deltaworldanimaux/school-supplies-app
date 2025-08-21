@@ -777,13 +777,15 @@ try {
         const data = await response.json();
         
         if (response.ok) {
-            // Safely set order number and show confirmation
+            // Ensure the popup elements exist before trying to access them
             const orderNumberElement = document.getElementById('confirmedOrderNumber');
-            if (orderNumberElement) {
+            const confirmationPopup = document.getElementById('orderConfirmation');
+            
+            if (orderNumberElement && confirmationPopup) {
                 orderNumberElement.textContent = data.orderNumber;
-                document.getElementById('orderConfirmation').style.display = 'flex';
+                confirmationPopup.style.display = 'flex';
             } else {
-                // Fallback to toast if element not found
+                // Fallback to toast if popup elements aren't found
                 showToast('تم استلام طلبك بنجاح! رقم الطلب: #' + data.orderNumber);
             }
             
@@ -817,28 +819,6 @@ document.querySelector('.confirmation-btn').addEventListener('click', function()
             // Set Arabic as default
             changeLanguage('ar');
         };
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize the app after DOM is ready
-    initMap();
-    
-    // Set up language buttons
-    document.querySelectorAll('.lang-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            changeLanguage(this.getAttribute('data-lang'));
-        });
-    });
-    
-    // Set Arabic as default
-    changeLanguage('ar');
-    
-    // Add event listener to close button (moved inside DOMContentLoaded)
-    const closeBtn = document.querySelector('.confirmation-btn');
-    if (closeBtn) {
-        closeBtn.addEventListener('click', function() {
-            document.getElementById('orderConfirmation').style.display = 'none';
-        });
-    }
-});
     </script>
 </body>
 </html>
