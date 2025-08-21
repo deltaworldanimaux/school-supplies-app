@@ -746,7 +746,7 @@
                 const orderDate = new Date(order.createdAt).toLocaleDateString('ar-MA');
                 
                 tr.innerHTML = `
-  <td>${order.orderNumber || order._id || 'N/A'}</td>
+  <td>${order.orderNumber || order._id || 'N/A'}</td>  <!-- Display orderNumber first -->
   <td>${order.parentName || 'غير متوفر'}</td>
   <td>${order.studentName || 'غير متوفر'}</td>
   <td>${order.phone || 'غير متوفر'}</td>

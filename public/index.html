@@ -891,36 +891,36 @@ formData.append('suppliesList', document.getElementById('fileInput').files[0]);
 
 
 try {
-        const response = await fetch('/api/orders', {
-            method: 'POST',
-            body: formData
-        });
-        const data = await response.json();
-        
-        if (response.ok) {
-            // Ensure the popup elements exist before trying to access them
-            const orderNumberElement = document.getElementById('confirmedOrderNumber');
-            const confirmationPopup = document.getElementById('orderConfirmation');
-            
-            if (orderNumberElement && confirmationPopup) {
-                orderNumberElement.textContent = data.orderNumber;
-                confirmationPopup.style.display = 'flex';
-            } else {
-                // Fallback to toast if popup elements aren't found
-                showToast('تم استلام طلبك بنجاح! رقم الطلب: #' + data.orderNumber);
-            }
-            
-            // Reset form
-            this.reset();
-            document.querySelector('#fileUpload p').textContent = 
-                translations[document.documentElement.lang].upload_text;
-        } else {
-            showToast('فشل إرسال الطلب: ' + data.message, 'error');
-        }
-    } catch (err) {
-        showToast('خطأ في الاتصال بالخادم', 'error');
-        console.error(err);
+    const response = await fetch('/api/orders', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await response.json();
+    
+    if (response.ok) {
+      // Ensure the popup elements exist before trying to access them
+      const orderNumberElement = document.getElementById('confirmedOrderNumber');
+      const confirmationPopup = document.getElementById('orderConfirmation');
+      
+      if (orderNumberElement && confirmationPopup) {
+        orderNumberElement.textContent = data.orderNumber; // Use the orderNumber from response
+        confirmationPopup.style.display = 'flex';
+      } else {
+        // Fallback to toast if popup elements aren't found
+        showToast('تم استلام طلبك بنجاح! رقم الطلب: ' + data.orderNumber);
+      }
+      
+      // Reset form
+      this.reset();
+      document.querySelector('#fileUpload p').textContent = 
+        translations[document.documentElement.lang].upload_text;
+    } else {
+      showToast('فشل إرسال الطلب: ' + data.message, 'error');
     }
+  } catch (err) {
+    showToast('خطأ في الاتصال بالخادم', 'error');
+    console.error(err);
+  }
 });
 
 document.querySelector('.confirmation-btn').addEventListener('click', function() {
