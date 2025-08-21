@@ -245,21 +245,22 @@
         }
         
         .school-bus {
-            font-size: 60px;
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            animation: drive 5s infinite linear;
-        }
+    font-size: 60px;
+    position: absolute;
+    top: 50%;
+    left: -60px; /* Initial position off-screen */
+    transform: translateY(-50%);
+    animation: drive 5s infinite linear;
+}
         
         @keyframes drive {
-            0% { 
-                transform: translateX(-60px) translateY(-50%); /* Start just outside left edge */
-            }
-            100% { 
-                transform: translateX(calc(100vw - 40px)) translateY(-50%); /* End just outside right edge, accounting for padding */
-            }
-        }
+    0% { 
+        left: -60px; /* Start off-screen left */
+    }
+    100% { 
+        left: 100%; /* End off-screen right */
+    }
+}
         
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
@@ -415,7 +416,7 @@
                     <p data-translate="upload_text">انقر لرفع قائمة اللوازم المدرسية (PDF, PNG, JPG)</p>
                     <input type="file" id="fileInput" accept=".pdf,.png,.jpg,.jpeg" style="display: none;">
                 </div>
-                                <p style="text-align: center; color: #666; margin-top: -10px; margin-bottom: 20px;">
+<p style="text-align: center; color: #666; margin-top: -10px; margin-bottom: 20px;" data-translate="map_instruction">
     انقر مرتين على الخريطة لتحديد موقعك
 </p>
                 <div class="map-container" id="map"></div>
@@ -469,7 +470,8 @@
                 order_id: "رقم الطلب",
                 status: "الحالة",
                 actions: "الإجراءات",
-                footer: "جميع الحقوق محفوظة © 2023 - تطبيق مدرستي"
+                footer: "جميع الحقوق محفوظة © 2023 - تطبيق مدرستي",
+                map_instruction: "انقر مرتين على الخريطة لتحديد موقعك"
             },
             fr: {
                 title: "Achetez des fournitures scolaires sans faire la queue",
@@ -497,7 +499,8 @@
                 order_id: "N° de commande",
                 status: "Statut",
                 actions: "Actions",
-                footer: "Tous droits réservés © 2023 - Mon École App"
+                footer: "Tous droits réservés © 2023 - Mon École App",
+                map_instruction: "Double-cliquez sur la carte pour définir votre position"
             },
             en: {
                 title: "Shop for school supplies without waiting in lines",
@@ -525,26 +528,30 @@
                 order_id: "Order ID",
                 status: "Status",
                 actions: "Actions",
-                footer: "All rights reserved © 2023 - My School App"
+                footer: "All rights reserved © 2023 - My School App",
+                map_instruction: "Double-click on the map to set your location"
+
             }
         };
 
         // Initialize map
         let map, marker;
         function initMap() {
-            map = L.map('map').setView([33.5731, -7.5898], 13); // Default to Casablanca
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap contributors'
-            }).addTo(map);
-            
-            marker = L.marker([33.5731, -7.5898]).addTo(map)
-                .bindPopup('موقع التوصيل')
-                .openPopup();
-                
-            map.on('click', function(e) {
-                marker.setLatLng(e.latlng);
-            });
-        }
+    // Tetouan coordinates [35.5881, -5.3626]
+    map = L.map('map').setView([35.5881, -5.3626], 13);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+    
+    marker = L.marker([35.5881, -5.3626]).addTo(map)
+        .bindPopup('موقع التوصيل')
+        .openPopup();
+        
+    map.on('dblclick', function(e) {
+        marker.setLatLng(e.latlng);
+    });
+}
 
 function showToast(message, type = 'success') {
     const toast = document.createElement('div');
