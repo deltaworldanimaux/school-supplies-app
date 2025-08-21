@@ -296,7 +296,86 @@
             text-align: left;
         }
         
-        
+        .confirmation-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    animation: fadeIn 0.3s ease;
+}
+
+.confirmation-content {
+    background: white;
+    padding: 40px;
+    border-radius: 20px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    max-width: 400px;
+    width: 90%;
+    animation: scaleIn 0.5s ease;
+}
+
+.confirmation-animation {
+    font-size: 80px;
+    color: #4CAF50;
+    margin-bottom: 20px;
+    animation: bounce 1s ease;
+}
+
+.confirmation-title {
+    color: #333;
+    margin-bottom: 15px;
+    font-size: 28px;
+}
+
+.confirmation-message {
+    color: #666;
+    margin-bottom: 20px;
+    font-size: 18px;
+}
+
+.order-number {
+    background: #f5f5f5;
+    padding: 15px;
+    border-radius: 10px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 25px;
+    font-size: 18px;
+}
+
+.confirmation-btn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 10px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.confirmation-btn:hover {
+    background: #3d8b40;
+    transform: translateY(-2px);
+}
+
+@keyframes scaleIn {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-20px); }
+    60% { transform: translateY(-10px); }
+}
         .orders-table {
             width: 100%;
             border-collapse: collapse;
@@ -433,7 +512,15 @@
         </form>
 
     </div>
-
+    <div id="orderConfirmation" class="confirmation-popup" style="display: none;">
+    <div class="confirmation-content">
+        <div class="confirmation-animation">✓</div>
+        <h2 class="confirmation-title" data-translate="thank_you">شكراً لك!</h2>
+        <p class="confirmation-message" data-translate="order_confirmed">تم تأكيد طلبك بنجاح</p>
+        <p class="order-number" data-translate="order_number">رقم الطلب: <span id="confirmedOrderNumber"></span></p>
+        <button class="confirmation-btn" data-translate="close_btn">إغلاق</button>
+    </div>
+</div>
     <footer>
         <div class="container">
             <p data-translate="footer">جميع الحقوق محفوظة © 2025 - تطبيق مدرستي</p>
@@ -472,7 +559,11 @@
                 actions: "الإجراءات",
                 footer: "جميع الحقوق محفوظة © 2025 - تطبيق مدرستي",
                 map_instruction: "انقر مرتين على الخريطة لتحديد موقعك",
-                delivery_location: "موقع التوصيل"
+                delivery_location: "موقع التوصيل",
+                thank_you: "شكراً لك!",
+        order_confirmed: "تم تأكيد طلبك بنجاح",
+        order_number: "رقم الطلب:",
+        close_btn: "إغلاق"
             },
             fr: {
                 title: "Achetez des fournitures scolaires sans faire la queue",
@@ -502,7 +593,11 @@
                 actions: "Actions",
                 footer: "Tous droits réservés © 2025 - Mon École App",
                 map_instruction: "Double-cliquez sur la carte pour définir votre position",
-                delivery_location: "Lieu de livraison"
+                delivery_location: "Lieu de livraison",
+                thank_you: "Merci!",
+        order_confirmed: "Votre commande a été confirmée",
+        order_number: "Numéro de commande:",
+        close_btn: "Fermer"
             },
             en: {
                 title: "Shop for school supplies without waiting in lines",
@@ -532,7 +627,11 @@
                 actions: "Actions",
                 footer: "All rights reserved © 2025 - My School App",
                 map_instruction: "Double-click on the map to set your location",
-                delivery_location: "Delivery location"
+                delivery_location: "Delivery location",
+                thank_you: "Thank You!",
+        order_confirmed: "Your order has been confirmed",
+        order_number: "Order Number:",
+        close_btn: "Close"
 
             }
         };
@@ -583,6 +682,14 @@ function showToast(message, type = 'success') {
         }
     });
     
+     if (document.getElementById('orderConfirmation').style.display === 'flex') {
+        document.querySelectorAll('#orderConfirmation [data-translate]').forEach(element => {
+            const key = element.getAttribute('data-translate');
+            if (translations[lang][key]) {
+                element.textContent = translations[lang][key];
+            }
+        });
+    }
     // Update marker popup text
     if (marker) {
         marker.setPopupContent(translations[lang].delivery_location);
@@ -663,27 +770,32 @@ formData.append('suppliesList', document.getElementById('fileInput').files[0]);
 
 
 try {
-const response = await fetch('/api/orders', {
-method: 'POST',
-body: formData
+        const response = await fetch('/api/orders', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await response.json();
+        
+        if (response.ok) {
+            // Show confirmation popup instead of toast
+            document.getElementById('confirmedOrderNumber').textContent = data.orderNumber;
+            document.getElementById('orderConfirmation').style.display = 'flex';
+            
+            // Reset form
+            this.reset();
+            document.querySelector('#fileUpload p').textContent = translations[document.documentElement.lang].upload_text;
+        } else {
+            showToast('فشل إرسال الطلب: ' + data.message, 'error');
+        }
+    } catch (err) {
+        showToast('خطأ في الاتصال بالخادم', 'error');
+        console.error(err);
+    }
 });
-const data = await response.json();
 
-
-if (response.ok) {
-showToast('تم استلام طلبك بنجاح! رقم الطلب: #' + data.orderNumber);
-this.reset();
-document.querySelector('#fileUpload p').textContent = translations[document.documentElement.lang].upload_text;
-} else {
-showToast('فشل إرسال الطلب: ' + data.message);
-}
-} catch (err) {
-showToast('خطأ في الاتصال بالخادم');
-console.error(err);
-}
+document.querySelector('.confirmation-btn').addEventListener('click', function() {
+    document.getElementById('orderConfirmation').style.display = 'none';
 });
-
-
         // Initialize the app
         window.onload = function() {
             initMap();
