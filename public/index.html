@@ -583,6 +583,9 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
   const studentName = document.getElementById('studentName').value;
   const grade = document.getElementById('grade').value;
   const file = document.getElementById('fileInput').files[0];
+  const latlng = marker.getLatLng();
+formData.append('latitude', latlng.lat);
+formData.append('longitude', latlng.lng);
   
   if (!parentName || !phone || !studentName || !grade || !file || !latlng) {
     alert('يرجى ملء جميع الحقول المطلوبة بما في ذلك تحميل الملف وتحديد الموقع');
@@ -596,10 +599,6 @@ formData.append('phone', document.getElementById('phone').value);
 formData.append('studentName', document.getElementById('studentName').value);
 formData.append('grade', document.getElementById('grade').value);
 
-
-const latlng = marker.getLatLng();
-formData.append('latitude', latlng.lat);
-formData.append('longitude', latlng.lng);
 
 
 if (document.getElementById('fileInput').files[0]) {
