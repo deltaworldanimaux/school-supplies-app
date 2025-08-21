@@ -1,3 +1,4 @@
+// models/Order.js
 const mongoose = require('mongoose');
 
 const orderSchema = new mongoose.Schema({
@@ -18,12 +19,12 @@ const orderSchema = new mongoose.Schema({
   },
   suppliesList: { type: String, required: true },
   status: { type: String, default: 'pending' },
-  orderNumber: { type: String, required: true, unique: true } // Add this field
+  orderNumber: { type: String, required: true, unique: true },
+  assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'Library' } // Fixed the colon here
 }, {
   timestamps: true
 });
 
 orderSchema.index({ location: '2dsphere' });
-assignedTo: { type: mongoose.Schema.Types.ObjectId, ref; 'Library' }
 
 module.exports = mongoose.model('Order', orderSchema);
