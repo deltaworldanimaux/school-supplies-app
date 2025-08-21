@@ -263,14 +263,13 @@
             width: 100%;
             height: 100%;
             background: rgba(0,0,0,0.5);
-            display: flex;
+            display: none;
             justify-content: center;
             align-items: center;
             z-index: 1000;
-            display: none;
         }
         
-        .order-details-modal:not(.hidden) {
+        .order-details-modal.active {
             display: flex;
         }
         
@@ -363,6 +362,19 @@
             gap: 10px;
             margin-top: 20px;
         }
+        
+        .image-preview-container {
+            margin-top: 10px;
+            max-width: 100%;
+        }
+        
+        .image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 5px;
+        }
     </style>
 </head>
 <body>
@@ -437,7 +449,7 @@
         </div>
 
         <!-- Modal placed inside admin page so it's hidden when admin page is hidden -->
-        <div id="orderDetailsModal" class="order-details-modal hidden">
+        <div id="orderDetailsModal" class="order-details-modal">
             <div class="modal-content">
                 <div class="modal-header">
                     <h2>تفاصيل الطلب</h2>
@@ -447,8 +459,11 @@
                     <!-- Order details will be populated here -->
                 </div>
                 <div class="action-buttons">
-                    <button class="action-btn view-btn" id="viewImageBtn" style="display: none;">عرض الصورة</button>
-                    <button class="action-btn view-btn" id="viewLocationBtn" style="display: none;">عرض الموقع</button>
+                    <button class="action-btn view-btn" id="viewImageBtn">عرض الصورة</button>
+                    <button class="action-btn view-btn" id="viewLocationBtn">عرض الموقع على الخريطة</button>
+                </div>
+                <div class="image-preview-container">
+                    <img id="imagePreview" class="image-preview" style="display: none;" />
                 </div>
             </div>
         </div>
@@ -515,7 +530,7 @@
             localStorage.removeItem('adminToken');
             document.getElementById('loginPage').classList.remove('hidden');
             document.getElementById('adminPage').classList.add('hidden');
-            document.getElementById('orderDetailsModal').classList.add('hidden');
+            document.getElementById('orderDetailsModal').classList.remove('active');
         });
         
         // Load orders from server
@@ -679,6 +694,9 @@
                 currentOrder = order;
                 const modal = document.getElementById('orderDetailsModal');
                 const content = document.getElementById('orderDetailsContent');
+                const viewImageBtn = document.getElementById('viewImageBtn');
+                const viewLocationBtn = document.getElementById('viewLocationBtn');
+                const imagePreview = document.getElementById('imagePreview');
                 
                 if (!modal || !content) return;
                 
@@ -687,30 +705,37 @@
                 
                 // File link if exists
                 let fileLink = 'لا يوجد ملف';
-                let viewImageBtn = document.getElementById('viewImageBtn');
                 if (order.suppliesList) {
                     const isFullUrl = order.suppliesList.startsWith('http');
                     const fileUrl = isFullUrl ? order.suppliesList : `${API_BASE}/uploads/${order.suppliesList}`;
-                    fileLink = `<a href="${fileUrl}" target="_blank" class="file-link">عرض الملف</a>`;
+                    fileLink = `<a href="${fileUrl}" target="_blank" class="file-link">عرض الملف على ImgBB</a>`;
                     
-                    // Show view image button
+                    // Set up view image button
                     viewImageBtn.style.display = 'inline-block';
                     viewImageBtn.onclick = function() {
                         window.open(fileUrl, '_blank');
                     };
+                    
+                    // Show image preview if it's an image
+                    if (fileUrl.match(/\.(jpeg|jpg|png|gif)$/i)) {
+                        imagePreview.src = fileUrl;
+                        imagePreview.style.display = 'block';
+                    } else {
+                        imagePreview.style.display = 'none';
+                    }
                 } else {
                     viewImageBtn.style.display = 'none';
+                    imagePreview.style.display = 'none';
                 }
                 
                 // Location link if exists
                 let locationLink = 'غير متوفر';
-                let viewLocationBtn = document.getElementById('viewLocationBtn');
                 if (order.location && order.location.coordinates) {
                     const [lng, lat] = order.location.coordinates;
                     const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
-                    locationLink = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                    locationLink = `<a href="${mapsUrl}" target="_blank" class="map-link">عرض الموقع على خرائط جوجل</a>`;
                     
-                    // Show view location button
+                    // Set up view location button
                     viewLocationBtn.style.display = 'inline-block';
                     viewLocationBtn.onclick = function() {
                         window.open(mapsUrl, '_blank');
@@ -760,7 +785,7 @@
                     </div>
                 `;
                 
-                modal.classList.remove('hidden');
+                modal.classList.add('active');
             })
             .catch(error => {
                 showAlert('ordersAlert', 'error', 'فشل في تحميل تفاصيل الطلب');
@@ -837,20 +862,20 @@
         
         // Close modal
         document.getElementById('closeModalBtn').addEventListener('click', function() {
-            document.getElementById('orderDetailsModal').classList.add('hidden');
+            document.getElementById('orderDetailsModal').classList.remove('active');
         });
         
         // Close modal when clicking outside
         document.getElementById('orderDetailsModal').addEventListener('click', function(e) {
             if (e.target === this) {
-                this.classList.add('hidden');
+                this.classList.remove('active');
             }
         });
         
         // Initialize the app
         window.addEventListener('load', function() {
             // Make sure the modal is hidden on page load
-            document.getElementById('orderDetailsModal').classList.add('hidden');
+            document.getElementById('orderDetailsModal').classList.remove('active');
         });
     </script>
 </body>
