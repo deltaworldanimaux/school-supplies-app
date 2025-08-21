@@ -916,44 +916,41 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
   const grade = document.getElementById('grade').value;
   const file = document.getElementById('fileInput').files[0];
   const latlng = marker.getLatLng();
-  const formData = new FormData();
-formData.append('parentName', document.getElementById('parentName').value);
-formData.append('phone', document.getElementById('phone').value);
-formData.append('studentName', document.getElementById('studentName').value);
-formData.append('grade', document.getElementById('grade').value);
-formData.append('latitude', latlng.lat);
-formData.append('longitude', latlng.lng);
-  document.getElementById('loadingOverlay').style.display = 'flex';
+
   if (!parentName || !phone || !studentName || !grade || !file || !latlng) {
-    showToast('يرجى ملء جميع الحقول المطلوبة بما في ذلك تحميل الملف وتحديد الموقع');
+    showToast('يرجى ملء جميع الحقول المطلوبة بما في ذلك تحميل الملف وتحديد الموقع', 'error');
     return;
   }
 
+  // Show loader only after validation passes
+  document.getElementById('loadingOverlay').style.display = 'flex';
 
-if (document.getElementById('fileInput').files[0]) {
-formData.append('suppliesList', document.getElementById('fileInput').files[0]);
-}
+  const formData = new FormData();
+  formData.append('parentName', parentName);
+  formData.append('phone', phone);
+  formData.append('studentName', studentName);
+  formData.append('grade', grade);
+  formData.append('latitude', latlng.lat);
+  formData.append('longitude', latlng.lng);
+  formData.append('suppliesList', file);
 
-
-try {
+  try {
     const response = await fetch('/api/orders', {
       method: 'POST',
       body: formData
     });
+    
     const data = await response.json();
     document.getElementById('loadingOverlay').style.display = 'none';
 
     if (response.ok) {
-      // Ensure the popup elements exist before trying to access them
       const orderNumberElement = document.getElementById('confirmedOrderNumber');
       const confirmationPopup = document.getElementById('orderConfirmation');
       
       if (orderNumberElement && confirmationPopup) {
-        // Use the orderNumber from the response
         orderNumberElement.textContent = data.orderNumber;
         confirmationPopup.style.display = 'flex';
       } else {
-        // Fallback to toast if popup elements aren't found
         showToast('تم استلام طلبك بنجاح! رقم الطلب: ' + data.orderNumber);
       }
       
@@ -965,7 +962,7 @@ try {
       showToast('فشل إرسال الطلب: ' + data.message, 'error');
     }
   } catch (err) {
-    document.getElementById('loadingOverlay').style.display = 'none'
+    document.getElementById('loadingOverlay').style.display = 'none';
     showToast('خطأ في الاتصال بالخادم', 'error');
     console.error(err);
   }
