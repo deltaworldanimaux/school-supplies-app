@@ -777,13 +777,20 @@ try {
         const data = await response.json();
         
         if (response.ok) {
-            // Show confirmation popup instead of toast
-            document.getElementById('confirmedOrderNumber').textContent = data.orderNumber;
-            document.getElementById('orderConfirmation').style.display = 'flex';
+            // Safely set order number and show confirmation
+            const orderNumberElement = document.getElementById('confirmedOrderNumber');
+            if (orderNumberElement) {
+                orderNumberElement.textContent = data.orderNumber;
+                document.getElementById('orderConfirmation').style.display = 'flex';
+            } else {
+                // Fallback to toast if element not found
+                showToast('تم استلام طلبك بنجاح! رقم الطلب: #' + data.orderNumber);
+            }
             
             // Reset form
             this.reset();
-            document.querySelector('#fileUpload p').textContent = translations[document.documentElement.lang].upload_text;
+            document.querySelector('#fileUpload p').textContent = 
+                translations[document.documentElement.lang].upload_text;
         } else {
             showToast('فشل إرسال الطلب: ' + data.message, 'error');
         }
@@ -810,6 +817,28 @@ document.querySelector('.confirmation-btn').addEventListener('click', function()
             // Set Arabic as default
             changeLanguage('ar');
         };
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize the app after DOM is ready
+    initMap();
+    
+    // Set up language buttons
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            changeLanguage(this.getAttribute('data-lang'));
+        });
+    });
+    
+    // Set Arabic as default
+    changeLanguage('ar');
+    
+    // Add event listener to close button (moved inside DOMContentLoaded)
+    const closeBtn = document.querySelector('.confirmation-btn');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', function() {
+            document.getElementById('orderConfirmation').style.display = 'none';
+        });
+    }
+});
     </script>
 </body>
 </html>
