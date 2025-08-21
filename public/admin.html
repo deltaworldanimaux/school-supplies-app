@@ -80,27 +80,6 @@
             z-index: 1;
         }
         
-        /* Add this to your CSS */
-.order-details-modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.5);
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.order-details-modal.hidden {
-  display: none;
-}
-
-.order-details-modal:not(.hidden) {
-  display: flex;
-}
         .stats-cards {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -288,6 +267,11 @@
             justify-content: center;
             align-items: center;
             z-index: 1000;
+            display: none;
+        }
+        
+        .order-details-modal:not(.hidden) {
+            display: flex;
         }
         
         .modal-content {
@@ -295,7 +279,7 @@
             padding: 30px;
             border-radius: 10px;
             width: 90%;
-            max-width: 600px;
+            max-width: 800px;
             max-height: 80vh;
             overflow-y: auto;
         }
@@ -334,9 +318,36 @@
         .file-link {
             color: var(--accent);
             text-decoration: none;
+            display: inline-block;
+            margin-right: 10px;
         }
         
         .file-link:hover {
+            text-decoration: underline;
+        }
+        
+        .file-preview {
+            max-width: 100%;
+            margin-top: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 5px;
+        }
+        
+        .file-preview img {
+            max-width: 100%;
+            max-height: 300px;
+            display: block;
+        }
+        
+        .map-link {
+            color: var(--accent);
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        
+        .map-link:hover {
             text-decoration: underline;
         }
         
@@ -345,6 +356,12 @@
             padding: 20px;
             font-size: 18px;
             color: #666;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
         }
     </style>
 </head>
@@ -429,6 +446,10 @@
                 <div id="orderDetailsContent">
                     <!-- Order details will be populated here -->
                 </div>
+                <div class="action-buttons">
+                    <button class="action-btn view-btn" id="viewImageBtn" style="display: none;">عرض الصورة</button>
+                    <button class="action-btn view-btn" id="viewLocationBtn" style="display: none;">عرض الموقع</button>
+                </div>
             </div>
         </div>
     </div>
@@ -436,6 +457,7 @@
     <script>
         let authToken = localStorage.getItem('adminToken');
         const API_BASE = window.location.origin;
+        let currentOrder = null;
         
         // Check if user is already logged in
         if (authToken) {
@@ -489,12 +511,12 @@
         });
         
         // Logout functionality
-document.getElementById('logoutBtn').addEventListener('click', function() {
-  localStorage.removeItem('adminToken');
-  document.getElementById('loginPage').classList.remove('hidden');
-  document.getElementById('adminPage').classList.add('hidden');
-  document.getElementById('orderDetailsModal').classList.add('hidden'); // ✅ hide modal on logout
-});
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+            localStorage.removeItem('adminToken');
+            document.getElementById('loginPage').classList.remove('hidden');
+            document.getElementById('adminPage').classList.add('hidden');
+            document.getElementById('orderDetailsModal').classList.add('hidden');
+        });
         
         // Load orders from server
         function loadOrders() {
@@ -654,6 +676,7 @@ document.getElementById('logoutBtn').addEventListener('click', function() {
                 return response.json();
             })
             .then(order => {
+                currentOrder = order;
                 const modal = document.getElementById('orderDetailsModal');
                 const content = document.getElementById('orderDetailsContent');
                 
@@ -664,8 +687,36 @@ document.getElementById('logoutBtn').addEventListener('click', function() {
                 
                 // File link if exists
                 let fileLink = 'لا يوجد ملف';
+                let viewImageBtn = document.getElementById('viewImageBtn');
                 if (order.suppliesList) {
-                    fileLink = `<a href="${API_BASE}/uploads/${order.suppliesList}" target="_blank" class="file-link">عرض الملف</a>`;
+                    const isFullUrl = order.suppliesList.startsWith('http');
+                    const fileUrl = isFullUrl ? order.suppliesList : `${API_BASE}/uploads/${order.suppliesList}`;
+                    fileLink = `<a href="${fileUrl}" target="_blank" class="file-link">عرض الملف</a>`;
+                    
+                    // Show view image button
+                    viewImageBtn.style.display = 'inline-block';
+                    viewImageBtn.onclick = function() {
+                        window.open(fileUrl, '_blank');
+                    };
+                } else {
+                    viewImageBtn.style.display = 'none';
+                }
+                
+                // Location link if exists
+                let locationLink = 'غير متوفر';
+                let viewLocationBtn = document.getElementById('viewLocationBtn');
+                if (order.location && order.location.coordinates) {
+                    const [lng, lat] = order.location.coordinates;
+                    const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+                    locationLink = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                    
+                    // Show view location button
+                    viewLocationBtn.style.display = 'inline-block';
+                    viewLocationBtn.onclick = function() {
+                        window.open(mapsUrl, '_blank');
+                    };
+                } else {
+                    viewLocationBtn.style.display = 'none';
                 }
                 
                 content.innerHTML = `
@@ -705,7 +756,7 @@ document.getElementById('logoutBtn').addEventListener('click', function() {
                     </div>
                     <div class="detail-row">
                         <div class="detail-label">الموقع:</div>
-                        <div class="detail-value">${order.location ? `${order.location.coordinates[1]}, ${order.location.coordinates[0]}` : 'غير متوفر'}</div>
+                        <div class="detail-value">${locationLink}</div>
                     </div>
                 `;
                 
@@ -797,15 +848,10 @@ document.getElementById('logoutBtn').addEventListener('click', function() {
         });
         
         // Initialize the app
-       window.addEventListener('load', function() {
-  // Make sure the modal is hidden on page load
-  document.getElementById('orderDetailsModal').classList.add('hidden');
-  
-  // Additional check to ensure modal doesn't appear on login page
-  if (!authToken) {
-    document.getElementById('orderDetailsModal').classList.add('hidden');
-  }
-});
+        window.addEventListener('load', function() {
+            // Make sure the modal is hidden on page load
+            document.getElementById('orderDetailsModal').classList.add('hidden');
+        });
     </script>
 </body>
 </html>
