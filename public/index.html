@@ -417,7 +417,7 @@
 
     <footer>
         <div class="container">
-            <p data-translate="footer">جميع الحقوق محفوظة © 2023 - تطبيق مدرستي</p>
+            <p data-translate="footer">جميع الحقوق محفوظة © 2025 - تطبيق مدرستي</p>
         </div>
     </footer>
 
@@ -574,23 +574,47 @@
         });
 
         // Form submission
-        document.getElementById('orderForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const orderData = {
-                parentName: document.getElementById('parentName').value,
-                phone: document.getElementById('phone').value,
-                studentName: document.getElementById('studentName').value,
-                grade: document.getElementById('grade').value,
-                location: marker.getLatLng(),
-                file: document.getElementById('fileInput').files[0]?.name || 'No file'
-            };
-            
-            // In a real app, you would send this to your backend
-            alert('تم استلام طلبك بنجاح! رقم الطلب: #' + Math.floor(1000 + Math.random() * 9000));
-            this.reset();
-            document.querySelector('#fileUpload p').textContent = translations[document.documentElement.lang].upload_text;
-        });
+        document.getElementById('orderForm').addEventListener('submit', async function(e) {
+e.preventDefault();
+
+
+const formData = new FormData();
+formData.append('parentName', document.getElementById('parentName').value);
+formData.append('phone', document.getElementById('phone').value);
+formData.append('studentName', document.getElementById('studentName').value);
+formData.append('grade', document.getElementById('grade').value);
+
+
+const latlng = marker.getLatLng();
+formData.append('latitude', latlng.lat);
+formData.append('longitude', latlng.lng);
+
+
+if (document.getElementById('fileInput').files[0]) {
+formData.append('suppliesList', document.getElementById('fileInput').files[0]);
+}
+
+
+try {
+const response = await fetch('/api/orders', {
+method: 'POST',
+body: formData
+});
+const data = await response.json();
+
+
+if (response.ok) {
+alert('تم استلام طلبك بنجاح! رقم الطلب: #' + data.orderNumber);
+this.reset();
+document.querySelector('#fileUpload p').textContent = translations[document.documentElement.lang].upload_text;
+} else {
+alert('فشل إرسال الطلب: ' + data.message);
+}
+} catch (err) {
+alert('خطأ في الاتصال بالخادم');
+console.error(err);
+}
+});
 
 
         // Initialize the app
