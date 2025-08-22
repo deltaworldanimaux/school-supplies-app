@@ -878,11 +878,11 @@ function renderOrdersTable(orders) {
         
         // View order details
         function viewOrderDetails(orderId) {
-            fetch(`${API_BASE}/api/orders/${orderId}`, {
-                headers: {
-                    'Authorization': `Bearer ${authToken}`
-                }
-            })
+            fetch(`${API_BASE}/api/orders/${orderId}?populate=assignedTo`, {
+  headers: {
+    'Authorization': `Bearer ${authToken}`
+  }
+})
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
@@ -974,6 +974,14 @@ function renderOrdersTable(orders) {
                         <div class="detail-label">تاريخ الطلب:</div>
                         <div class="detail-value">${orderDate}</div>
                     </div>
+                    <div class="detail-row">
+  <div class="detail-label">المكتبة:</div>
+  <div class="detail-value" id="libraryDetail">${order.assignedTo ? order.assignedTo.name : 'غير معين'}</div>
+</div>
+<div class="detail-row">
+  <div class="detail-label">التكلفة:</div>
+  <div class="detail-value">${order.cost ? order.cost + ' درهم' : 'غير محدد'}</div>
+</div>
                     <div class="detail-row">
                         <div class="detail-label">قائمة اللوازم:</div>
                         <div class="detail-value">${fileLink}</div>

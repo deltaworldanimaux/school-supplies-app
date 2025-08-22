@@ -310,7 +310,14 @@ app.get('/api/orders/:id', authenticateAdmin, async (req, res) => {
       return res.status(400).json({ message: 'Invalid order ID format' });
     }
     
-    const order = await Order.findById(req.params.id);
+    let query = Order.findById(req.params.id);
+    
+    // Check if populate is requested
+    if (req.query.populate === 'assignedTo') {
+      query = query.populate('assignedTo', 'name phone');
+    }
+    
+    const order = await query.exec();
     
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
@@ -622,11 +629,20 @@ app.put('/api/library/orders/:id/deliver', authenticateLibrary, async (req, res)
 // Mark order as completed
 app.put('/api/library/orders/:id/complete', authenticateLibrary, async (req, res) => {
   try {
+    const { cost } = req.body;
+    
     const order = await Order.findOneAndUpdate(
       { _id: req.params.id, assignedTo: req.library._id },
-      { status: 'ready' },  // Changed from 'delivered' to 'ready'
+      { 
+        status: 'ready',
+        cost: parseFloat(cost) // Add cost to order
+      },
       { new: true }
     );
+    
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found or not assigned to this library' });
+    }
     
     res.json({ message: 'Order completed', order });
   } catch (error) {

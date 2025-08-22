@@ -192,14 +192,24 @@
                     <!-- Orders will be populated here -->
                 </tbody>
             </table>
+            
         </div>
+        <div id="costModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
+  <div style="background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 300px; border-radius: 10px;">
+    <h3>إدخال تكلفة اللوازم</h3>
+    <input type="number" id="costInput" placeholder="التكلفة بالدرهم" style="width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px;">
+    <button id="submitCostBtn" style="background: var(--primary); color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer;">تأكيد</button>
+    <button id="cancelCostBtn" style="background: #dc3545; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; margin-right: 10px;">إلغاء</button>
+  </div>
+</div>
     </div>
 
     <script>
         const API_BASE = window.location.origin;
         let authToken = localStorage.getItem('libraryToken');
         let currentLibrary = null;
-        
+        let currentOrderIdForCost = null;
+
         if (authToken) {
             verifyLibraryToken();
         }
@@ -339,39 +349,117 @@ function attachEventListeners() {
     });
   });
 }     
-function updateOrderStatus(orderId, status) {
-  let endpoint;
-  if (status === 'processing') {
-    endpoint = 'receive';
-  } else if (status === 'ready') {
-    endpoint = 'complete';  // This should match your server endpoint
-  } else if (status === 'delivered') {
-    endpoint = 'deliver';
+function updateOrderStatus(orderId, status, cost = null) {
+    let endpoint;
+    let body = {};
+    
+    if (status === 'processing') {
+      endpoint = 'receive';
+    } else if (status === 'ready') {
+      endpoint = 'complete';
+      body = { cost: cost };
+    } else if (status === 'delivered') {
+      endpoint = 'deliver';
+    }
+    
+    fetch(`${API_BASE}/api/library/orders/${orderId}/${endpoint}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${authToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    })
+    .then(response => {
+      if (!response.ok) {
+        return response.json().then(errorData => {
+          throw new Error(errorData.message || 'Network response was not ok');
+        });
+      }
+      return response.json();
+    })
+    .then(data => {
+      alert('تم تحديث حالة الطلب');
+      if (status === 'ready') {
+        generateReceipt(data.order);
+      }
+      loadLibraryOrders();
+    })
+    .catch(error => {
+      alert('خطأ في تحديث حالة الطلب: ' + error.message);
+      console.error('Error updating order status:', error);
+    });
   }
-  
-  fetch(`${API_BASE}/api/library/orders/${orderId}/${endpoint}`, {
-    method: 'PUT',
-    headers: {
-      'Authorization': `Bearer ${authToken}`
-    }
-  })
-  .then(response => {
-    if (!response.ok) {
-      return response.json().then(errorData => {
-        throw new Error(errorData.message || 'Network response was not ok');
-      });
-    }
-    return response.json();
-  })
-  .then(data => {
-    alert('تم تحديث حالة الطلب');
-    loadLibraryOrders();
-  })
-  .catch(error => {
-    alert('خطأ في تحديث حالة الطلب: ' + error.message);
-    console.error('Error updating order status:', error);
-  });
-}
+
+  // Add function to generate printable receipt
+  function generateReceipt(order) {
+    const printWindow = window.open('', '_blank');
+    const receiptDate = new Date().toLocaleDateString('ar-MA');
+    
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html dir="rtl">
+      <head>
+        <title>إيصال طلب ${order.orderNumber}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+          .header { text-align: center; margin-bottom: 20px; }
+          .logo { max-width: 150px; margin-bottom: 10px; }
+          .receipt-info { margin-bottom: 20px; }
+          .receipt-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+          .receipt-table th, .receipt-table td { border: 1px solid #ddd; padding: 8px; text-align: right; }
+          .receipt-table th { background-color: #f2f2f2; }
+          .total { font-weight: bold; font-size: 1.2em; margin-top: 20px; }
+          .footer { margin-top: 30px; text-align: center; font-size: 0.9em; color: #666; }
+          @media print {
+            body { padding: 0; margin: 0; }
+            .no-print { display: none; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <img src="https://i.ibb.co/YCKG3BL/0f536795b6f4.png" alt="Logo" class="logo">
+          <h1>إيصال استلام لوازم مدرسية</h1>
+        </div>
+        
+        <div class="receipt-info">
+          <p><strong>رقم الطلب:</strong> ${order.orderNumber}</p>
+          <p><strong>التاريخ:</strong> ${receiptDate}</p>
+          <p><strong>اسم ولي الأمر:</strong> ${order.parentName}</p>
+          <p><strong>اسم التلميذ:</strong> ${order.studentName}</p>
+          <p><strong>المستوى الدراسي:</strong> ${order.grade}</p>
+        </div>
+        
+        <table class="receipt-table">
+          <tr>
+            <th>الوصف</th>
+            <th>المبلغ</th>
+          </tr>
+          <tr>
+            <td>تكلفة اللوازم المدرسية</td>
+            <td>${order.cost} درهم</td>
+          </tr>
+        </table>
+        
+        <div class="total">المجموع: ${order.cost} درهم</div>
+        
+        <div class="footer">
+          <p>شكراً لثقتكم بنا</p>
+          <p>${currentLibrary.name}</p>
+          <p>هاتف: ${currentLibrary.phone}</p>
+        </div>
+        
+        <div class="no-print" style="margin-top: 20px; text-align: center;">
+          <button onclick="window.print()">طباعة الإيصال</button>
+          <button onclick="window.close()">إغلاق</button>
+        </div>
+      </body>
+      </html>
+    `);
+    
+    printWindow.document.close();
+  }
         
         function viewOrderFile(orderId) {
   fetch(`${API_BASE}/api/library/orders/${orderId}`, {
@@ -407,7 +495,28 @@ function updateOrderStatus(orderId, status) {
     default: return status;
   }
 }
-
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('ready-btn')) {
+      currentOrderIdForCost = e.target.dataset.order;
+      document.getElementById('costModal').style.display = 'block';
+    }
+  });
+document.getElementById('submitCostBtn').addEventListener('click', function() {
+    const cost = document.getElementById('costInput').value;
+    if (!cost || isNaN(cost) || cost <= 0) {
+      alert('يرجى إدخال تكلفة صحيحة');
+      return;
+    }
+    
+    updateOrderStatus(currentOrderIdForCost, 'ready', cost);
+    document.getElementById('costModal').style.display = 'none';
+    document.getElementById('costInput').value = '';
+  });
+  
+  document.getElementById('cancelCostBtn').addEventListener('click', function() {
+    document.getElementById('costModal').style.display = 'none';
+    document.getElementById('costInput').value = '';
+  });
     </script>
 </body>
 </html>
