@@ -59,6 +59,17 @@ bot.on('message', async (msg) => {
   }
 });
 
+async function sendLibraryNotification(libraryId, message) {
+  try {
+    const library = await Library.findById(libraryId);
+    if (library && library.telegramChatId) {
+      await bot.sendMessage(library.telegramChatId, message);
+      console.log('Telegram notification sent to library');
+    }
+  } catch (error) {
+    console.error('Error sending Telegram notification to library:', error);
+  }
+}
 // Function to send Telegram notification
 async function sendTelegramNotification(message) {
   try {
@@ -552,6 +563,7 @@ app.post('/api/orders/:id/assign', authenticateAdmin, async (req, res) => {
     res.status(500).json({ message: 'Error assigning order', error: error.message });
   }
 });
+
 const authenticateLibrary = async (req, res, next) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
