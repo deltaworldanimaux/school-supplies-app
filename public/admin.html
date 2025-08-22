@@ -614,39 +614,55 @@
             </div>
         </div>
     </div>
-<div id="libraryCreation" style="margin-bottom: 30px; display: none;">
+<div id="libraryModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+  <div class="modal-content" style="background-color: #fefefe; margin: 5% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 800px; border-radius: 10px;">
+    <span class="close" style="color: #aaa; float: left; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
     <h2>إدارة المكتبات</h2>
     
-    <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-        <h3>إنشاء مكتبة جديدة</h3>
-        <div id="map" style="height: 300px; margin-bottom: 15px; border: 1px solid #ddd;"></div>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
-            <div>
-                <label>اسم المكتبة:</label>
-                <input type="text" id="libraryName" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
-            </div>
-            <div>
-                <label>هاتف المكتبة:</label>
-                <input type="text" id="libraryPhone" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
-            </div>
-            <div>
-                <label>اسم المستخدم:</label>
-                <input type="text" id="libraryUsername" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
-            </div>
-            <div>
-                <label>كلمة المرور:</label>
-                <input type="password" id="libraryPassword" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
-            </div>
-        </div>
-        <button id="createLibraryBtn" style="background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
-            إنشاء المكتبة
-        </button>
+    <div id="map" style="height: 300px; margin-bottom: 15px; border: 1px solid #ddd;"></div>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
+      <div>
+        <label>اسم المكتبة:</label>
+        <input type="text" id="libraryName" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+      </div>
+      <div>
+        <label>هاتف المكتبة:</label>
+        <input type="text" id="libraryPhone" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+      </div>
+      <div>
+        <label>اسم المستخدم:</label>
+        <input type="text" id="libraryUsername" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+      </div>
+      <div>
+        <label>كلمة المرور:</label>
+        <input type="password" id="libraryPassword" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+      </div>
     </div>
     
+    <button id="saveLibraryBtn" style="background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+      حفظ المكتبة
+    </button>
+    
     <div id="librariesList" style="margin-top: 20px;">
-        <h3>المكتبات الموجودة</h3>
-        <div id="librariesContainer"></div>
+      <h3>المكتبات الموجودة</h3>
+      <div id="librariesContainer"></div>
     </div>
+  </div>
+</div>
+
+<!-- Add this modal for assigning orders to libraries -->
+<div id="assignOrderModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+  <div class="modal-content" style="background-color: #fefefe; margin: 5% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 600px; border-radius: 10px;">
+    <span class="close" style="color: #aaa; float: left; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+    <h2>تعيين الطلب إلى مكتبة</h2>
+    <p>الطلب: <span id="assignOrderNumber"></span></p>
+    
+    <div id="librariesListForAssign" style="margin-top: 20px;">
+      <h3>اختر مكتبة:</h3>
+      <div id="librariesForAssignContainer"></div>
+    </div>
+  </div>
 </div>
     <script>
         let authToken = localStorage.getItem('adminToken');
@@ -802,7 +818,7 @@ function setupEventSource() {
                 const orderDate = new Date(order.createdAt).toLocaleDateString('ar-MA');
                 
                 tr.innerHTML = `
-  <td>${order.orderNumber || order._id || 'N/A'}</td>  <!-- Display orderNumber first -->
+  <td>${order.orderNumber || order._id || 'N/A'}</td>
   <td>${order.parentName || 'غير متوفر'}</td>
   <td>${order.studentName || 'غير متوفر'}</td>
   <td>${order.phone || 'غير متوفر'}</td>
@@ -818,6 +834,7 @@ function setupEventSource() {
   <td>${orderDate}</td>
   <td>
     <button class="action-btn view-btn" data-order="${order._id || order.id}">عرض</button>
+    <button class="action-btn assign-btn" data-order="${order._id || order.id}">تعيين إلى مكتبة</button>
     <button class="action-btn delete-btn" data-order="${order._id || order.id}">حذف</button>
   </td>
 `;
@@ -1108,6 +1125,8 @@ document.getElementById('searchInput').addEventListener('input', applyFilters);
 // Add to your existing JavaScript
 let map, marker;
 let libraries = [];
+let currentEditingLibraryId = null;
+let currentOrderIdForAssign = null;
 
 // Toggle library creation section
 function toggleLibrarySection() {
@@ -1122,59 +1141,114 @@ function toggleLibrarySection() {
 
 // Initialize map
 function initMap() {
-    map = L.map('map').setView([33.5731, -7.5898], 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
-    
-    map.on('click', function(e) {
-        if (marker) {
-            map.removeLayer(marker);
-        }
-        marker = L.marker(e.latlng).addTo(map);
-    });
+  map = L.map('map').setView([35.5762, -5.3684], 13); // Tetouan coordinates
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+  
+  map.on('click', function(e) {
+    if (marker) {
+      map.removeLayer(marker);
+    }
+    marker = L.marker(e.latlng).addTo(map);
+  });
+}
+
+function openLibraryModal() {
+  document.getElementById('libraryModal').style.display = 'block';
+  initMap();
+  loadLibraries();
+  resetLibraryForm();
+}
+
+// Close library modal
+function closeLibraryModal() {
+  document.getElementById('libraryModal').style.display = 'none';
 }
 
 // Load libraries
 function loadLibraries() {
-    fetch(`${API_BASE}/api/libraries`, {
-        headers: {
-            'Authorization': `Bearer ${authToken}`
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        libraries = data;
-        renderLibraries();
-    })
-    .catch(error => console.error('Error loading libraries:', error));
+  fetch(`${API_BASE}/api/libraries`, {
+    headers: {
+      'Authorization': `Bearer ${authToken}`
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    libraries = data;
+    renderLibraries();
+  })
+  .catch(error => console.error('Error loading libraries:', error));
 }
 
 // Render libraries list
 function renderLibraries() {
-    const container = document.getElementById('librariesContainer');
-    container.innerHTML = '';
+  const container = document.getElementById('librariesContainer');
+  container.innerHTML = '';
+  
+  libraries.forEach(library => {
+    const libElement = document.createElement('div');
+    libElement.style.background = 'white';
+    libElement.style.padding = '15px';
+    libElement.style.margin = '10px 0';
+    libElement.style.borderRadius = '5px';
+    libElement.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
     
-    libraries.forEach(library => {
-        const libElement = document.createElement('div');
-        libElement.style.background = 'white';
-        libElement.style.padding = '15px';
-        libElement.style.margin = '10px 0';
-        libElement.style.borderRadius = '5px';
-        libElement.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
-        
-        libElement.innerHTML = `
-            <strong>${library.name}</strong> - ${library.phone}
-            <div>اسم المستخدم: ${library.username}</div>
-            <button onclick="assignOrderToLibrary('${library._id}')" style="background: var(--accent); color: white; border: none; padding: 5px 10px; border-radius: 3px; margin-top: 5px; cursor: pointer;">
-                تعيين الطلب الحالي
-            </button>
-        `;
-        
-        container.appendChild(libElement);
-    });
+    libElement.innerHTML = `
+      <strong>${library.name}</strong> - ${library.phone}
+      <div>اسم المستخدم: ${library.username}</div>
+      <div>كلمة المرور: ${library.plainPassword}</div>
+      <div style="margin-top: 10px;">
+        <button onclick="editLibrary('${library._id}')" style="background: var(--secondary); color: white; border: none; padding: 5px 10px; border-radius: 3px; margin-right: 5px; cursor: pointer;">
+          تعديل
+        </button>
+        <button onclick="deleteLibrary('${library._id}')" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">
+          حذف
+        </button>
+      </div>
+    `;
+    
+    container.appendChild(libElement);
+  });
 }
 
+// Edit library
+function editLibrary(libraryId) {
+  const library = libraries.find(lib => lib._id === libraryId);
+  if (library) {
+    currentEditingLibraryId = libraryId;
+    document.getElementById('libraryName').value = library.name;
+    document.getElementById('libraryPhone').value = library.phone;
+    document.getElementById('libraryUsername').value = library.username;
+    document.getElementById('libraryPassword').value = library.plainPassword;
+    
+    // Remove the current marker if exists
+    if (marker) {
+      map.removeLayer(marker);
+    }
+    // Add marker at library's location
+    marker = L.marker([library.location.coordinates[1], library.location.coordinates[0]]).addTo(map);
+    map.setView([library.location.coordinates[1], library.location.coordinates[0]], 13);
+  }
+}
+
+// Delete library
+function deleteLibrary(libraryId) {
+  if (confirm('هل أنت متأكد من حذف هذه المكتبة؟')) {
+    fetch(`${API_BASE}/api/libraries/${libraryId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${authToken}`
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      alert('تم حذف المكتبة بنجاح');
+      loadLibraries();
+    })
+    .catch(error => console.error('Error deleting library:', error));
+  }
+}
 // Create new library
 document.getElementById('createLibraryBtn').addEventListener('click', function() {
     const name = document.getElementById('libraryName').value;
@@ -1212,36 +1286,173 @@ document.getElementById('createLibraryBtn').addEventListener('click', function()
     .catch(error => console.error('Error creating library:', error));
 });
 
+// Save library (create or update)
+document.getElementById('saveLibraryBtn').addEventListener('click', function() {
+  const name = document.getElementById('libraryName').value;
+  const phone = document.getElementById('libraryPhone').value;
+  const username = document.getElementById('libraryUsername').value;
+  const password = document.getElementById('libraryPassword').value;
+  
+  if (!name || !phone || !username || !password || !marker) {
+    alert('يرجى ملء جميع الحقول وتحديد موقع على الخريطة');
+    return;
+  }
+  
+  const latlng = marker.getLatLng();
+  
+  const url = currentEditingLibraryId ? 
+    `${API_BASE}/api/libraries/${currentEditingLibraryId}` : 
+    `${API_BASE}/api/libraries`;
+  
+  const method = currentEditingLibraryId ? 'PUT' : 'POST';
+  
+  fetch(url, {
+    method: method,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${authToken}`
+    },
+    body: JSON.stringify({
+      name,
+      phone,
+      username,
+      password,
+      latitude: latlng.lat,
+      longitude: latlng.lng
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    alert(currentEditingLibraryId ? 'تم تحديث المكتبة بنجاح' : 'تم إنشاء المكتبة بنجاح');
+    loadLibraries();
+    resetLibraryForm();
+  })
+  .catch(error => console.error('Error saving library:', error));
+});
+
+document.querySelectorAll('.assign-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    openAssignOrderModal(this.dataset.order);
+  });
+});
+
+// Reset library form
+function resetLibraryForm() {
+  currentEditingLibraryId = null;
+  document.getElementById('libraryName').value = '';
+  document.getElementById('libraryPhone').value = '';
+  document.getElementById('libraryUsername').value = '';
+  document.getElementById('libraryPassword').value = '';
+  if (marker) {
+    map.removeLayer(marker);
+    marker = null;
+  }
+  // Reset map view to Tetouan
+  map.setView([35.5762, -5.3684], 13);
+}
+
+// Open assign order modal
+function openAssignOrderModal(orderId) {
+  currentOrderIdForAssign = orderId;
+  const order = allOrders.find(o => o._id === orderId);
+  document.getElementById('assignOrderModal').style.display = 'block';
+  document.getElementById('assignOrderNumber').textContent = order.orderNumber || order._id;
+  loadLibrariesForAssign();
+}
+
+// Close assign order modal
+function closeAssignOrderModal() {
+  document.getElementById('assignOrderModal').style.display = 'none';
+}
+
+// Load libraries for assignment
+function loadLibrariesForAssign() {
+  fetch(`${API_BASE}/api/libraries`, {
+    headers: {
+      'Authorization': `Bearer ${authToken}`
+    }
+  })
+  .then(response => response.json())
+  .then(libraries => {
+    renderLibrariesForAssign(libraries);
+  })
+  .catch(error => console.error('Error loading libraries for assign:', error));
+}
+
+// Render libraries for assignment
+function renderLibrariesForAssign(libraries) {
+  const container = document.getElementById('librariesForAssignContainer');
+  container.innerHTML = '';
+  
+  if (libraries.length === 0) {
+    container.innerHTML = '<p>لا توجد مكتبات</p>';
+    return;
+  }
+  
+  libraries.forEach(library => {
+    const libElement = document.createElement('div');
+    libElement.style.background = 'white';
+    libElement.style.padding = '15px';
+    libElement.style.margin = '10px 0';
+    libElement.style.borderRadius = '5px';
+    libElement.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
+    libElement.style.cursor = 'pointer';
+    
+    libElement.innerHTML = `
+      <strong>${library.name}</strong> - ${library.phone}
+      <div>اسم المستخدم: ${library.username}</div>
+    `;
+    
+    libElement.addEventListener('click', function() {
+      assignOrderToLibrary(library._id);
+    });
+    
+    container.appendChild(libElement);
+  });
+}
+
 // Assign order to library
 function assignOrderToLibrary(libraryId) {
-    if (!currentOrder) {
-        alert('يرجى فتح طلب أولاً');
-        return;
-    }
-    
-    fetch(`${API_BASE}/api/orders/${currentOrder._id}/assign`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`
-        },
-        body: JSON.stringify({ libraryId })
-    })
-    .then(response => response.json())
-    .then(data => {
-        alert('تم تعيين الطلب إلى المكتبة');
-        document.getElementById('orderDetailsModal').classList.remove('active');
-        loadOrders();
-    })
-    .catch(error => console.error('Error assigning order:', error));
+  fetch(`${API_BASE}/api/orders/${currentOrderIdForAssign}/assign`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${authToken}`
+    },
+    body: JSON.stringify({ libraryId })
+  })
+  .then(response => response.json())
+  .then(data => {
+    alert('تم تعيين الطلب إلى المكتبة');
+    closeAssignOrderModal();
+    loadOrders(); // Reload orders to update the status
+  })
+  .catch(error => {
+    alert('خطأ في تعيين الطلب');
+    console.error('Error assigning order:', error);
+  });
 }
+
+// Add event listeners for modals
+document.querySelectorAll('.modal .close').forEach(closeBtn => {
+  closeBtn.addEventListener('click', function() {
+    this.closest('.modal').style.display = 'none';
+  });
+});
+
+// Close modals when clicking outside
+window.addEventListener('click', function(event) {
+  if (event.target.classList.contains('modal')) {
+    event.target.style.display = 'none';
+  }
+});
 
 // Add a button to toggle library section in your admin UI
 const libraryToggleBtn = document.createElement('button');
 libraryToggleBtn.textContent = 'إدارة المكتبات';
 libraryToggleBtn.classList.add('btn');
 libraryToggleBtn.style.marginLeft = '10px';
-libraryToggleBtn.onclick = toggleLibrarySection;
+libraryToggleBtn.onclick = openLibraryModal;
 document.querySelector('.auth-info').appendChild(libraryToggleBtn);
     </script>
 </body>

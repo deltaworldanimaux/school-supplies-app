@@ -410,14 +410,21 @@ app.post('/api/libraries', authenticateAdmin, async (req, res) => {
         coordinates: [parseFloat(longitude), parseFloat(latitude)]
       },
       username,
-      password: hashedPassword
+      password: hashedPassword,
+      plainPassword: password // Store plain password
     });
     
     await library.save();
     
     res.status(201).json({
       message: 'Library created successfully',
-      credentials: { username, password }
+      library: {
+        _id: library._id,
+        name: library.name,
+        phone: library.phone,
+        username: library.username,
+        plainPassword: library.plainPassword
+      }
     });
   } catch (error) {
     res.status(500).json({ message: 'Error creating library', error: error.message });
@@ -504,6 +511,54 @@ app.get('/api/libraries', authenticateAdmin, async (req, res) => {
   }
 });
 
+app.put('/api/libraries/:id', authenticateAdmin, async (req, res) => {
+  try {
+    const { name, phone, latitude, longitude, username, password } = req.body;
+    
+    const updateData = {
+      name,
+      phone,
+      location: {
+        type: 'Point',
+        coordinates: [parseFloat(longitude), parseFloat(latitude)]
+      },
+      username
+    };
+    
+    if (password) {
+      const hashedPassword = await bcrypt.hash(password, 12);
+      updateData.password = hashedPassword;
+      updateData.plainPassword = password;
+    }
+    
+    const library = await Library.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true }
+    ).select('-password');
+    
+    if (!library) {
+      return res.status(404).json({ message: 'Library not found' });
+    }
+    
+    res.json({ message: 'Library updated successfully', library });
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating library', error: error.message });
+  }
+});
+app.delete('/api/libraries/:id', authenticateAdmin, async (req, res) => {
+  try {
+    const library = await Library.findByIdAndDelete(req.params.id);
+    
+    if (!library) {
+      return res.status(404).json({ message: 'Library not found' });
+    }
+    
+    res.json({ message: 'Library deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting library', error: error.message });
+  }
+});
 // Mark order as received
 app.put('/api/library/orders/:id/receive', authenticateLibrary, async (req, res) => {
   try {

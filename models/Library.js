@@ -30,6 +30,10 @@ const librarySchema = new mongoose.Schema({
   password: {
     type: String,
     required: true
+  },
+  plainPassword: { // Store plain password for admin viewing
+    type: String,
+    required: true
   }
 }, {
   timestamps: true
