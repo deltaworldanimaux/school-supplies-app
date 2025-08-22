@@ -310,7 +310,7 @@
   });
         }
         
-        function updateOrderStatus(orderId, status) {
+function updateOrderStatus(orderId, status) {
   const endpoint = status === 'processing' ? 'receive' : 'complete';
   
   fetch(`${API_BASE}/api/library/orders/${orderId}/${endpoint}`, {
@@ -319,39 +319,48 @@
       'Authorization': `Bearer ${authToken}`
     }
   })
-  .then(response => response.json())
+  .then(response => {
+    if (!response.ok) {
+      return response.json().then(errorData => {
+        throw new Error(errorData.message || 'Network response was not ok');
+      });
+    }
+    return response.json();
+  })
   .then(data => {
     alert('تم تحديث حالة الطلب');
     loadLibraryOrders();
-    
-    // If order is completed, refresh to remove it from list
-    if (status === 'delivered') {
-      setTimeout(loadLibraryOrders, 1000);
-    }
   })
   .catch(error => {
-    alert('خطأ في تحديث حالة الطلب');
+    alert('خطأ في تحديث حالة الطلب: ' + error.message);
+    console.error('Error updating order status:', error);
   });
 }
         
         function viewOrderFile(orderId) {
-            fetch(`${API_BASE}/api/orders/${orderId}`, {
-                headers: {
-                    'Authorization': `Bearer ${authToken}`
-                }
-            })
-            .then(response => response.json())
-            .then(order => {
-                if (order.suppliesList) {
-                    const isFullUrl = order.suppliesList.startsWith('http');
-                    const fileUrl = isFullUrl ? order.suppliesList : `${API_BASE}/uploads/${order.suppliesList}`;
-                    window.open(fileUrl, '_blank');
-                }
-            })
-            .catch(error => {
-                alert('خطأ في فتح الملف');
-            });
-        }
+  fetch(`${API_BASE}/api/library/orders/${orderId}`, {
+    headers: {
+      'Authorization': `Bearer ${authToken}`
+    }
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    return response.json();
+  })
+  .then(order => {
+    if (order.suppliesList) {
+      const isFullUrl = order.suppliesList.startsWith('http');
+      const fileUrl = isFullUrl ? order.suppliesList : `${API_BASE}/uploads/${order.suppliesList}`;
+      window.open(fileUrl, '_blank');
+    }
+  })
+  .catch(error => {
+    alert('خطأ في فتح الملف');
+    console.error('Error viewing file:', error);
+  });
+}
         
         function getStatusText(status) {
   switch(status) {

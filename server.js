@@ -501,6 +501,23 @@ app.get('/api/library/orders', authenticateLibrary, async (req, res) => {
   }
 });
 
+app.get('/api/library/orders/:id', authenticateLibrary, async (req, res) => {
+  try {
+    const order = await Order.findOne({
+      _id: req.params.id,
+      assignedTo: req.library._id
+    }).select('-phone -location');
+    
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found or not assigned to this library' });
+    }
+    
+    res.json(order);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching order', error: error.message });
+  }
+});
+
 // Get all libraries (admin only)
 app.get('/api/libraries', authenticateAdmin, async (req, res) => {
   try {
