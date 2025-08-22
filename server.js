@@ -23,7 +23,9 @@ let clients = [];
 const Order = require('./models/Order');
 const Admin = require('./models/Admin');
 const Library = require('./models/Library');
-
+const GITHUB_TOKEN = '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';
+const GITHUB_REPO = 'deltaworldanimaux/myproject3';
+const GITHUB_BRANCH = 'main';
 const TelegramBot = require('node-telegram-bot-api');
 const TELEGRAM_BOT_TOKEN = '8282280616:AAEILrAJbJ_HnSjPO01HENUYrMHNuoU4cTs';
 const TELEGRAM_CHAT_ID = '7779679746';
@@ -205,19 +207,25 @@ app.post('/api/orders', upload.single('suppliesList'), async (req, res) => {
     }
     
     let fileUrl;
-    try {
-      // Try to upload to ImgBB
-      fileUrl = await uploadToImgBB(req.file.path);
-      
-      // If successful, delete local file
-      if (fileUrl.startsWith('http')) {
-        fs.unlinkSync(req.file.path);
-      }
-    } catch (uploadError) {
-      console.error('File upload error:', uploadError);
-      // Fallback to local file path
-      fileUrl = `uploads/${req.file.filename}`;
-    }
+        try {
+            // Check if file is PDF
+            const isPDF = req.file.originalname.toLowerCase().endsWith('.pdf');
+            
+            if (isPDF) {
+                // Upload PDF to GitHub
+                fileUrl = await uploadToGitHub(req.file.path, req.file.originalname);
+                
+                // Delete local file after successful upload
+                fs.unlinkSync(req.file.path);
+            } else {
+                // For images, use ImgBB as before
+                fileUrl = await uploadToImgBB(req.file.path);
+            }
+        } catch (uploadError) {
+            console.error('File upload error:', uploadError);
+            // Fallback to local file path
+            fileUrl = `uploads/${req.file.filename}`;
+        }
     
     // Generate a proper order number (format: ORD-YYYYMMDD-XXXX)
     const now = new Date();
@@ -715,6 +723,52 @@ app.put('/api/library/orders/:id/refuse', authenticateLibrary, async (req, res) 
     res.status(500).json({ message: 'خطأ في رفض الطلب', error: error.message });
   }
 });
+// Function to upload file to GitHub
+async function uploadToGitHub(filePath, originalName) {
+    try {
+        // Read file content
+        const fileContent = fs.readFileSync(filePath);
+        const base64Content = fileContent.toString('base64');
+        
+        // Create filename with timestamp to avoid conflicts
+        const timestamp = Date.now();
+        const extension = path.extname(originalName);
+        const fileName = `uploads/${timestamp}${extension}`;
+        
+        // GitHub API URL
+        const apiUrl = `https://api.github.com/repos/${GITHUB_REPO}/contents/${fileName}`;
+        
+        // Request body
+        const body = JSON.stringify({
+            message: `Upload file: ${originalName}`,
+            content: base64Content,
+            branch: GITHUB_BRANCH
+        });
+        
+        // Make request to GitHub API
+        const response = await fetch(apiUrl, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `token ${GITHUB_TOKEN}`,
+                'Content-Type': 'application/json',
+                'User-Agent': 'School-Supplies-App'
+            },
+            body: body
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            // Return the raw content URL
+            return data.content.download_url;
+        } else {
+            throw new Error(data.message || 'GitHub upload failed');
+        }
+    } catch (error) {
+        console.error('GitHub upload error:', error);
+        throw error;
+    }
+}
 // Mark order as received
 app.put('/api/library/orders/:id/receive', authenticateLibrary, async (req, res) => {
   try {
