@@ -332,9 +332,9 @@ function updateOrderStatus(orderId, status) {
   if (status === 'processing') {
     endpoint = 'receive';
   } else if (status === 'ready') {
-    endpoint = 'complete';
+    endpoint = 'complete';  // This should match your server endpoint
   } else if (status === 'delivered') {
-    endpoint = 'deliver'; // New endpoint
+    endpoint = 'deliver';
   }
   
   fetch(`${API_BASE}/api/library/orders/${orderId}/${endpoint}`, {
@@ -397,7 +397,7 @@ function updateOrderStatus(orderId, status) {
 }
 document.querySelectorAll('.ready-btn').forEach(btn => {
   btn.addEventListener('click', function() {
-    updateOrderStatus(this.dataset.order, 'ready'); // Changed from 'delivered'
+    updateOrderStatus(this.dataset.order, 'ready');
   });
 });
 

@@ -624,7 +624,7 @@ app.put('/api/library/orders/:id/complete', authenticateLibrary, async (req, res
   try {
     const order = await Order.findOneAndUpdate(
       { _id: req.params.id, assignedTo: req.library._id },
-      { status: 'ready' }, // Change from 'delivered' to 'ready'
+      { status: 'ready' },  // Changed from 'delivered' to 'ready'
       { new: true }
     );
     
