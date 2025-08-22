@@ -27,10 +27,16 @@ const Library = require('./models/Library');
 const TelegramBot = require('node-telegram-bot-api');
 const TELEGRAM_BOT_TOKEN = '8282280616:AAEILrAJbJ_HnSjPO01HENUYrMHNuoU4cTs';
 const TELEGRAM_CHAT_ID = '7779679746';
-const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, {polling: false});
+const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
 bot.on('message', async (msg) => {
+console.log('📩 Incoming message:', msg.text, 'from', msg.chat.id);
+
+
 const chatId = msg.chat.id;
 const text = msg.text;
+
+
+if (!text) return;
 
 
 if (text === '/start') {
@@ -67,9 +73,6 @@ console.error('Telegram register error:', err);
 return bot.sendMessage(chatId, '⚠️ خطأ داخلي، حاول لاحقاً');
 }
 }
-
-
-bot.sendMessage(chatId, '⚠️ أمر غير معروف. استخدم /start للبدء');
 });
 
 async function sendLibraryNotification(libraryId, message) {
