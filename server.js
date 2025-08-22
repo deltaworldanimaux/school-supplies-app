@@ -561,7 +561,7 @@ app.post('/api/orders/:id/assign', authenticateAdmin, async (req, res) => {
     // Send Telegram notification to the library if they have a chat ID
     if (library.telegramChatId) {
       try {
-        await sendLibraryNotification(libraryId, `🆕 New Order Assigned!\nOrder Number: ${order.orderNumber}\nParent: ${order.parentName}\nStudent: ${order.studentName}\nGrade: ${order.grade}`);
+        await sendLibraryNotification(libraryId, `🆕 تم تعيين طلب جديد!\nرقم الطلب: ${order.orderNumber}\nاسم ولي الأمر: ${order.parentName}\nاسم التلميذ: ${order.studentName}\nالمستوى الدراسي: ${order.grade}`);
         console.log('Telegram notification sent to library');
       } catch (telegramError) {
         console.error('Error sending Telegram notification to library:', telegramError);
