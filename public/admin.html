@@ -1334,7 +1334,7 @@ function resetLibraryForm() {
 
 // Open assign order modal
 function openAssignOrderModal(orderId) {
-  currentOrderIdForAssign = orderId;
+  // Find the order in allOrders array
   const order = allOrders.find(o => o._id === orderId);
   
   if (!order) {
@@ -1343,6 +1343,7 @@ function openAssignOrderModal(orderId) {
     return;
   }
   
+  currentOrderIdForAssign = orderId;
   document.getElementById('assignOrderModal').style.display = 'block';
   document.getElementById('assignOrderNumber').textContent = order.orderNumber || order._id || 'N/A';
   loadLibrariesForAssign();
@@ -1438,24 +1439,25 @@ window.addEventListener('click', function(event) {
 
 document.getElementById('ordersTableBody').addEventListener('click', function(e) {
   const target = e.target;
+  const orderId = target.getAttribute('data-order');
   
-  // Handle view button
+  if (!orderId) return;
+  
   if (target.classList.contains('view-btn')) {
-    viewOrderDetails(target.dataset.order);
+    viewOrderDetails(orderId);
   } 
-  // Handle assign button
   else if (target.classList.contains('assign-btn')) {
-    openAssignOrderModal(target.dataset.order);
+    openAssignOrderModal(orderId);
   } 
-  // Handle delete button
   else if (target.classList.contains('delete-btn')) {
-    deleteOrder(target.dataset.order);
+    deleteOrder(orderId);
   }
 });
 
 document.getElementById('ordersTableBody').addEventListener('change', function(e) {
   if (e.target.classList.contains('status-select')) {
-    updateOrderStatus(e.target.dataset.order, e.target.value);
+    const orderId = e.target.getAttribute('data-order');
+    updateOrderStatus(orderId, e.target.value);
   }
 });
     </script>
