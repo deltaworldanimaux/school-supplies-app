@@ -1334,12 +1334,33 @@ function resetLibraryForm() {
 
 // Open assign order modal
 function openAssignOrderModal(orderId) {
-  // Find the order in allOrders array
-  const order = allOrders.find(o => o._id === orderId);
+  // Try to find the order in allOrders
+  const order = allOrders.find(o => o._id === orderId || o.id === orderId);
   
   if (!order) {
-    console.error('Order not found:', orderId);
-    alert('تعذر العثور على الطلب. يرجى تحديث الصفحة والمحاولة مرة أخرى.');
+    console.error('Order not found in allOrders:', orderId);
+    // Try to fetch the order directly from the server as a fallback
+    fetch(`${API_BASE}/api/orders/${orderId}`, {
+      headers: {
+        'Authorization': `Bearer ${authToken}`
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    })
+    .then(order => {
+      currentOrderIdForAssign = orderId;
+      document.getElementById('assignOrderModal').style.display = 'block';
+      document.getElementById('assignOrderNumber').textContent = order.orderNumber || order._id || 'N/A';
+      loadLibrariesForAssign();
+    })
+    .catch(error => {
+      console.error('Error fetching order:', error);
+      alert('تعذر العثور على الطلب. يرجى تحديث الصفحة والمحاولة مرة أخرى.');
+    });
     return;
   }
   
@@ -1438,10 +1459,15 @@ window.addEventListener('click', function(event) {
 });
 
 document.getElementById('ordersTableBody').addEventListener('click', function(e) {
-  const target = e.target;
-  const orderId = target.getAttribute('data-order');
+  // Find the button element that was clicked (or its parent if it's a child element)
+  let target = e.target;
+  while (target && !target.getAttribute('data-order') && target !== this) {
+    target = target.parentElement;
+  }
   
-  if (!orderId) return;
+  if (!target || !target.getAttribute('data-order')) return;
+  
+  const orderId = target.getAttribute('data-order');
   
   if (target.classList.contains('view-btn')) {
     viewOrderDetails(orderId);
