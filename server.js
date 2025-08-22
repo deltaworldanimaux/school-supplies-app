@@ -631,29 +631,34 @@ app.put('/api/library/orders/:id/complete', authenticateLibrary, async (req, res
   try {
     const { cost } = req.body;
     
+    // Validate cost
+    if (!cost || isNaN(cost) || cost <= 0) {
+      return res.status(400).json({ message: 'يرجى إدخال تكلفة صحيحة' });
+    }
+    
     const order = await Order.findOneAndUpdate(
       { 
         _id: req.params.id, 
         assignedTo: req.library._id,
-        status: 'processing' // Ensure order is in correct state
+        status: 'processing' // Only allow completion from processing status
       },
       { 
         status: 'ready',
         cost: parseFloat(cost)
       },
       { new: true }
-    ).populate('assignedTo', 'name phone'); // Populate library info
-
+    );
+    
     if (!order) {
       return res.status(404).json({ 
-        message: 'Order not found, not assigned to this library, or not in processing status' 
+        message: 'الطلب غير موجود أو غير مخصص لهذه المكتبة أو ليس في حالة معالجة' 
       });
     }
-
-    res.json({ message: 'Order completed', order });
+    
+    res.json({ message: 'تم إكمال الطلب', order });
   } catch (error) {
     console.error('Complete order error:', error);
-    res.status(500).json({ message: 'Error completing order', error: error.message });
+    res.status(500).json({ message: 'خطأ في إكمال الطلب', error: error.message });
   }
 });
 
