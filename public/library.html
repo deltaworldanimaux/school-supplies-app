@@ -401,7 +401,8 @@ function updateOrderStatus(orderId, status, cost = null) {
     endpoint = 'receive';
   } else if (status === 'ready') {
     endpoint = 'complete';
-    body = { cost: cost };
+    // Ensure cost is a number, not a string
+    body = { cost: parseFloat(cost) };
   } else if (status === 'delivered') {
     endpoint = 'deliver';
   }
@@ -425,7 +426,6 @@ function updateOrderStatus(orderId, status, cost = null) {
   .then(data => {
     alert(data.message || 'تم تحديث حالة الطلب');
     if (status === 'ready') {
-      // Pass both the order data and library info to generateReceipt
       generateReceipt(data.order, currentLibrary);
     }
     loadLibraryOrders();
@@ -558,19 +558,19 @@ document.getElementById('costForm').addEventListener('submit', function(e) {
   e.preventDefault();
   
   const costInput = document.getElementById('costInput');
-  const cost = costInput.value;
+  const costValue = costInput.value.trim();
   
-  if (!cost || isNaN(cost) || cost <= 0) {
-    alert('يرجى إدخال تكلفة صحيحة');
+  // More robust validation
+  if (!costValue || isNaN(costValue) || parseFloat(costValue) <= 0) {
+    alert('يرجى إدخال تكلفة صحيحة (رقم أكبر من الصفر)');
     costInput.focus();
     return;
   }
   
-  updateOrderStatus(currentOrderIdForCost, 'ready', cost);
+  updateOrderStatus(currentOrderIdForCost, 'ready', costValue);
   document.getElementById('costModal').style.display = 'none';
   costInput.value = '';
 });
-
 document.getElementById('costModal').addEventListener('click', function(e) {
   if (e.target.id === 'costModal') {
     document.getElementById('costModal').style.display = 'none';
