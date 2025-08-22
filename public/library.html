@@ -128,7 +128,44 @@
             text-align: right;
             border-bottom: 1px solid #eee;
         }
+        .btn-print {
+            background: linear-gradient(135deg, var(--primary) 0%, #45a049 100%);
+            color: white;
+        }
         
+        .btn-close {
+            background: linear-gradient(135deg, var(--secondary) 0%, #e68a00 100%);
+            color: white;
+        }
+        .btn-print:hover {
+            background: linear-gradient(135deg, #45a049 0%, var(--primary) 100%);
+        }
+        
+        .btn-close:hover {
+            background: linear-gradient(135deg, #e68a00 0%, var(--secondary) 100%);
+        }
+        
+        /* Style for the no-print section */
+        .no-print {
+            margin-top: 40px;
+            text-align: center;
+            padding: 25px;
+            background: #f9f9f9;
+            border-radius: 10px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+        }
+        
+        @media (max-width: 480px) {
+            .buttons-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 280px;
+            }
+        }
         .orders-table th {
             background-color: #f8f9fa;
             font-weight: 600;
@@ -507,10 +544,19 @@ function updateOrderStatus(orderId, status, cost = null) {
         <p>شكراً لثقتكم بنا</p>
       </div>
       
-      <div class="no-print" style="margin-top: 20px; text-align: center;">
-        <button onclick="window.print()">طباعة الإيصال</button>
-        <button onclick="window.close()">إغلاق</button>
-      </div>
+      <div class="no-print">
+            <div class="buttons-container">
+                <button class="btn btn-print" onclick="window.print()">
+                    <i class="fas fa-print"></i>
+                    طباعة الإيصال
+                </button>
+                <button class="btn btn-close" onclick="window.close()">
+                    <i class="fas fa-times"></i>
+                    إغلاق
+                </button>
+            </div>
+        </div>
+        </div>
     </body>
     </html>
   `);
