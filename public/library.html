@@ -244,12 +244,30 @@
   </div>
 </div>
     </div>
-
+<div id="refuseModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
+  <div style="background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 300px; border-radius: 10px;">
+    <h3>سبب رفض الطلب</h3>
+    <form id="refuseForm">
+      <select id="refuseReason" style="width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px;" required>
+        <option value="">اختر السبب</option>
+        <option value="المواد غير متوفرة">المواد غير متوفرة</option>
+        <option value="الموقع بعيد جداً">الموقع بعيد جداً</option>
+        <option value="غير قادر على التجهيز">غير قادر على التجهيز</option>
+        <option value="أسباب أخرى">أسباب أخرى</option>
+      </select>
+      <div style="text-align: left;">
+        <button type="submit" id="submitRefuseBtn" style="background: #dc3545; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer;">رفض الطلب</button>
+        <button type="button" id="cancelRefuseBtn" style="background: #6c757d; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; margin-right: 10px;">إلغاء</button>
+      </div>
+    </form>
+  </div>
+</div>
     <script>
         const API_BASE = window.location.origin;
         let authToken = localStorage.getItem('libraryToken');
         let currentLibrary = null;
         let currentOrderIdForCost = null;
+        let currentOrderIdForRefuse = null;
 
         if (authToken) {
             verifyLibraryToken();
@@ -364,14 +382,16 @@ function renderLibraryOrders(orders) {
       <td>${order.grade || 'غير متوفر'}</td>
       <td>${getStatusText(order.status)}</td>
       <td>
-        ${order.status === 'confirmed' ? 
-          `<button class="action-btn receive-btn" data-order="${order._id}">استلام الطلب</button>` : ''}
-        ${order.status === 'processing' ? 
-          `<button class="action-btn ready-btn" data-order="${order._id}">تم التجهيز</button>` : ''}
-        ${order.status === 'ready' ? 
-          `<button class="action-btn deliver-btn" data-order="${order._id}">تم التوصيل</button>` : ''}
-        <button class="action-btn view-btn" data-order="${order._id}">عرض الملف</button>
-      </td>
+  ${order.status === 'confirmed' ? 
+    `<button class="action-btn receive-btn" data-order="${order._id}">استلام الطلب</button>
+     <button class="action-btn refuse-btn" data-order="${order._id}" style="background-color: #dc3545;">رفض الطلب</button>` : ''}
+  ${order.status === 'processing' ? 
+    `<button class="action-btn ready-btn" data-order="${order._id}">تم التجهيز</button>
+     <button class="action-btn refuse-btn" data-order="${order._id}" style="background-color: #dc3545;">رفض الطلب</button>` : ''}
+  ${order.status === 'ready' ? 
+    `<button class="action-btn deliver-btn" data-order="${order._id}">تم التوصيل</button>` : ''}
+  <button class="action-btn view-btn" data-order="${order._id}">عرض الملف</button>
+</td>
     `;
     
     tbody.appendChild(tr);
@@ -548,7 +568,33 @@ body { padding: 0; margin: 0; }
 
 printWindow.document.close();
 }
-        
+
+  function refuseOrder(orderId, reason) {
+  fetch(`${API_BASE}/api/library/orders/${orderId}/refuse`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${authToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ reason })
+  })
+  .then(response => {
+    if (!response.ok) {
+      return response.json().then(errorData => {
+        throw new Error(errorData.message || 'Network response was not ok');
+      });
+    }
+    return response.json();
+  })
+  .then(data => {
+    alert(data.message || 'تم رفض الطلب');
+    loadLibraryOrders();
+  })
+  .catch(error => {
+    alert('خطأ في رفض الطلب: ' + error.message);
+    console.error('Error refusing order:', error);
+  });
+}      
         function viewOrderFile(orderId) {
   fetch(`${API_BASE}/api/library/orders/${orderId}`, {
     headers: {
@@ -589,7 +635,40 @@ document.addEventListener('click', function(e) {
     currentOrderIdForCost = e.target.dataset.order;
     document.getElementById('costModal').style.display = 'block';
   }
+  if (e.target.classList.contains('refuse-btn')) {
+    e.preventDefault();
+    currentOrderIdForRefuse = e.target.dataset.order;
+    document.getElementById('refuseModal').style.display = 'block';
+  }
 });
+// Handle refuse form submission
+document.getElementById('refuseForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const reason = document.getElementById('refuseReason').value;
+  
+  if (!reason) {
+    alert('يرجى اختيار سبب الرفض');
+    return;
+  }
+  
+  refuseOrder(currentOrderIdForRefuse, reason);
+  document.getElementById('refuseModal').style.display = 'none';
+  document.getElementById('refuseReason').value = '';
+});
+
+// Close refuse modal
+document.getElementById('refuseModal').addEventListener('click', function(e) {
+  if (e.target.id === 'refuseModal') {
+    document.getElementById('refuseModal').style.display = 'none';
+    document.getElementById('refuseReason').value = '';
+  }
+});
+
+document.getElementById('cancelRefuseBtn').addEventListener('click', function() {
+  document.getElementById('refuseModal').style.display = 'none';
+  document.getElementById('refuseReason').value = '';
+});
+
 document.getElementById('costForm').addEventListener('submit', function(e) {
 e.preventDefault();
 const costInput = document.getElementById('costInput');

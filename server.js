@@ -598,6 +598,40 @@ app.delete('/api/libraries/:id', authenticateAdmin, async (req, res) => {
     res.status(500).json({ message: 'Error deleting library', error: error.message });
   }
 });
+app.put('/api/library/orders/:id/refuse', authenticateLibrary, async (req, res) => {
+  try {
+    const { reason } = req.body;
+    
+    const order = await Order.findOneAndUpdate(
+      { 
+        _id: req.params.id, 
+        assignedTo: req.library._id,
+        status: { $in: ['confirmed', 'processing'] }
+      },
+      { 
+        status: 'pending',
+        refusalReason: reason,
+        assignedTo: null // Remove assignment
+      },
+      { new: true }
+    );
+    
+    if (!order) {
+      return res.status(404).json({ 
+        message: 'الطلب غير موجود أو غير مخصص لهذه المكتبة أو لا يمكن رفضه في حالته الحالية' 
+      });
+    }
+    
+    // Send Telegram notification for refused order
+    const refusalMessage = `❌ Order Refused!\nOrder Number: ${order.orderNumber}\nLibrary: ${req.library.name}\nReason: ${reason}`;
+    sendTelegramNotification(refusalMessage);
+    
+    res.json({ message: 'تم رفض الطلب', order });
+  } catch (error) {
+    console.error('Refuse order error:', error);
+    res.status(500).json({ message: 'خطأ في رفض الطلب', error: error.message });
+  }
+});
 // Mark order as received
 app.put('/api/library/orders/:id/receive', authenticateLibrary, async (req, res) => {
   try {
@@ -654,6 +688,10 @@ app.put('/api/library/orders/:id/complete', authenticateLibrary, async (req, res
         message: 'الطلب غير موجود أو غير مخصص لهذه المكتبة أو ليس في حالة معالجة' 
       });
     }
+    
+    // Send Telegram notification for completed order
+    const readyMessage = `✅ Order Ready!\nOrder Number: ${order.orderNumber}\nLibrary: ${req.library.name}\nCost: ${cost} MAD`;
+    sendTelegramNotification(readyMessage);
     
     res.json({ message: 'تم إكمال الطلب', order });
   } catch (error) {

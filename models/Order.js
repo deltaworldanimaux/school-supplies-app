@@ -25,7 +25,8 @@ const orderSchema = new mongoose.Schema({
   },
   orderNumber: { type: String, required: true, unique: true },
   assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'Library' },
-  cost: { type: Number, default: null } // Add cost field
+  cost: { type: Number, default: null },
+  refusalReason: { type: String, default: null } // Add refusal reason field
 }, {
   timestamps: true
 });
