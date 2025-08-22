@@ -365,34 +365,39 @@ function renderLibraryOrders(orders) {
   attachEventListeners();
 }
 function attachEventListeners() {
-  // Receive button
-  document.querySelectorAll('.receive-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-      updateOrderStatus(this.dataset.order, 'processing');
-    });
-  });
-  
-  // Ready button (تم التجهيز)
-  document.querySelectorAll('.ready-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-      updateOrderStatus(this.dataset.order, 'ready');
-    });
-  });
-  
-  // Deliver button
-  document.querySelectorAll('.deliver-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-      updateOrderStatus(this.dataset.order, 'delivered');
-    });
-  });
-  
-  // View button
-  document.querySelectorAll('.view-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-      viewOrderFile(this.dataset.order);
-    });
-  });
-}     
+// Receive button
+document.querySelectorAll('.receive-btn').forEach(btn => {
+btn.addEventListener('click', function() {
+updateOrderStatus(this.dataset.order, 'processing');
+});
+});
+
+
+// Ready button → only open modal, not call updateOrderStatus directly
+document.querySelectorAll('.ready-btn').forEach(btn => {
+btn.addEventListener('click', function(e) {
+e.preventDefault();
+currentOrderIdForCost = this.dataset.order;
+document.getElementById('costModal').style.display = 'block';
+});
+});
+
+
+// Deliver button
+document.querySelectorAll('.deliver-btn').forEach(btn => {
+btn.addEventListener('click', function() {
+updateOrderStatus(this.dataset.order, 'delivered');
+});
+});
+
+
+// View button
+document.querySelectorAll('.view-btn').forEach(btn => {
+btn.addEventListener('click', function() {
+viewOrderFile(this.dataset.order);
+});
+});
+}   
 function updateOrderStatus(orderId, status, cost = null) {
   let endpoint;
   let body = {};
@@ -555,21 +560,21 @@ document.addEventListener('click', function(e) {
   }
 });
 document.getElementById('costForm').addEventListener('submit', function(e) {
-  e.preventDefault();
-  
-  const costInput = document.getElementById('costInput');
-  const costValue = costInput.value.trim();
-  
-  // More robust validation
-  if (!costValue || isNaN(costValue) || parseFloat(costValue) <= 0) {
-    alert('يرجى إدخال تكلفة صحيحة (رقم أكبر من الصفر)');
-    costInput.focus();
-    return;
-  }
-  
-  updateOrderStatus(currentOrderIdForCost, 'ready', costValue);
-  document.getElementById('costModal').style.display = 'none';
-  costInput.value = '';
+e.preventDefault();
+const costInput = document.getElementById('costInput');
+const costValue = costInput.value.trim();
+
+
+if (!costValue || isNaN(costValue) || parseFloat(costValue) < 0) {
+alert('يرجى إدخال تكلفة صحيحة');
+costInput.focus();
+return;
+}
+
+
+updateOrderStatus(currentOrderIdForCost, 'ready', parseFloat(costValue));
+document.getElementById('costModal').style.display = 'none';
+costInput.value = '';
 });
 document.getElementById('costModal').addEventListener('click', function(e) {
   if (e.target.id === 'costModal') {
