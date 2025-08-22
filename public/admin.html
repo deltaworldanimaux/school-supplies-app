@@ -842,27 +842,6 @@ function setupEventSource() {
 addAssignButtonToOrders();
                 tbody.appendChild(tr);
             });
-            
-            // Add event listeners for status changes
-            document.querySelectorAll('.status-select').forEach(select => {
-                select.addEventListener('change', function() {
-                    updateOrderStatus(this.dataset.order, this.value);
-                });
-            });
-            
-            // Add event listeners for view buttons
-            document.querySelectorAll('.view-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    viewOrderDetails(this.dataset.order);
-                });
-            });
-            
-            // Add event listeners for delete buttons
-            document.querySelectorAll('.delete-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    deleteOrder(this.dataset.order);
-                });
-            });
         }
         
         // Update order status
@@ -1455,6 +1434,28 @@ window.addEventListener('click', function(event) {
   }
 });
 
+document.getElementById('ordersTableBody').addEventListener('click', function(e) {
+  const target = e.target;
+  
+  // Handle view button
+  if (target.classList.contains('view-btn')) {
+    viewOrderDetails(target.dataset.order);
+  } 
+  // Handle assign button
+  else if (target.classList.contains('assign-btn')) {
+    openAssignOrderModal(target.dataset.order);
+  } 
+  // Handle delete button
+  else if (target.classList.contains('delete-btn')) {
+    deleteOrder(target.dataset.order);
+  }
+});
+
+document.getElementById('ordersTableBody').addEventListener('change', function(e) {
+  if (e.target.classList.contains('status-select')) {
+    updateOrderStatus(e.target.dataset.order, e.target.value);
+  }
+});
     </script>
 </body>
 </html>
