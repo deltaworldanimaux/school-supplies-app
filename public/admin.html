@@ -530,14 +530,15 @@
 
     <div id="adminPage" class="container hidden">
         <header>
-            <div class="logo">
-                <span>📊 لوحة تحكم مدرستي</span>
-            </div>
-            <div class="auth-info">
-                <span>مرحباً, <span id="adminName">Admin</span></span>
-                <button id="logoutBtn" class="btn">تسجيل الخروج</button>
-            </div>
-        </header>
+    <div class="logo">
+        <span>📊 لوحة تحكم مدرستي</span>
+    </div>
+    <div class="auth-info">
+        <span>مرحباً, <span id="adminName">Admin</span></span>
+        <button id="manageLibrariesBtn" class="btn" style="margin-left: 10px;">إدارة المكتبات</button>
+        <button id="logoutBtn" class="btn">تسجيل الخروج</button>
+    </div>
+</header>
 
         <div class="admin-content">
             <h1>إدارة طلبات اللوازم المدرسية</h1>
@@ -651,7 +652,7 @@
   </div>
 </div>
 
-<!-- Add this modal for assigning orders to libraries -->
+<!-- Assign Order Modal -->
 <div id="assignOrderModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
   <div class="modal-content" style="background-color: #fefefe; margin: 5% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 600px; border-radius: 10px;">
     <span class="close" style="color: #aaa; float: left; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
