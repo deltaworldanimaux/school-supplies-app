@@ -1336,8 +1336,15 @@ function resetLibraryForm() {
 function openAssignOrderModal(orderId) {
   currentOrderIdForAssign = orderId;
   const order = allOrders.find(o => o._id === orderId);
+  
+  if (!order) {
+    console.error('Order not found:', orderId);
+    alert('تعذر العثور على الطلب. يرجى تحديث الصفحة والمحاولة مرة أخرى.');
+    return;
+  }
+  
   document.getElementById('assignOrderModal').style.display = 'block';
-  document.getElementById('assignOrderNumber').textContent = order.orderNumber || order._id;
+  document.getElementById('assignOrderNumber').textContent = order.orderNumber || order._id || 'N/A';
   loadLibrariesForAssign();
 }
 
