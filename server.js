@@ -607,7 +607,7 @@ app.put('/api/library/orders/:id/receive', authenticateLibrary, async (req, res)
       { new: true }
     );
     
-    res.json({ message: 'Order received', order });
+    res.json({ message: 'تم قبول الطلب', order });
   } catch (error) {
     res.status(500).json({ message: 'Error updating order', error: error.message });
   }

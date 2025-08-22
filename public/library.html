@@ -145,27 +145,6 @@
             background: linear-gradient(135deg, #e68a00 0%, var(--secondary) 100%);
         }
         
-        /* Style for the no-print section */
-        .no-print {
-            margin-top: 40px;
-            text-align: center;
-            padding: 25px;
-            background: #f9f9f9;
-            border-radius: 10px;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
-        }
-        
-        @media (max-width: 480px) {
-            .buttons-container {
-                flex-direction: column;
-                align-items: center;
-            }
-            
-            .btn {
-                width: 100%;
-                max-width: 280px;
-            }
-        }
         .orders-table th {
             background-color: #f8f9fa;
             font-weight: 600;
@@ -479,89 +458,95 @@ function updateOrderStatus(orderId, status, cost = null) {
 }
 
   // Add function to generate printable receipt
-  function generateReceipt(order) {
-  if (!order) {
-    console.error('Order data is null');
-    alert('Error: Order data is missing');
-    return;
-  }
+function generateReceipt(order) {
+if (!order) {
+console.error('Order data is null');
+alert('Error: Order data is missing');
+return;
+}
 
-  const printWindow = window.open('', '_blank');
-  const receiptDate = new Date().toLocaleDateString('ar-MA');
-  
-  // Get current library info from the page
-  const libraryName = document.getElementById('libraryName').textContent;
-  
-  printWindow.document.write(`
-    <!DOCTYPE html>
-    <html dir="rtl">
-    <head>
-      <title>إيصال طلب ${order.orderNumber}</title>
-      <style>
-        body { font-family: Arial, sans-serif; padding: 20px; }
-        .header { text-align: center; margin-bottom: 20px; }
-        .logo { max-width: 150px; margin-bottom: 10px; }
-        .receipt-info { margin-bottom: 20px; }
-        .receipt-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        .receipt-table th, .receipt-table td { border: 1px solid #ddd; padding: 8px; text-align: right; }
-        .receipt-table th { background-color: #f2f2f2; }
-        .total { font-weight: bold; font-size: 1.2em; margin-top: 20px; }
-        .footer { margin-top: 30px; text-align: center; font-size: 0.9em; color: #666; }
-        @media print {
-          body { padding: 0; margin: 0; }
-          .no-print { display: none; }
-        }
-      </style>
-    </head>
-    <body>
-      <div class="header">
-        <img src="https://i.ibb.co/YCKG3BL/0f536795b6f4.png" alt="Logo" class="logo">
-        <h1>إيصال استلام لوازم مدرسية</h1>
-      </div>
-      
-      <div class="receipt-info">
-        <p><strong>رقم الطلب:</strong> ${order.orderNumber || 'غير متوفر'}</p>
-        <p><strong>التاريخ:</strong> ${receiptDate}</p>
-        <p><strong>اسم ولي الأمر:</strong> ${order.parentName || 'غير متوفر'}</p>
-        <p><strong>اسم التلميذ:</strong> ${order.studentName || 'غير متوفر'}</p>
-        <p><strong>المستوى الدراسي:</strong> ${order.grade || 'غير متوفر'}</p>
-      </div>
-      
-      <table class="receipt-table">
-        <tr>
-          <th>الوصف</th>
-          <th>المبلغ</th>
-        </tr>
-        <tr>
-          <td>تكلفة اللوازم المدرسية</td>
-          <td>${order.cost || 0} درهم</td>
-        </tr>
-      </table>
-      
-      <div class="total">المجموع: ${order.cost || 0} درهم</div>
-      
-      <div class="footer">
-        <p>شكراً لثقتكم بنا</p>
-      </div>
-      
-      <div class="no-print">
-            <div class="buttons-container">
-                <button class="btn btn-print" onclick="window.print()">
-                    <i class="fas fa-print"></i>
-                    طباعة الإيصال
-                </button>
-                <button class="btn btn-close" onclick="window.close()">
-                    <i class="fas fa-times"></i>
-                    إغلاق
-                </button>
-            </div>
-        </div>
-        </div>
-    </body>
-    </html>
-  `);
-  
-  printWindow.document.close();
+
+const printWindow = window.open('', '_blank');
+const receiptDate = new Date().toLocaleDateString('ar-MA');
+const libraryName = document.getElementById('libraryName').textContent;
+
+
+const serviceFees = 50;
+const suppliesCost = order.cost || 0;
+const totalAmount = suppliesCost + serviceFees;
+
+
+printWindow.document.write(`
+<!DOCTYPE html>
+<html dir="rtl">
+<head>
+<title>إيصال طلب ${order.orderNumber}</title>
+<style>
+body { font-family: Arial, sans-serif; padding: 20px; }
+.header { text-align: center; margin-bottom: 20px; }
+.logo { max-width: 150px; margin-bottom: 10px; }
+.receipt-info { margin-bottom: 20px; }
+.receipt-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+.receipt-table th, .receipt-table td { border: 1px solid #ddd; padding: 8px; text-align: right; }
+.receipt-table th { background-color: #f2f2f2; }
+.total { font-weight: bold; font-size: 1.2em; margin-top: 20px; }
+.footer { margin-top: 30px; text-align: center; font-size: 0.9em; color: #666; }
+@media print {
+body { padding: 0; margin: 0; }
+.no-print { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="header">
+<img src="https://i.ibb.co/YCKG3BL/0f536795b6f4.png" alt="Logo" class="logo">
+<h1>إيصال استلام لوازم مدرسية</h1>
+</div>
+
+
+<div class="receipt-info">
+<p><strong>رقم الطلب:</strong> ${order.orderNumber || 'غير متوفر'}</p>
+<p><strong>التاريخ:</strong> ${receiptDate}</p>
+<p><strong>اسم ولي الأمر:</strong> ${order.parentName || 'غير متوفر'}</p>
+<p><strong>اسم التلميذ:</strong> ${order.studentName || 'غير متوفر'}</p>
+<p><strong>المستوى الدراسي:</strong> ${order.grade || 'غير متوفر'}</p>
+</div>
+
+
+<table class="receipt-table">
+<tr>
+<th>الوصف</th>
+<th>المبلغ</th>
+</tr>
+<tr>
+<td>تكلفة اللوازم المدرسية</td>
+<td>${suppliesCost} درهم</td>
+</tr>
+<tr>
+<td>رسوم الخدمة</td>
+<td>${serviceFees} درهم</td>
+</tr>
+</table>
+
+
+<div class="total">المجموع: ${totalAmount} درهم</div>
+
+
+<div class="footer">
+<p>شكراً لثقتكم بنا</p>
+</div>
+
+
+<div class="no-print" style="margin-top: 20px; text-align: center;">
+<button onclick="window.print()">طباعة الإيصال</button>
+<button onclick="window.close()">إغلاق</button>
+</div>
+</body>
+</html>
+`);
+
+
+printWindow.document.close();
 }
         
         function viewOrderFile(orderId) {
