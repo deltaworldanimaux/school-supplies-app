@@ -80,7 +80,26 @@
             cursor: pointer;
             transition: all 0.3s;
         }
-        
+        .modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+  background-color: #fefefe;
+  margin: 15% auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 300px;
+  border-radius: 10px;
+  text-align: center;
+}
         .btn:hover {
             background: rgba(255, 255, 255, 0.3);
         }
@@ -202,7 +221,7 @@
              style="width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px;" 
              required min="1" step="0.01">
       <div style="text-align: left;">
-        <button type="submit" style="background: var(--primary); color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer;">تأكيد</button>
+<button type="submit" id="submitCostBtn" style="background: var(--primary); color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer;">تأكيد</button>
         <button type="button" id="cancelCostBtn" style="background: #dc3545; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; margin-right: 10px;">إلغاء</button>
       </div>
     </form>
@@ -552,26 +571,13 @@ document.getElementById('costForm').addEventListener('submit', function(e) {
   costInput.value = '';
 });
 
-document.getElementById('submitCostBtn').addEventListener('click', function() {
-    const cost = document.getElementById('costInput').value;
-    if (!cost || isNaN(cost) || cost <= 0) {
-      alert('يرجى إدخال تكلفة صحيحة');
-      return;
-    }
-    
-    updateOrderStatus(currentOrderIdForCost, 'ready', cost);
-    document.getElementById('costModal').style.display = 'none';
-    document.getElementById('costInput').value = '';
-  });
-  
-  document.getElementById('costModal').addEventListener('click', function(e) {
+document.getElementById('costModal').addEventListener('click', function(e) {
   if (e.target.id === 'costModal') {
     document.getElementById('costModal').style.display = 'none';
     document.getElementById('costInput').value = '';
   }
 });
-
- document.getElementById('cancelCostBtn').addEventListener('click', function() {
+document.getElementById('cancelCostBtn').addEventListener('click', function() {
   document.getElementById('costModal').style.display = 'none';
   document.getElementById('costInput').value = '';
 });
