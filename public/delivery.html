@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تطبيق التوصيل - مدرستي</title>
+    <style>
+        :root {
+            --primary: #4CAF50;
+            --secondary: #FF9800;
+            --accent: #2196F3;
+            --light: #F5F5F5;
+            --dark: #333;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7f9;
+            padding: 20px;
+            position: relative;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .driver-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .score {
+            background: var(--secondary);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            border-bottom: 3px solid var(--primary);
+            font-weight: bold;
+        }
+        
+        .tab-content {
+            padding: 20px;
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .order-card {
+            background: white;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        
+        .order-number {
+            font-weight: bold;
+            color: var(--dark);
+        }
+        
+        .order-status {
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+        }
+        
+        .status-pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-accepted {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status-picked_up {
+            background-color: #cce5ff;
+            color: #004085;
+        }
+        
+        .status-delivered {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .order-details {
+            margin-bottom: 10px;
+        }
+        
+        .detail-row {
+            display: flex;
+            margin-bottom: 5px;
+        }
+        
+        .detail-label {
+            font-weight: 600;
+            width: 120px;
+            color: #666;
+        }
+        
+        .detail-value {
+            flex: 1;
+        }
+        
+        .action-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 5px;
+            font-weight: 500;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background-color: var(--secondary);
+            color: white;
+        }
+        
+        .btn-accent {
+            background-color: var(--accent);
+            color: white;
+        }
+        
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--dark);
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+        
+        .login-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: block;
+            width: 100%;
+            font-weight: bold;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .map-link {
+            color: var(--accent);
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="loginPage" class="login-container">
+        <h2 style="text-align: center; margin-bottom: 30px;">تسجيل الدخول - مندوب التوصيل</h2>
+        <div id="loginAlert" class="alert hidden"></div>
+        <div class="form-group">
+            <label for="driverPhone">رقم الهاتف</label>
+            <input type="text" id="driverPhone" required>
+        </div>
+        <button id="driverLoginBtn" class="login-btn">دخول</button>
+    </div>
+
+    <div id="driverApp" class="container hidden">
+        <header>
+            <h1>تطبيق التوصيل</h1>
+        </header>
+        
+        <div class="driver-info">
+            <div id="driverName">مرحباً, مندوب التوصيل</div>
+            <div class="score">النقاط: <span id="driverScore">0</span></div>
+        </div>
+        
+        <div class="tabs">
+            <div class="tab active" data-tab="available">الطلبات المتاحة</div>
+            <div class="tab" data-tab="current">طلباتي الحالية</div>
+            <div class="tab" data-tab="history">سجل الطلبات</div>
+        </div>
+        
+        <div id="availableOrders" class="tab-content active">
+            <h2 style="margin-bottom: 15px;">الطلبات المتاحة للتوصيل</h2>
+            <div id="availableOrdersList"></div>
+        </div>
+        
+        <div id="currentOrders" class="tab-content">
+            <h2 style="margin-bottom: 15px;">طلباتي الحالية</h2>
+            <div id="currentOrdersList"></div>
+        </div>
+        
+        <div id="orderHistory" class="tab-content">
+            <h2 style="margin-bottom: 15px;">سجل الطلبات</h2>
+            <div id="ordersHistoryList"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentDriver = null;
+        let authToken = localStorage.getItem('driverToken');
+        const API_BASE = window.location.origin;
+        
+        // Check if driver is already logged in
+        if (authToken) {
+            verifyDriverToken();
+        } else {
+            showLoginPage();
+        }
+        
+        // Login functionality
+        document.getElementById('driverLoginBtn').addEventListener('click', function() {
+            const phone = document.getElementById('driverPhone').value;
+            
+            if (!phone) {
+                showAlert('loginAlert', 'error', 'يرجى إدخال رقم الهاتف');
+                return;
+            }
+            
+            findDriverByPhone(phone);
+        });
+        
+        // Tab functionality
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                // Remove active class from all tabs and content
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                // Add active class to clicked tab
+                this.classList.add('active');
+                
+                // Show corresponding content
+                const tabName = this.getAttribute('data-tab');
+                document.getElementById(tabName + (tabName === 'available' ? 'Orders' : tabName === 'current' ? 'Orders' : 'History')).classList.add('active');
+                
+                // Load data for the tab
+                if (tabName === 'available') {
+                    loadAvailableOrders();
+                } else if (tabName === 'current') {
+                    loadCurrentOrders();
+                } else if (tabName === 'history') {
+                    loadOrderHistory();
+                }
+            });
+        });
+        
+        function verifyDriverToken() {
+            // In a real app, you would verify the token with the server
+            // For simplicity, we'll just check if we have a driver ID in localStorage
+            const driverId = localStorage.getItem('driverId');
+            if (driverId) {
+                fetchDriver(driverId);
+            } else {
+                showLoginPage();
+            }
+        }
+        
+        function findDriverByPhone(phone) {
+            // Since we don't have a dedicated driver login endpoint,
+            // we'll fetch all drivers and find by phone
+            fetch(`${API_BASE}/api/delivery-drivers`)
+                .then(response => response.json())
+                .then(drivers => {
+                    const driver = drivers.find(d => d.phone === phone);
+                    if (driver) {
+                        currentDriver = driver;
+                        localStorage.setItem('driverId', driver._id);
+                        localStorage.setItem('driverToken', 'driver_' + driver._id); // Simple token
+                        authToken = 'driver_' + driver._id;
+                        showDriverApp();
+                    } else {
+                        showAlert('loginAlert', 'error', 'رقم الهاتف غير مسجل');
+                    }
+                })
+                .catch(error => {
+                    showAlert('loginAlert', 'error', 'خطأ في الاتصال بالخادم');
+                    console.error('Error fetching drivers:', error);
+                });
+        }
+        
+        function fetchDriver(driverId) {
+            fetch(`${API_BASE}/api/delivery-drivers`)
+                .then(response => response.json())
+                .then(drivers => {
+                    const driver = drivers.find(d => d._id === driverId);
+                    if (driver) {
+                        currentDriver = driver;
+                        showDriverApp();
+                    } else {
+                        showLoginPage();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching driver:', error);
+                    showLoginPage();
+                });
+        }
+        
+        function showLoginPage() {
+            document.getElementById('loginPage').classList.remove('hidden');
+            document.getElementById('driverApp').classList.add('hidden');
+        }
+        
+        function showDriverApp() {
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('driverApp').classList.remove('hidden');
+            
+            // Update driver info
+            document.getElementById('driverName').textContent = `مرحباً, ${currentDriver.name}`;
+            document.getElementById('driverScore').textContent = currentDriver.score;
+            
+            // Load initial data
+            loadAvailableOrders();
+        }
+        
+        function loadAvailableOrders() {
+            fetch(`${API_BASE}/api/delivery/available-orders`)
+                .then(response => response.json())
+                .then(orders => {
+                    const container = document.getElementById('availableOrdersList');
+                    container.innerHTML = '';
+                    
+                    if (orders.length === 0) {
+                        container.innerHTML = '<p>لا توجد طلبات متاحة حالياً</p>';
+                        return;
+                    }
+                    
+                    orders.forEach(order => {
+                        const orderCard = createOrderCard(order, 'available');
+                        container.appendChild(orderCard);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading available orders:', error);
+                    document.getElementById('availableOrdersList').innerHTML = '<p>خطأ في تحميل الطلبات</p>';
+                });
+        }
+        
+        function loadCurrentOrders() {
+            if (!currentDriver) return;
+            
+            fetch(`${API_BASE}/api/delivery/driver/${currentDriver._id}/orders`)
+                .then(response => response.json())
+                .then(orders => {
+                    // Filter to only current orders (not delivered)
+                    const currentOrders = orders.filter(order => 
+                        order.deliveryStatus !== 'delivered' && order.status !== 'delivered'
+                    );
+                    
+                    const container = document.getElementById('currentOrdersList');
+                    container.innerHTML = '';
+                    
+                    if (currentOrders.length === 0) {
+                        container.innerHTML = '<p>لا توجد طلبات حالية</p>';
+                        return;
+                    }
+                    
+                    currentOrders.forEach(order => {
+                        const orderCard = createOrderCard(order, 'current');
+                        container.appendChild(orderCard);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading current orders:', error);
+                    document.getElementById('currentOrdersList').innerHTML = '<p>خطأ في تحميل الطلبات</p>';
+                });
+        }
+        
+        function loadOrderHistory() {
+            if (!currentDriver) return;
+            
+            fetch(`${API_BASE}/api/delivery/driver/${currentDriver._id}/orders`)
+                .then(response => response.json())
+                .then(orders => {
+                    // Filter to only delivered orders
+                    const deliveredOrders = orders.filter(order => 
+                        order.deliveryStatus === 'delivered' || order.status === 'delivered'
+                    );
+                    
+                    const container = document.getElementById('ordersHistoryList');
+                    container.innerHTML = '';
+                    
+                    if (deliveredOrders.length === 0) {
+                        container.innerHTML = '<p>لا توجد طلبات سابقة</p>';
+                        return;
+                    }
+                    
+                    deliveredOrders.forEach(order => {
+                        const orderCard = createOrderCard(order, 'history');
+                        container.appendChild(orderCard);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading order history:', error);
+                    document.getElementById('ordersHistoryList').innerHTML = '<p>خطأ في تحميل سجل الطلبات</p>';
+                });
+        }
+        
+        function createOrderCard(order, context) {
+            const card = document.createElement('div');
+            card.className = 'order-card';
+            card.id = `order-${order._id}`;
+            
+            const statusText = {
+                'pending': 'قيد الانتظار',
+                'accepted': 'تم القبول',
+                'picked_up': 'تم الاستلام',
+                'delivered': 'تم التوصيل'
+            }[order.deliveryStatus] || order.deliveryStatus;
+            
+            const statusClass = {
+                'pending': 'status-pending',
+                'accepted': 'status-accepted',
+                'picked_up': 'status-picked_up',
+                'delivered': 'status-delivered'
+            }[order.deliveryStatus] || 'status-pending';
+            
+            let cardContent = `
+                <div class="order-header">
+                    <div class="order-number">طلب #${order.orderNumber}</div>
+                    <div class="order-status ${statusClass}">${statusText}</div>
+                </div>
+                <div class="order-details">
+                    <div class="detail-row">
+                        <div class="detail-label">المبلغ المستحق:</div>
+                        <div class="detail-value">${order.cost || 0} درهم (للمكتبة)</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">رسوم التوصيل:</div>
+                        <div class="detail-value">${order.deliveryFee || 50} درهم</div>
+                    </div>
+            `;
+            
+            if (order.deliveryStatus === 'accepted' || order.deliveryStatus === 'picked_up' || order.deliveryStatus === 'delivered') {
+                cardContent += `
+                    <div class="detail-row">
+                        <div class="detail-label">موقع المكتبة:</div>
+                        <div class="detail-value">
+                            <a href="https://maps.google.com/?q=${order.location.coordinates[1]},${order.location.coordinates[0]}" target="_blank" class="map-link">
+                                فتح في خرائط جوجل
+                            </a>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            if (order.libraryPaid && (order.deliveryStatus === 'picked_up' || order.deliveryStatus === 'delivered')) {
+                cardContent += `
+                    <div class="detail-row">
+                        <div class="detail-label">دفع المكتبة:</div>
+                        <div class="detail-value">تم الدفع ✓</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">اسم العميل:</div>
+                        <div class="detail-value">${order.parentName}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">هاتف العميل:</div>
+                        <div class="detail-value">${order.phone}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">موقع العميل:</div>
+                        <div class="detail-value">
+                            <a href="https://maps.google.com/?q=${order.location.coordinates[1]},${order.location.coordinates[0]}" target="_blank" class="map-link">
+                                فتح في خرائط جوجل
+                            </a>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            cardContent += `</div>`;
+            
+            // Add action buttons based on context and status
+            if (context === 'available') {
+                cardContent += `
+                    <button class="action-btn btn-primary" onclick="acceptOrder('${order._id}')">
+                        قبول الطلب
+                    </button>
+                `;
+            } else if (context === 'current') {
+                if (order.deliveryStatus === 'accepted') {
+                    cardContent += `
+                        <button class="action-btn btn-secondary" onclick="pickupOrder('${order._id}')">
+                            تم الاستلام من المكتبة
+                        </button>
+                    `;
+                } else if (order.deliveryStatus === 'picked_up' && !order.libraryPaid) {
+                    cardContent += `
+                        <button class="action-btn btn-accent" onclick="markLibraryPaid('${order._id}')">
+                            تم دفع المبلغ للمكتبة
+                        </button>
+                    `;
+                } else if (order.deliveryStatus === 'picked_up' && order.libraryPaid) {
+                    cardContent += `
+                        <button class="action-btn btn-primary" onclick="deliverOrder('${order._id}')">
+                            تم التوصيل للعميل
+                        </button>
+                    `;
+                }
+            }
+            
+            card.innerHTML = cardContent;
+            return card;
+        }
+        
+        function acceptOrder(orderId) {
+            if (!currentDriver) return;
+            
+            fetch(`${API_BASE}/api/delivery/orders/${orderId}/accept`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ driverId: currentDriver._id })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    alert('تم قبول الطلب بنجاح');
+                    loadAvailableOrders();
+                    loadCurrentOrders();
+                    // Switch to current orders tab
+                    document.querySelector('[data-tab="current"]').click();
+                } else {
+                    alert(data.message || 'فشل في قبول الطلب');
+                }
+            })
+            .catch(error => {
+                alert('خطأ في الاتصال بالخادم');
+                console.error('Error accepting order:', error);
+            });
+        }
+        
+        function pickupOrder(orderId) {
+            if (!currentDriver) return;
+            
+            fetch(`${API_BASE}/api/delivery/orders/${orderId}/pickup`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ driverId: currentDriver._id })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    alert('تم تسجيل استلام الطلب من المكتبة');
+                    loadCurrentOrders();
+                } else {
+                    alert(data.message || 'فشل في تحديث حالة الطلب');
+                }
+            })
+            .catch(error => {
+                alert('خطأ في الاتصال بالخادم');
+                console.error('Error updating order status:', error);
+            });
+        }
+        
+        function markLibraryPaid(orderId) {
+            if (!currentDriver) return;
+            
+            fetch(`${API_BASE}/api/delivery/orders/${orderId}/library-paid`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ driverId: currentDriver._id })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    alert('تم تسديد المبلغ للمكتبة');
+                    loadCurrentOrders();
+                } else {
+                    alert(data.message || 'فشل في تحديث حالة الدفع');
+                }
+            })
+            .catch(error => {
+                alert('خطأ في الاتصال بالخادم');
+                console.error('Error updating payment status:', error);
+            });
+        }
+        
+        function deliverOrder(orderId) {
+            if (!currentDriver) return;
+            
+            fetch(`${API_BASE}/api/delivery/orders/${orderId}/deliver`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ driverId: currentDriver._id })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    alert('تم تسليم الطلب للعميل بنجاح! تمت إضافة 10 نقاط إلى رصيدك.');
+                    currentDriver.score += 10;
+                    document.getElementById('driverScore').textContent = currentDriver.score;
+                    loadCurrentOrders();
+                    loadOrderHistory();
+                } else {
+                    alert(data.message || 'فشل في تسليم الطلب');
+                }
+            })
+            .catch(error => {
+                alert('خطأ في الاتصال بالخادم');
+                console.error('Error delivering order:', error);
+            });
+        }
+        
+        function showAlert(containerId, type, message) {
+            const alert = document.getElementById(containerId);
+            if (!alert) return;
+            
+            alert.textContent = message;
+            alert.classList.remove('hidden', 'alert-error', 'alert-success');
+            alert.classList.add(`alert-${type}`);
+            
+            // Auto hide after 5 seconds
+            setTimeout(() => {
+                alert.classList.add('hidden');
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

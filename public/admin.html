@@ -521,6 +521,7 @@
     </style>
 </head>
 <body>
+    <button id="manageDriversBtn" class="btn" style="margin-left: 10px;">إدارة المندوبين</button>
     <div id="loginPage" class="login-container">
         <h2 style="text-align: center; margin-bottom: 30px;">تسجيل الدخول إلى لوحة التحكم</h2>
         <div id="loginAlert" class="alert hidden"></div>
@@ -678,10 +679,43 @@
 </div>
   </div>
 </div>
+<div id="driversModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+  <div class="modal-content" style="background-color: #fefefe; margin: 5% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 800px; border-radius: 10px;">
+    <span class="close" style="color: #aaa; float: left; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+    <h2>إدارة مندوبي التوصيل</h2>
+    
+    <div style="margin: 20px 0;">
+      <h3>إضافة مندوب جديد</h3>
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px; align-items: end;">
+        <div>
+          <label>الاسم:</label>
+          <input type="text" id="driverName" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+        </div>
+        <div>
+          <label>رقم الهاتف:</label>
+          <input type="text" id="driverPhone" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+        </div>
+        <div>
+          <label>النقاط:</label>
+          <input type="number" id="driverScore" value="0" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+        </div>
+        <button id="addDriverBtn" style="background: var(--primary); color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; height: 36px;">
+          إضافة
+        </button>
+      </div>
+    </div>
+    
+    <div id="driversList">
+      <h3>المندوبون المسجلون</h3>
+      <div id="driversContainer"></div>
+    </div>
+  </div>
+</div>
     <script>
         let authToken = localStorage.getItem('adminToken');
         const API_BASE = window.location.origin;
         let currentOrder = null;
+        let drivers = [];
         
         // Check if user is already logged in
         if (authToken) {
@@ -794,6 +828,153 @@
     if (deliveredOrdersEl) deliveredOrdersEl.textContent = orders.filter(o => o.status === 'delivered').length;
 }
 
+document.getElementById('manageDriversBtn').addEventListener('click', openDriversModal);
+
+function openDriversModal() {
+  document.getElementById('driversModal').style.display = 'block';
+  loadDrivers();
+}
+
+function closeDriversModal() {
+  document.getElementById('driversModal').style.display = 'none';
+}
+
+function loadDrivers() {
+  fetch(`${API_BASE}/api/delivery-drivers`, {
+    headers: {
+      'Authorization': `Bearer ${authToken}`
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    drivers = data;
+    renderDrivers();
+  })
+  .catch(error => console.error('Error loading drivers:', error));
+}
+
+function renderDrivers() {
+  const container = document.getElementById('driversContainer');
+  container.innerHTML = '';
+  
+  drivers.forEach(driver => {
+    const driverElement = document.createElement('div');
+    driverElement.style.background = 'white';
+    driverElement.style.padding = '15px';
+    driverElement.style.margin = '10px 0';
+    driverElement.style.borderRadius = '5px';
+    driverElement.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
+    driverElement.style.display = 'grid';
+    driverElement.style.gridTemplateColumns = '1fr 1fr 1fr auto';
+    driverElement.style.gap = '10px';
+    driverElement.style.alignItems = 'center';
+    
+    driverElement.innerHTML = `
+      <div>
+        <strong>${driver.name}</strong>
+      </div>
+      <div>${driver.phone}</div>
+      <div>
+        <input type="number" value="${driver.score}" id="score-${driver._id}" style="width: 80px; padding: 5px; border: 1px solid #ddd; border-radius: 3px;">
+      </div>
+      <div>
+        <button onclick="updateDriver('${driver._id}')" style="background: var(--secondary); color: white; border: none; padding: 5px 10px; border-radius: 3px; margin-right: 5px; cursor: pointer;">
+          حفظ
+        </button>
+        <button onclick="deleteDriver('${driver._id}')" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">
+          حذف
+        </button>
+      </div>
+    `;
+    
+    container.appendChild(driverElement);
+  });
+}
+
+document.getElementById('addDriverBtn').addEventListener('click', function() {
+  const name = document.getElementById('driverName').value;
+  const phone = document.getElementById('driverPhone').value;
+  const score = document.getElementById('driverScore').value;
+  
+  if (!name || !phone) {
+    alert('يرجى ملء جميع الحقول');
+    return;
+  }
+  
+  fetch(`${API_BASE}/api/delivery-drivers`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${authToken}`
+    },
+    body: JSON.stringify({ name, phone, score })
+  })
+  .then(response => response.json())
+  .then(data => {
+    alert('تم إضافة المندوب بنجاح');
+    document.getElementById('driverName').value = '';
+    document.getElementById('driverPhone').value = '';
+    document.getElementById('driverScore').value = '0';
+    loadDrivers();
+  })
+  .catch(error => {
+    alert('خطأ في إضافة المندوب');
+    console.error('Error adding driver:', error);
+  });
+});
+
+function updateDriver(driverId) {
+  const score = document.getElementById(`score-${driverId}`).value;
+  
+  fetch(`${API_BASE}/api/delivery-drivers/${driverId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${authToken}`
+    },
+    body: JSON.stringify({ score: parseInt(score) })
+  })
+  .then(response => response.json())
+  .then(data => {
+    alert('تم تحديث نقاط المندوب');
+    loadDrivers();
+  })
+  .catch(error => {
+    alert('خطأ في تحديث المندوب');
+    console.error('Error updating driver:', error);
+  });
+}
+
+function deleteDriver(driverId) {
+  if (confirm('هل أنت متأكد من حذف هذا المندوب؟')) {
+    fetch(`${API_BASE}/api/delivery-drivers/${driverId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${authToken}`
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      alert('تم حذف المندوب بنجاح');
+      loadDrivers();
+    })
+    .catch(error => {
+      alert('خطأ في حذف المندوب');
+      console.error('Error deleting driver:', error);
+    });
+  }
+}
+
+// Close modals when clicking outside
+window.addEventListener('click', function(event) {
+  if (event.target.classList.contains('modal')) {
+    event.target.style.display = 'none';
+  }
+  if (event.target.classList.contains('modal')) {
+    event.target.style.display = 'none';
+  }
+});
+
 function setupEventSource() {
   const eventSource = new EventSource(`${API_BASE}/api/orders/events`, {
     headers: {
@@ -829,7 +1010,11 @@ function renderOrdersTable(orders) {
     const tr = document.createElement('tr');
     const orderId = order._id || order.id;
     const orderDate = new Date(order.createdAt).toLocaleDateString('ar-MA');
-    
+    let deliveryButton = '';
+    if (order.status === 'ready') {
+      deliveryButton = `<button class="action-btn btn-accent" data-order="${order._id}" onclick="assignForDelivery('${order._id}')">إرسال للتوصيل</button>`;
+    }
+
     tr.innerHTML = `
       <td>${order.orderNumber || orderId || 'N/A'}</td>
       <td>${order.parentName || 'غير متوفر'}</td>
@@ -844,6 +1029,7 @@ function renderOrdersTable(orders) {
   <option value="ready" ${order.status === 'ready' ? 'selected' : ''}>جاهز</option> <!-- Changed -->
   <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>تم التوصيل</option> <!-- New -->
 </select>
+    <td>${deliveryButton}</td>
       </td>
       <td>${orderDate}</td>
       <td>
@@ -859,7 +1045,28 @@ function renderOrdersTable(orders) {
     tbody.appendChild(tr);
   });
 }
-        
+
+function assignForDelivery(orderId) {
+  fetch(`${API_BASE}/api/orders/${orderId}/assign-delivery`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${authToken}`
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.message) {
+      alert('تم إرسال الطلب للمندوبين');
+      loadOrders();
+    } else {
+      alert(data.message || 'فشل في إرسال الطلب');
+    }
+  })
+  .catch(error => {
+    alert('خطأ في الاتصال بالخادم');
+    console.error('Error assigning for delivery:', error);
+  });
+}
         // Update order status
         function updateOrderStatus(orderId, status) {
             fetch(`${API_BASE}/api/orders/${orderId}/status`, {
@@ -1509,12 +1716,7 @@ document.querySelectorAll('.modal .close').forEach(closeBtn => {
 });
 document.getElementById('manageLibrariesBtn').addEventListener('click', openLibraryModal);
 
-// Close modals when clicking outside
-window.addEventListener('click', function(event) {
-  if (event.target.classList.contains('modal')) {
-    event.target.style.display = 'none';
-  }
-});
+
 
 document.getElementById('ordersTableBody').addEventListener('click', function(e) {
   // Find the button element that was clicked (or its parent if it's a child element)

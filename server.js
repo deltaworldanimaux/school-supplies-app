@@ -837,6 +837,241 @@ app.put('/api/library/orders/:id/complete', authenticateLibrary, async (req, res
   }
 });
 
+// Get all delivery drivers
+app.get('/api/delivery-drivers', authenticateAdmin, async (req, res) => {
+  try {
+    const drivers = await DeliveryDriver.find().sort({ score: -1 });
+    res.json(drivers);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching drivers', error: error.message });
+  }
+});
+
+// Create a new delivery driver
+app.post('/api/delivery-drivers', authenticateAdmin, async (req, res) => {
+  try {
+    const { name, phone, score } = req.body;
+    
+    const driver = new DeliveryDriver({
+      name,
+      phone,
+      score: score || 0
+    });
+    
+    await driver.save();
+    res.status(201).json({ message: 'Driver created successfully', driver });
+  } catch (error) {
+    res.status(500).json({ message: 'Error creating driver', error: error.message });
+  }
+});
+
+// Update a delivery driver
+app.put('/api/delivery-drivers/:id', authenticateAdmin, async (req, res) => {
+  try {
+    const { name, phone, score, isActive } = req.body;
+    
+    const driver = await DeliveryDriver.findByIdAndUpdate(
+      req.params.id,
+      { name, phone, score, isActive },
+      { new: true }
+    );
+    
+    if (!driver) {
+      return res.status(404).json({ message: 'Driver not found' });
+    }
+    
+    res.json({ message: 'Driver updated successfully', driver });
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating driver', error: error.message });
+  }
+});
+
+// Delete a delivery driver
+app.delete('/api/delivery-drivers/:id', authenticateAdmin, async (req, res) => {
+  try {
+    const driver = await DeliveryDriver.findByIdAndDelete(req.params.id);
+    
+    if (!driver) {
+      return res.status(404).json({ message: 'Driver not found' });
+    }
+    
+    res.json({ message: 'Driver deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting driver', error: error.message });
+  }
+});
+
+// Assign order for delivery (when status is 'ready')
+app.post('/api/orders/:id/assign-delivery', authenticateAdmin, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+    
+    if (order.status !== 'ready') {
+      return res.status(400).json({ message: 'Order must be ready before assigning for delivery' });
+    }
+    
+    // Update order status and broadcast to all drivers
+    order.status = 'out_for_delivery';
+    order.deliveryStatus = 'pending';
+    await order.save();
+    
+    // Broadcast to all active drivers
+    const activeDrivers = await DeliveryDriver.find({ isActive: true });
+    const deliveryMessage = `🛵 New delivery available!\nOrder: ${order.orderNumber}\nLibrary payment: ${order.cost} MAD\nDelivery fee: ${order.deliveryFee} MAD`;
+    
+    // In a real app, you would use WebSockets or push notifications here
+    // For now, we'll just log it
+    console.log('Broadcasting delivery opportunity to drivers:', activeDrivers.length);
+    
+    res.json({ message: 'Order assigned for delivery', order });
+  } catch (error) {
+    res.status(500).json({ message: 'Error assigning delivery', error: error.message });
+  }
+});
+
+// Driver accepts a delivery
+app.post('/api/delivery/orders/:id/accept', async (req, res) => {
+  try {
+    const { driverId } = req.body;
+    const order = await Order.findById(req.params.id);
+    const driver = await DeliveryDriver.findById(driverId);
+    
+    if (!order || !driver) {
+      return res.status(404).json({ message: 'Order or driver not found' });
+    }
+    
+    if (order.deliveryStatus !== 'pending') {
+      return res.status(400).json({ message: 'Order already taken' });
+    }
+    
+    if (driver.currentOrder) {
+      return res.status(400).json({ message: 'Driver already has an active order' });
+    }
+    
+    // Assign order to driver
+    order.deliveryDriver = driverId;
+    order.deliveryStatus = 'accepted';
+    driver.currentOrder = order._id;
+    
+    await order.save();
+    await driver.save();
+    
+    res.json({ message: 'Order accepted', order, driver });
+  } catch (error) {
+    res.status(500).json({ message: 'Error accepting order', error: error.message });
+  }
+});
+
+// Driver marks order as picked up from library
+app.post('/api/delivery/orders/:id/pickup', async (req, res) => {
+  try {
+    const { driverId } = req.body;
+    const order = await Order.findById(req.params.id);
+    
+    if (!order || order.deliveryDriver.toString() !== driverId) {
+      return res.status(404).json({ message: 'Order not found or not assigned to this driver' });
+    }
+    
+    if (order.deliveryStatus !== 'accepted') {
+      return res.status(400).json({ message: 'Invalid order status for pickup' });
+    }
+    
+    order.deliveryStatus = 'picked_up';
+    await order.save();
+    
+    res.json({ message: 'Order picked up', order });
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating order status', error: error.message });
+  }
+});
+
+// Driver marks library payment completed
+app.post('/api/delivery/orders/:id/library-paid', async (req, res) => {
+  try {
+    const { driverId } = req.body;
+    const order = await Order.findById(req.params.id);
+    
+    if (!order || order.deliveryDriver.toString() !== driverId) {
+      return res.status(404).json({ message: 'Order not found or not assigned to this driver' });
+    }
+    
+    if (order.deliveryStatus !== 'picked_up') {
+      return res.status(400).json({ message: 'Invalid order status for payment' });
+    }
+    
+    order.libraryPaid = true;
+    await order.save();
+    
+    res.json({ message: 'Library payment confirmed', order });
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating payment status', error: error.message });
+  }
+});
+
+// Driver marks delivery as completed
+app.post('/api/delivery/orders/:id/deliver', async (req, res) => {
+  try {
+    const { driverId } = req.body;
+    const order = await Order.findById(req.params.id);
+    const driver = await DeliveryDriver.findById(driverId);
+    
+    if (!order || order.deliveryDriver.toString() !== driverId || !driver) {
+      return res.status(404).json({ message: 'Order or driver not found' });
+    }
+    
+    if (order.deliveryStatus !== 'picked_up' || !order.libraryPaid) {
+      return res.status(400).json({ message: 'Invalid order status for delivery' });
+    }
+    
+    // Update order status
+    order.deliveryStatus = 'delivered';
+    order.status = 'delivered';
+    order.clientPaid = true;
+    
+    // Update driver score
+    driver.score += 10;
+    driver.currentOrder = null;
+    
+    await order.save();
+    await driver.save();
+    
+    res.json({ message: 'Order delivered successfully', order, driver });
+  } catch (error) {
+    res.status(500).json({ message: 'Error completing delivery', error: error.message });
+  }
+});
+
+// Get orders for a specific driver
+app.get('/api/delivery/driver/:driverId/orders', async (req, res) => {
+  try {
+    const orders = await Order.find({ 
+      deliveryDriver: req.params.driverId 
+    }).sort({ createdAt: -1 });
+    
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching driver orders', error: error.message });
+  }
+});
+
+// Get available delivery orders
+app.get('/api/delivery/available-orders', async (req, res) => {
+  try {
+    const orders = await Order.find({ 
+      status: 'out_for_delivery',
+      deliveryStatus: 'pending'
+    });
+    
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching available orders', error: error.message });
+  }
+});
+
 // Create uploads directory if it doesn't exist
 if (!fs.existsSync('uploads')) {
   fs.mkdirSync('uploads');
