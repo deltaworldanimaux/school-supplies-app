@@ -31,9 +31,14 @@ const librarySchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  plainPassword: { // Store plain password for admin viewing
+  plainPassword: {
     type: String,
     required: true
+  },
+  // Add this new field
+  telegramChatId: {
+    type: String,
+    default: null
   }
 }, {
   timestamps: true

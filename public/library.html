@@ -169,6 +169,19 @@
             background-color: var(--secondary);
             color: white;
         }
+                .toast {
+    padding: 15px 20px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    color: white;
+    background: #4CAF50;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    transition: opacity 0.3s;
+    opacity: 0;
+}
+.toast.error {
+    background: #f44336;
+}
         .status-ready {
   background-color: #d4edda;
   color: #155724;
@@ -251,7 +264,6 @@
       <select id="refuseReason" style="width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px;" required>
         <option value="">اختر السبب</option>
         <option value="المواد غير متوفرة">المواد غير متوفرة</option>
-        <option value="الموقع بعيد جداً">الموقع بعيد جداً</option>
         <option value="غير قادر على التجهيز">غير قادر على التجهيز</option>
         <option value="أسباب أخرى">أسباب أخرى</option>
       </select>
@@ -262,6 +274,7 @@
     </form>
   </div>
 </div>
+<div id="toastContainer" style="position: fixed; top: 20px; right: 20px; z-index: 1000;"></div>
     <script>
         const API_BASE = window.location.origin;
         let authToken = localStorage.getItem('libraryToken');
@@ -334,11 +347,11 @@
       loadLibraryOrders();
     });
   } else {
-    alert(data.message || 'فشل تسجيل الدخول');
+    showToast(data.message || 'فشل تسجيل الدخول');
   }
 })
             .catch(error => {
-                alert('خطأ في الاتصال بالخادم');
+                showToast('خطأ في الاتصال بالخادم');
             });
         });
         
@@ -362,7 +375,20 @@
                 console.error('Error loading orders:', error);
             });
         }
-        
+
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type === 'error' ? 'error' : ''}`;
+    toast.textContent = message;
+    document.getElementById('toastContainer').appendChild(toast);
+    
+    setTimeout(() => toast.style.opacity = 1, 10);
+    setTimeout(() => {
+        toast.style.opacity = 0;
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
 function renderLibraryOrders(orders) {
   const tbody = document.getElementById('ordersTableBody');
   tbody.innerHTML = '';
@@ -465,14 +491,14 @@ function updateOrderStatus(orderId, status, cost = null) {
     return response.json();
   })
   .then(data => {
-    alert(data.message || 'تم تحديث حالة الطلب');
+    showToast(data.message || 'تم تحديث حالة الطلب');
     if (status === 'ready') {
       generateReceipt(data.order, currentLibrary);
     }
     loadLibraryOrders();
   })
   .catch(error => {
-    alert('خطأ في تحديث حالة الطلب: ' + error.message);
+    showToast('خطأ في تحديث حالة الطلب: ' + error.message);
     console.error('Error updating order status:', error);
   });
 }
@@ -481,7 +507,7 @@ function updateOrderStatus(orderId, status, cost = null) {
 function generateReceipt(order) {
 if (!order) {
 console.error('Order data is null');
-alert('Error: Order data is missing');
+showToast('خطأ: بيانات الطلب مفقودة');
 return;
 }
 
@@ -587,11 +613,11 @@ printWindow.document.close();
     return response.json();
   })
   .then(data => {
-    alert(data.message || 'تم رفض الطلب');
+    showToast(data.message || 'تم رفض الطلب');
     loadLibraryOrders();
   })
   .catch(error => {
-    alert('خطأ في رفض الطلب: ' + error.message);
+    showToast('خطأ في رفض الطلب: ' + error.message);
     console.error('Error refusing order:', error);
   });
 }      
@@ -615,7 +641,7 @@ printWindow.document.close();
     }
   })
   .catch(error => {
-    alert('خطأ في فتح الملف');
+    showToast('خطأ في فتح الملف');
     console.error('Error viewing file:', error);
   });
 }
@@ -647,7 +673,7 @@ document.getElementById('refuseForm').addEventListener('submit', function(e) {
   const reason = document.getElementById('refuseReason').value;
   
   if (!reason) {
-    alert('يرجى اختيار سبب الرفض');
+    showToast('يرجى اختيار سبب الرفض');
     return;
   }
   
@@ -676,7 +702,7 @@ const costValue = costInput.value.trim();
 
 
 if (!costValue || isNaN(costValue) || parseFloat(costValue) < 0) {
-alert('يرجى إدخال تكلفة صحيحة');
+showToast('يرجى إدخال تكلفة صحيحة');
 costInput.focus();
 return;
 }

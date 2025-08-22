@@ -23,7 +23,41 @@ const TelegramBot = require('node-telegram-bot-api');
 const TELEGRAM_BOT_TOKEN = '8282280616:AAEILrAJbJ_HnSjPO01HENUYrMHNuoU4cTs';
 const TELEGRAM_CHAT_ID = '7779679746';
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, {polling: false});
-
+bot.on('message', async (msg) => {
+  const chatId = msg.chat.id;
+  const text = msg.text;
+  
+  if (text === '/start') {
+    bot.sendMessage(chatId, 'مرحباً! لإعداد إشعارات الطلبات، يرجى إرسال اسم المستخدم الخاص بمكتبتك وكلمة المرور بالشكل التالي:\n\n/register username password');
+  } else if (text.startsWith('/register')) {
+    const parts = text.split(' ');
+    if (parts.length !== 3) {
+      bot.sendMessage(chatId, 'صيغة غير صحيحة. يرجى استخدام: /register username password');
+      return;
+    }
+    
+    const username = parts[1];
+    const password = parts[2];
+    
+    try {
+      const library = await Library.findOne({ username });
+      
+      if (!library || !(await bcrypt.compare(password, library.password))) {
+        bot.sendMessage(chatId, 'بيانات الاعتماد غير صحيحة. يرجى التحقق من اسم المستخدم وكلمة المرور.');
+        return;
+      }
+      
+      // Update library with Telegram chat ID
+      library.telegramChatId = chatId;
+      await library.save();
+      
+      bot.sendMessage(chatId, `تم ربط حساب المكتبة "${library.name}" برقم الدردشة هذا بنجاح! ستتلقى الآن إشعارات عند تعيين طلبات جديدة لك.`);
+    } catch (error) {
+      console.error('Telegram registration error:', error);
+      bot.sendMessage(chatId, 'حدث خطأ أثناء المعالجة. يرجى المحاولة مرة أخرى لاحقاً.');
+    }
+  }
+});
 
 // Function to send Telegram notification
 async function sendTelegramNotification(message) {
@@ -420,7 +454,7 @@ app.post('/api/admin/change-password', authenticateAdmin, async (req, res) => {
 // Library creation endpoint
 app.post('/api/libraries', authenticateAdmin, async (req, res) => {
   try {
-    const { name, phone, latitude, longitude, username, password } = req.body;
+    const { name, phone, latitude, longitude, username, password, telegramChatId } = req.body;
     
     const hashedPassword = await bcrypt.hash(password, 12);
     
@@ -433,7 +467,8 @@ app.post('/api/libraries', authenticateAdmin, async (req, res) => {
       },
       username,
       password: hashedPassword,
-      plainPassword: password // Store plain password
+      plainPassword: password,
+      telegramChatId: telegramChatId || null
     });
     
     await library.save();
@@ -445,7 +480,8 @@ app.post('/api/libraries', authenticateAdmin, async (req, res) => {
         name: library.name,
         phone: library.phone,
         username: library.username,
-        plainPassword: library.plainPassword
+        plainPassword: library.plainPassword,
+        telegramChatId: library.telegramChatId
       }
     });
   } catch (error) {
@@ -479,6 +515,13 @@ app.post('/api/library/login', async (req, res) => {
 app.post('/api/orders/:id/assign', authenticateAdmin, async (req, res) => {
   try {
     const { libraryId } = req.body;
+    
+    // Get the library details
+    const library = await Library.findById(libraryId);
+    if (!library) {
+      return res.status(404).json({ message: 'Library not found' });
+    }
+    
     const order = await Order.findByIdAndUpdate(
       req.params.id,
       { 
@@ -487,6 +530,22 @@ app.post('/api/orders/:id/assign', authenticateAdmin, async (req, res) => {
       },
       { new: true }
     );
+    
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+    
+    // Send Telegram notification to the library if they have a chat ID
+    if (library.telegramChatId) {
+      try {
+        const message = `🆕 New Order Assigned!\nOrder Number: ${order.orderNumber}\nParent: ${order.parentName}\nStudent: ${order.studentName}\nGrade: ${order.grade}`;
+        await bot.sendMessage(library.telegramChatId, message);
+        console.log('Telegram notification sent to library');
+      } catch (telegramError) {
+        console.error('Error sending Telegram notification to library:', telegramError);
+        // Don't fail the request if Telegram notification fails
+      }
+    }
     
     res.json({ message: 'Order assigned to library', order });
   } catch (error) {
@@ -552,7 +611,7 @@ app.get('/api/libraries', authenticateAdmin, async (req, res) => {
 
 app.put('/api/libraries/:id', authenticateAdmin, async (req, res) => {
   try {
-    const { name, phone, latitude, longitude, username, password } = req.body;
+    const { name, phone, latitude, longitude, username, password, telegramChatId } = req.body;
     
     const updateData = {
       name,
@@ -561,7 +620,8 @@ app.put('/api/libraries/:id', authenticateAdmin, async (req, res) => {
         type: 'Point',
         coordinates: [parseFloat(longitude), parseFloat(latitude)]
       },
-      username
+      username,
+      telegramChatId: telegramChatId || null
     };
     
     if (password) {
