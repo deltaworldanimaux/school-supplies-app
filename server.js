@@ -19,64 +19,68 @@ app.use('/uploads', express.static('uploads'));
 // MongoDB Connection
 const MONGODB_URI = "mongodb+srv://deltaworldanimaux:SYQ0SLzI97c73EKS@supply.v7ebphf.mongodb.net/school_supplies?retryWrites=true&w=majority&appName=supply";
 let clients = [];
+// MongoDB Models
+const Order = require('./models/Order');
+const Admin = require('./models/Admin');
+const Library = require('./models/Library');
+
 const TelegramBot = require('node-telegram-bot-api');
 const TELEGRAM_BOT_TOKEN = '8282280616:AAEILrAJbJ_HnSjPO01HENUYrMHNuoU4cTs';
 const TELEGRAM_CHAT_ID = '7779679746';
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, {polling: false});
 bot.on('message', async (msg) => {
-  const chatId = msg.chat.id;
-  const text = msg.text;
-  
-  if (text === '/start') {
-    bot.sendMessage(chatId, 'مرحباً! لإعداد إشعارات الطلبات، يرجى إرسال:\n\n/register [اسم المستخدم] [كلمة المرور]\n\nمثال:\n/register test 10102010');
-  } else if (text.startsWith('/register')) {
-    const parts = text.split(' ');
-    if (parts.length < 3) {
-      bot.sendMessage(chatId, '❌ صيغة غير صحيحة. يرجى استخدام:\n/register username password');
-      return;
-    }
-    
-    const username = parts[1];
-    const password = parts.slice(2).join(' '); // Allow for passwords with spaces
-    
-    try {
-      const library = await Library.findOne({ username });
-      
-      if (!library) {
-        bot.sendMessage(chatId, '❌ اسم المستخدم غير صحيح');
-        return;
-      }
-      
-      const isPasswordValid = await bcrypt.compare(password, library.password);
-      if (!isPasswordValid) {
-        bot.sendMessage(chatId, '❌ كلمة المرور غير صحيحة');
-        return;
-      }
-      
-      // Update library with Telegram chat ID
-      library.telegramChatId = chatId;
-      await library.save();
-      
-      bot.sendMessage(chatId, `✅ تم ربط حساب المكتبة "${library.name}" بنجاح!\n\nستتلقى الآن إشعارات عند تعيين طلبات جديدة لك.`);
-    } catch (error) {
-      console.error('Telegram registration error:', error);
-      bot.sendMessage(chatId, '❌ حدث خطأ أثناء المعالجة. يرجى المحاولة مرة أخرى لاحقاً.');
-    }
-  } else {
-    bot.sendMessage(chatId, '⚠️ أمر غير معروف. يرجى استخدام /start للبدء');
-  }
+const chatId = msg.chat.id;
+const text = msg.text;
+
+
+if (text === '/start') {
+return bot.sendMessage(chatId, 'مرحباً! استخدم\n/register [username] [password]');
+}
+
+
+if (text.startsWith('/register')) {
+const [ , username, ...passParts ] = text.split(' ');
+const password = passParts.join(' ');
+
+
+if (!username || !password) {
+return bot.sendMessage(chatId, '❌ الصيغة غير صحيحة. استخدم: /register username password');
+}
+
+
+try {
+const library = await Library.findOne({ username });
+if (!library) return bot.sendMessage(chatId, '❌ اسم المستخدم غير صحيح');
+
+
+const valid = await bcrypt.compare(password, library.password);
+if (!valid) return bot.sendMessage(chatId, '❌ كلمة المرور غير صحيحة');
+
+
+library.telegramChatId = chatId;
+await library.save();
+
+
+return bot.sendMessage(chatId, `✅ تم ربط المكتبة: ${library.name}`);
+} catch (err) {
+console.error('Telegram register error:', err);
+return bot.sendMessage(chatId, '⚠️ خطأ داخلي، حاول لاحقاً');
+}
+}
+
+
+bot.sendMessage(chatId, '⚠️ أمر غير معروف. استخدم /start للبدء');
 });
 
 async function sendLibraryNotification(libraryId, message) {
-  try {
-    const library = await Library.findById(libraryId);
-    if (library && library.telegramChatId) {
-      await bot.sendMessage(library.telegramChatId, message);
-      console.log('Telegram notification sent to library');
-    }
-  } catch (error) {
-    console.error('Error sending Telegram notification to library:', error);
-  }
+try {
+const library = await Library.findById(libraryId);
+if (library?.telegramChatId) {
+await bot.sendMessage(library.telegramChatId, message);
+}
+} catch (err) {
+console.error('Error sending library notification:', err);
+}
 }
 // Function to send Telegram notification
 async function sendTelegramNotification(message) {
@@ -99,10 +103,7 @@ mongoose.connect(MONGODB_URI, {
   process.exit(1); // Exit the process if connection fails
 });
 
-// MongoDB Models
-const Order = require('./models/Order');
-const Admin = require('./models/Admin');
-const Library = require('./models/Library');
+
 
 // File upload configuration
 const storage = multer.diskStorage({
@@ -557,8 +558,7 @@ app.post('/api/orders/:id/assign', authenticateAdmin, async (req, res) => {
     // Send Telegram notification to the library if they have a chat ID
     if (library.telegramChatId) {
       try {
-        const message = `🆕 New Order Assigned!\nOrder Number: ${order.orderNumber}\nParent: ${order.parentName}\nStudent: ${order.studentName}\nGrade: ${order.grade}`;
-        await bot.sendMessage(library.telegramChatId, message);
+        await sendLibraryNotification(libraryId, `🆕 New Order Assigned!\nOrder Number: ${order.orderNumber}\nParent: ${order.parentName}\nStudent: ${order.studentName}\nGrade: ${order.grade}`);
         console.log('Telegram notification sent to library');
       } catch (telegramError) {
         console.error('Error sending Telegram notification to library:', telegramError);
