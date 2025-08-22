@@ -840,7 +840,8 @@ function setupEventSource() {
   </td>
 `;
 
-                
+// After appending the row to tbody, call:
+addAssignButtonToOrders();
                 tbody.appendChild(tr);
             });
             
@@ -1251,7 +1252,7 @@ function deleteLibrary(libraryId) {
   }
 }
 // Create new library
-document.getElementById('createLibraryBtn').addEventListener('click', function() {
+document.getElementById('saveLibraryBtn').addEventListener('click', function() {
     const name = document.getElementById('libraryName').value;
     const phone = document.getElementById('libraryPhone').value;
     const username = document.getElementById('libraryUsername').value;
@@ -1440,7 +1441,15 @@ document.querySelectorAll('.modal .close').forEach(closeBtn => {
     this.closest('.modal').style.display = 'none';
   });
 });
-
+document.getElementById('manageLibrariesBtn').addEventListener('click', openLibraryModal);
+function addAssignButtonToOrders() {
+  // Add event listeners for assign buttons
+  document.querySelectorAll('.assign-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      openAssignOrderModal(this.dataset.order);
+    });
+  });
+}
 // Close modals when clicking outside
 window.addEventListener('click', function(event) {
   if (event.target.classList.contains('modal')) {
