@@ -300,6 +300,11 @@ app.put('/api/orders/:id/status', authenticateAdmin, async (req, res) => {
 // Get order by ID (admin only)
 app.get('/api/orders/:id', authenticateAdmin, async (req, res) => {
   try {
+    // Check if the ID is a valid ObjectId
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: 'Invalid order ID format' });
+    }
+    
     const order = await Order.findById(req.params.id);
     
     if (!order) {
@@ -316,15 +321,20 @@ app.get('/api/orders/:id', authenticateAdmin, async (req, res) => {
 // Delete order (admin only)
 app.delete('/api/orders/:id', authenticateAdmin, async (req, res) => {
   try {
+    // Check if the ID is a valid ObjectId
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: 'Invalid order ID format' });
+    }
+    
     const order = await Order.findByIdAndDelete(req.params.id);
     
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
     
-    // Delete associated file if exists
-    if (order.suppliesList) {
-      fs.unlink(path.join(__dirname, 'uploads', order.suppliesList), (err) => {
+    // Delete associated file only if it exists locally (not ImgBB URL)
+    if (order.suppliesList && !order.suppliesList.startsWith('http')) {
+      fs.unlink(path.join(__dirname, order.suppliesList), (err) => {
         if (err) console.error('Error deleting file:', err);
       });
     }

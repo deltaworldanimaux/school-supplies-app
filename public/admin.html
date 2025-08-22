@@ -799,52 +799,50 @@ function setupEventSource() {
   };
 }
         // Render orders table
-        function renderOrdersTable(orders) {
-            const tbody = document.getElementById('ordersTableBody');
-            if (!tbody) return;
-            
-            tbody.innerHTML = '';
-            
-            if (orders.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">لا توجد طلبات</td></tr>';
-                return;
-            }
-            
-            orders.forEach(order => {
-                const tr = document.createElement('tr');
-                
-                // Format date
-                const orderDate = new Date(order.createdAt).toLocaleDateString('ar-MA');
-                
-                tr.innerHTML = `
-  <td>${order.orderNumber || order._id || 'N/A'}</td>
-  <td>${order.parentName || 'غير متوفر'}</td>
-  <td>${order.studentName || 'غير متوفر'}</td>
-  <td>${order.phone || 'غير متوفر'}</td>
-  <td>${order.grade || 'غير متوفر'}</td>
-  <td>
-    <select class="status-select" data-order="${order._id || order.id}">
-      <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>قيد المعالجة</option>
-      <option value="confirmed" ${order.status === 'confirmed' ? 'selected' : ''}>تم التأكيد</option>
-      <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>قيد التجهيز</option>
-      <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>تم التوصيل</option>
-    </select>
-  </td>
-  <td>${orderDate}</td>
-  <td>
-    <button class="action-btn view-btn" data-order="${order._id || order.id}">عرض</button>
-${order.assignedTo ? 
-  '<button class="action-btn assigned-btn" style="background-color: #28ba0b; cursor: default;" disabled>تم الإرسال</button>' : 
-  '<button class="action-btn assign-btn" data-order="${order._id || order.id}">تعيين إلى مكتبة</button>'
-}
-<button class="action-btn delete-btn" data-order="${order._id || order.id}">حذف</button>
-  </td>
-`;
-
-// After appending the row to tbody, call:
-                tbody.appendChild(tr);
-            });
+function renderOrdersTable(orders) {
+  const tbody = document.getElementById('ordersTableBody');
+  if (!tbody) return;
+  
+  tbody.innerHTML = '';
+  
+  if (orders.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">لا توجد طلبات</td></tr>';
+    return;
+  }
+  
+  orders.forEach(order => {
+    const tr = document.createElement('tr');
+    const orderId = order._id || order.id;
+    const orderDate = new Date(order.createdAt).toLocaleDateString('ar-MA');
+    
+    tr.innerHTML = `
+      <td>${order.orderNumber || orderId || 'N/A'}</td>
+      <td>${order.parentName || 'غير متوفر'}</td>
+      <td>${order.studentName || 'غير متوفر'}</td>
+      <td>${order.phone || 'غير متوفر'}</td>
+      <td>${order.grade || 'غير متوفر'}</td>
+      <td>
+        <select class="status-select" data-order="${orderId}">
+          <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>قيد المعالجة</option>
+          <option value="confirmed" ${order.status === 'confirmed' ? 'selected' : ''}>تم التأكيد</option>
+          <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>قيد التجهيز</option>
+          <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>تم التوصيل</option>
+        </select>
+      </td>
+      <td>${orderDate}</td>
+      <td>
+        <button class="action-btn view-btn" data-order="${orderId}">عرض</button>
+        ${order.assignedTo ? 
+          '<button class="action-btn assigned-btn" style="background-color: #28ba0b; cursor: default;" disabled>تم الإرسال</button>' : 
+          `<button class="action-btn assign-btn" data-order="${orderId}">تعيين إلى مكتبة</button>`
         }
+        <button class="action-btn delete-btn" data-order="${orderId}">حذف</button>
+      </td>
+    `;
+    
+    tbody.appendChild(tr);
+  });
+}
         
         // Update order status
         function updateOrderStatus(orderId, status) {
@@ -1339,28 +1337,7 @@ function openAssignOrderModal(orderId) {
   
   if (!order) {
     console.error('Order not found in allOrders:', orderId);
-    // Try to fetch the order directly from the server as a fallback
-    fetch(`${API_BASE}/api/orders/${orderId}`, {
-      headers: {
-        'Authorization': `Bearer ${authToken}`
-      }
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      return response.json();
-    })
-    .then(order => {
-      currentOrderIdForAssign = orderId;
-      document.getElementById('assignOrderModal').style.display = 'block';
-      document.getElementById('assignOrderNumber').textContent = order.orderNumber || order._id || 'N/A';
-      loadLibrariesForAssign();
-    })
-    .catch(error => {
-      console.error('Error fetching order:', error);
-      alert('تعذر العثور على الطلب. يرجى تحديث الصفحة والمحاولة مرة أخرى.');
-    });
+    alert('تعذر العثور على الطلب. يرجى تحديث الصفحة والمحاولة مرة أخرى.');
     return;
   }
   
@@ -1369,7 +1346,6 @@ function openAssignOrderModal(orderId) {
   document.getElementById('assignOrderNumber').textContent = order.orderNumber || order._id || 'N/A';
   loadLibrariesForAssign();
 }
-
 // Close assign order modal
 function closeAssignOrderModal() {
   document.getElementById('assignOrderModal').style.display = 'none';
