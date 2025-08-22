@@ -134,7 +134,10 @@
             background-color: var(--secondary);
             color: white;
         }
-        
+        .status-ready {
+  background-color: #d4edda;
+  color: #155724;
+}
         .complete-btn {
             background-color: var(--primary);
             color: white;
@@ -285,19 +288,21 @@
     const tr = document.createElement('tr');
     
     tr.innerHTML = `
-      <td>${order.orderNumber || order._id}</td>
-      <td>${order.parentName || 'غير متوفر'}</td>
-      <td>${order.studentName || 'غير متوفر'}</td>
-      <td>${order.grade || 'غير متوفر'}</td>
-      <td>${getStatusText(order.status)}</td>
-      <td>
-        ${order.status === 'confirmed' ? 
-          `<button class="action-btn receive-btn" data-order="${order._id}">استلام الطلب</button>` : ''}
-        ${order.status === 'processing' ? 
-          `<button class="action-btn complete-btn" data-order="${order._id}">تم التوصيل</button>` : ''}
-        <button class="action-btn view-btn" data-order="${order._id}">عرض الملف</button>
-      </td>
-    `;
+  <td>${order.orderNumber || order._id}</td>
+  <td>${order.parentName || 'غير متوفر'}</td>
+  <td>${order.studentName || 'غير متوفر'}</td>
+  <td>${order.grade || 'غير متوفر'}</td>
+  <td>${getStatusText(order.status)}</td>
+  <td>
+    ${order.status === 'confirmed' ? 
+      `<button class="action-btn receive-btn" data-order="${order._id}">استلام الطلب</button>` : ''}
+    ${order.status === 'processing' ? 
+      `<button class="action-btn ready-btn" data-order="${order._id}">تم التجهيز</button>` : ''} <!-- Changed from complete-btn -->
+    ${order.status === 'ready' ? 
+      `<button class="action-btn deliver-btn" data-order="${order._id}">تم التوصيل</button>` : ''} <!-- New button -->
+    <button class="action-btn view-btn" data-order="${order._id}">عرض الملف</button>
+  </td>
+`;
     
     tbody.appendChild(tr);
   });
@@ -323,7 +328,14 @@
         }
         
 function updateOrderStatus(orderId, status) {
-  const endpoint = status === 'processing' ? 'receive' : 'complete';
+  let endpoint;
+  if (status === 'processing') {
+    endpoint = 'receive';
+  } else if (status === 'ready') {
+    endpoint = 'complete';
+  } else if (status === 'delivered') {
+    endpoint = 'deliver'; // New endpoint
+  }
   
   fetch(`${API_BASE}/api/library/orders/${orderId}/${endpoint}`, {
     method: 'PUT',
@@ -383,6 +395,17 @@ function updateOrderStatus(orderId, status) {
     default: return status;
   }
 }
+document.querySelectorAll('.ready-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    updateOrderStatus(this.dataset.order, 'ready'); // Changed from 'delivered'
+  });
+});
+
+document.querySelectorAll('.deliver-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    updateOrderStatus(this.dataset.order, 'delivered'); // New endpoint
+  });
+});
     </script>
 </body>
 </html>

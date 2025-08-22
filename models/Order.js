@@ -18,7 +18,11 @@ const orderSchema = new mongoose.Schema({
     }
   },
   suppliesList: { type: String, required: true },
-  status: { type: String, default: 'pending' },
+  status: { 
+  type: String, 
+  default: 'pending',
+  enum: ['pending', 'confirmed', 'processing', 'ready', 'delivered'] // Add 'ready' and keep 'delivered'
+},
   orderNumber: { type: String, required: true, unique: true },
   assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'Library' } // Fixed the colon here
 }, {

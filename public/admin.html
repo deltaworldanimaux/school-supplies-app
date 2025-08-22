@@ -563,12 +563,13 @@
             </div>
 <div class="filters" style="margin-bottom: 20px; display: flex; gap: 10px; align-items: center;">
     <select id="statusFilter">
-        <option value="">جميع الحالات</option>
-        <option value="pending">قيد المعالجة</option>
-        <option value="confirmed">تم التأكيد</option>
-        <option value="processing">قيد التجهيز</option>
-        <option value="delivered">تم التوصيل</option>
-    </select>
+  <option value="">جميع الحالات</option>
+  <option value="pending">قيد المعالجة</option>
+  <option value="confirmed">تم التأكيد</option>
+  <option value="processing">قيد التجهيز</option>
+  <option value="ready">جاهز</option> 
+  <option value="delivered">تم التوصيل</option> <!-- New status -->
+</select>
     <input type="text" id="searchInput" placeholder="بحث باسم ولي الأمر أو التلميذ">
     <button id="applyFilters">تطبيق</button>
 </div>
@@ -823,11 +824,12 @@ function renderOrdersTable(orders) {
       <td>${order.grade || 'غير متوفر'}</td>
       <td>
         <select class="status-select" data-order="${orderId}">
-          <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>قيد المعالجة</option>
-          <option value="confirmed" ${order.status === 'confirmed' ? 'selected' : ''}>تم التأكيد</option>
-          <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>قيد التجهيز</option>
-          <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>تم التوصيل</option>
-        </select>
+  <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>قيد المعالجة</option>
+  <option value="confirmed" ${order.status === 'confirmed' ? 'selected' : ''}>تم التأكيد</option>
+  <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>قيد التجهيز</option>
+  <option value="ready" ${order.status === 'ready' ? 'selected' : ''}>جاهز</option> <!-- Changed -->
+  <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>تم التوصيل</option> <!-- New -->
+</select>
       </td>
       <td>${orderDate}</td>
       <td>
@@ -1022,25 +1024,27 @@ function renderOrdersTable(orders) {
         
         // Helper function to get status class
         function getStatusClass(status) {
-            switch(status) {
-                case 'pending': return 'status-pending';
-                case 'confirmed': return 'status-confirmed';
-                case 'processing': return 'status-processing';
-                case 'delivered': return 'status-delivered';
-                default: return 'status-pending';
-            }
-        }
+  switch(status) {
+    case 'pending': return 'status-pending';
+    case 'confirmed': return 'status-confirmed';
+    case 'processing': return 'status-processing';
+    case 'ready': return 'status-ready'; // New class
+    case 'delivered': return 'status-delivered'; // Changed class
+    default: return 'status-pending';
+  }
+}
         
         // Helper function to get status text
         function getStatusText(status) {
-            switch(status) {
-                case 'pending': return 'قيد المعالجة';
-                case 'confirmed': return 'تم التأكيد';
-                case 'processing': return 'قيد التجهيز';
-                case 'delivered': return 'تم التوصيل';
-                default: return 'قيد المعالجة';
-            }
-        }
+  switch(status) {
+    case 'pending': return 'قيد المعالجة';
+    case 'confirmed': return 'تم التأكيد';
+    case 'processing': return 'قيد التجهيز';
+    case 'ready': return 'جاهز'; // Changed
+    case 'delivered': return 'تم التوصيل'; // New
+    default: return status;
+  }
+}
         
         // Show alert message
         function showAlert(containerId, type, message) {

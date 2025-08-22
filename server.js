@@ -281,6 +281,11 @@ app.get('/api/orders', authenticateAdmin, async (req, res) => {
 app.put('/api/orders/:id/status', authenticateAdmin, async (req, res) => {
   try {
     const { status } = req.body;
+    // Add validation for new status values
+    const validStatuses = ['pending', 'confirmed', 'processing', 'ready', 'delivered'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ message: 'Invalid status' });
+    }
     const order = await Order.findByIdAndUpdate(
       req.params.id,
       { status },
@@ -601,12 +606,25 @@ app.put('/api/library/orders/:id/receive', authenticateLibrary, async (req, res)
   }
 });
 
+app.put('/api/library/orders/:id/deliver', authenticateLibrary, async (req, res) => {
+  try {
+    const order = await Order.findOneAndUpdate(
+      { _id: req.params.id, assignedTo: req.library._id },
+      { status: 'delivered' },
+      { new: true }
+    );
+    
+    res.json({ message: 'Order delivered', order });
+  } catch (error) {
+    res.status(500).json({ message: 'Error delivering order', error: error.message });
+  }
+});
 // Mark order as completed
 app.put('/api/library/orders/:id/complete', authenticateLibrary, async (req, res) => {
   try {
     const order = await Order.findOneAndUpdate(
       { _id: req.params.id, assignedTo: req.library._id },
-      { status: 'delivered' },
+      { status: 'ready' }, // Change from 'delivered' to 'ready'
       { new: true }
     );
     
