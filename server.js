@@ -632,20 +632,27 @@ app.put('/api/library/orders/:id/complete', authenticateLibrary, async (req, res
     const { cost } = req.body;
     
     const order = await Order.findOneAndUpdate(
-      { _id: req.params.id, assignedTo: req.library._id },
+      { 
+        _id: req.params.id, 
+        assignedTo: req.library._id,
+        status: 'processing' // Ensure order is in correct state
+      },
       { 
         status: 'ready',
-        cost: parseFloat(cost) // Add cost to order
+        cost: parseFloat(cost)
       },
       { new: true }
-    );
-    
+    ).populate('assignedTo', 'name phone'); // Populate library info
+
     if (!order) {
-      return res.status(404).json({ message: 'Order not found or not assigned to this library' });
+      return res.status(404).json({ 
+        message: 'Order not found, not assigned to this library, or not in processing status' 
+      });
     }
-    
+
     res.json({ message: 'Order completed', order });
   } catch (error) {
+    console.error('Complete order error:', error);
     res.status(500).json({ message: 'Error completing order', error: error.message });
   }
 });
