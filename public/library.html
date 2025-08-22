@@ -275,7 +275,7 @@
             });
         }
         
-        function renderLibraryOrders(orders) {
+function renderLibraryOrders(orders) {
   const tbody = document.getElementById('ordersTableBody');
   tbody.innerHTML = '';
   
@@ -288,45 +288,57 @@
     const tr = document.createElement('tr');
     
     tr.innerHTML = `
-  <td>${order.orderNumber || order._id}</td>
-  <td>${order.parentName || 'غير متوفر'}</td>
-  <td>${order.studentName || 'غير متوفر'}</td>
-  <td>${order.grade || 'غير متوفر'}</td>
-  <td>${getStatusText(order.status)}</td>
-  <td>
-    ${order.status === 'confirmed' ? 
-      `<button class="action-btn receive-btn" data-order="${order._id}">استلام الطلب</button>` : ''}
-    ${order.status === 'processing' ? 
-      `<button class="action-btn ready-btn" data-order="${order._id}">تم التجهيز</button>` : ''} <!-- Changed from complete-btn -->
-    ${order.status === 'ready' ? 
-      `<button class="action-btn deliver-btn" data-order="${order._id}">تم التوصيل</button>` : ''} <!-- New button -->
-    <button class="action-btn view-btn" data-order="${order._id}">عرض الملف</button>
-  </td>
-`;
+      <td>${order.orderNumber || order._id}</td>
+      <td>${order.parentName || 'غير متوفر'}</td>
+      <td>${order.studentName || 'غير متوفر'}</td>
+      <td>${order.grade || 'غير متوفر'}</td>
+      <td>${getStatusText(order.status)}</td>
+      <td>
+        ${order.status === 'confirmed' ? 
+          `<button class="action-btn receive-btn" data-order="${order._id}">استلام الطلب</button>` : ''}
+        ${order.status === 'processing' ? 
+          `<button class="action-btn ready-btn" data-order="${order._id}">تم التجهيز</button>` : ''}
+        ${order.status === 'ready' ? 
+          `<button class="action-btn deliver-btn" data-order="${order._id}">تم التوصيل</button>` : ''}
+        <button class="action-btn view-btn" data-order="${order._id}">عرض الملف</button>
+      </td>
+    `;
     
     tbody.appendChild(tr);
   });
-            
-            // Add event listeners
-             document.querySelectorAll('.receive-btn').forEach(btn => {
+  
+  // Add event listeners to all buttons
+  attachEventListeners();
+}
+function attachEventListeners() {
+  // Receive button
+  document.querySelectorAll('.receive-btn').forEach(btn => {
     btn.addEventListener('click', function() {
       updateOrderStatus(this.dataset.order, 'processing');
     });
   });
   
-  document.querySelectorAll('.complete-btn').forEach(btn => {
+  // Ready button (تم التجهيز)
+  document.querySelectorAll('.ready-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      updateOrderStatus(this.dataset.order, 'ready');
+    });
+  });
+  
+  // Deliver button
+  document.querySelectorAll('.deliver-btn').forEach(btn => {
     btn.addEventListener('click', function() {
       updateOrderStatus(this.dataset.order, 'delivered');
     });
   });
   
+  // View button
   document.querySelectorAll('.view-btn').forEach(btn => {
     btn.addEventListener('click', function() {
       viewOrderFile(this.dataset.order);
     });
   });
-        }
-        
+}     
 function updateOrderStatus(orderId, status) {
   let endpoint;
   if (status === 'processing') {
@@ -395,17 +407,7 @@ function updateOrderStatus(orderId, status) {
     default: return status;
   }
 }
-document.querySelectorAll('.ready-btn').forEach(btn => {
-  btn.addEventListener('click', function() {
-    updateOrderStatus(this.dataset.order, 'ready');
-  });
-});
 
-document.querySelectorAll('.deliver-btn').forEach(btn => {
-  btn.addEventListener('click', function() {
-    updateOrderStatus(this.dataset.order, 'delivered'); // New endpoint
-  });
-});
     </script>
 </body>
 </html>
