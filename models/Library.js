@@ -35,7 +35,6 @@ const librarySchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  // Add this new field
   telegramChatId: {
     type: String,
     default: null

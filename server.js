@@ -28,22 +28,28 @@ bot.on('message', async (msg) => {
   const text = msg.text;
   
   if (text === '/start') {
-    bot.sendMessage(chatId, 'مرحباً! لإعداد إشعارات الطلبات، يرجى إرسال اسم المستخدم الخاص بمكتبتك وكلمة المرور بالشكل التالي:\n\n/register username password');
+    bot.sendMessage(chatId, 'مرحباً! لإعداد إشعارات الطلبات، يرجى إرسال:\n\n/register [اسم المستخدم] [كلمة المرور]\n\nمثال:\n/register test 10102010');
   } else if (text.startsWith('/register')) {
     const parts = text.split(' ');
-    if (parts.length !== 3) {
-      bot.sendMessage(chatId, 'صيغة غير صحيحة. يرجى استخدام: /register username password');
+    if (parts.length < 3) {
+      bot.sendMessage(chatId, '❌ صيغة غير صحيحة. يرجى استخدام:\n/register username password');
       return;
     }
     
     const username = parts[1];
-    const password = parts[2];
+    const password = parts.slice(2).join(' '); // Allow for passwords with spaces
     
     try {
       const library = await Library.findOne({ username });
       
-      if (!library || !(await bcrypt.compare(password, library.password))) {
-        bot.sendMessage(chatId, 'بيانات الاعتماد غير صحيحة. يرجى التحقق من اسم المستخدم وكلمة المرور.');
+      if (!library) {
+        bot.sendMessage(chatId, '❌ اسم المستخدم غير صحيح');
+        return;
+      }
+      
+      const isPasswordValid = await bcrypt.compare(password, library.password);
+      if (!isPasswordValid) {
+        bot.sendMessage(chatId, '❌ كلمة المرور غير صحيحة');
         return;
       }
       
@@ -51,11 +57,13 @@ bot.on('message', async (msg) => {
       library.telegramChatId = chatId;
       await library.save();
       
-      bot.sendMessage(chatId, `تم ربط حساب المكتبة "${library.name}" برقم الدردشة هذا بنجاح! ستتلقى الآن إشعارات عند تعيين طلبات جديدة لك.`);
+      bot.sendMessage(chatId, `✅ تم ربط حساب المكتبة "${library.name}" بنجاح!\n\nستتلقى الآن إشعارات عند تعيين طلبات جديدة لك.`);
     } catch (error) {
       console.error('Telegram registration error:', error);
-      bot.sendMessage(chatId, 'حدث خطأ أثناء المعالجة. يرجى المحاولة مرة أخرى لاحقاً.');
+      bot.sendMessage(chatId, '❌ حدث خطأ أثناء المعالجة. يرجى المحاولة مرة أخرى لاحقاً.');
     }
+  } else {
+    bot.sendMessage(chatId, '⚠️ أمر غير معروف. يرجى استخدام /start للبدء');
   }
 });
 
