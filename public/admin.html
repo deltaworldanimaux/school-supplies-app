@@ -833,13 +833,15 @@ function setupEventSource() {
   <td>${orderDate}</td>
   <td>
     <button class="action-btn view-btn" data-order="${order._id || order.id}">عرض</button>
-    <button class="action-btn assign-btn" data-order="${order._id || order.id}">تعيين إلى مكتبة</button>
-    <button class="action-btn delete-btn" data-order="${order._id || order.id}">حذف</button>
+${order.assignedTo ? 
+  '<button class="action-btn assigned-btn" style="background-color: #6c757d; cursor: default;" disabled>تم الإرسال</button>' : 
+  '<button class="action-btn assign-btn" data-order="${order._id || order.id}">تعيين إلى مكتبة</button>'
+}
+<button class="action-btn delete-btn" data-order="${order._id || order.id}">حذف</button>
   </td>
 `;
 
 // After appending the row to tbody, call:
-addAssignButtonToOrders();
                 tbody.appendChild(tr);
             });
         }
@@ -1419,14 +1421,7 @@ document.querySelectorAll('.modal .close').forEach(closeBtn => {
   });
 });
 document.getElementById('manageLibrariesBtn').addEventListener('click', openLibraryModal);
-function addAssignButtonToOrders() {
-  // Add event listeners for assign buttons
-  document.querySelectorAll('.assign-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-      openAssignOrderModal(this.dataset.order);
-    });
-  });
-}
+
 // Close modals when clicking outside
 window.addEventListener('click', function(event) {
   if (event.target.classList.contains('modal')) {
