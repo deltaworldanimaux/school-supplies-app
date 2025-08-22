@@ -631,8 +631,8 @@ app.put('/api/library/orders/:id/complete', authenticateLibrary, async (req, res
   try {
     const { cost } = req.body;
     
-    // Validate cost
-    if (!cost || isNaN(cost) || cost <= 0) {
+    // Validate cost - allow 0 cost if needed
+    if (cost === undefined || cost === null || isNaN(cost) || cost < 0) {
       return res.status(400).json({ message: 'يرجى إدخال تكلفة صحيحة' });
     }
     
@@ -640,7 +640,7 @@ app.put('/api/library/orders/:id/complete', authenticateLibrary, async (req, res
       { 
         _id: req.params.id, 
         assignedTo: req.library._id,
-        status: 'processing' // Only allow completion from processing status
+        status: 'processing'
       },
       { 
         status: 'ready',
