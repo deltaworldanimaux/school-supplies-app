@@ -261,73 +261,78 @@
         }
         
         function renderLibraryOrders(orders) {
-            const tbody = document.getElementById('ordersTableBody');
-            tbody.innerHTML = '';
-            
-            if (orders.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">لا توجد طلبات</td></tr>';
-                return;
-            }
-            
-            orders.forEach(order => {
-                const tr = document.createElement('tr');
-                
-                tr.innerHTML = `
-                    <td>${order.orderNumber || order._id}</td>
-                    <td>${order.parentName || 'غير متوفر'}</td>
-                    <td>${order.studentName || 'غير متوفر'}</td>
-                    <td>${order.grade || 'غير متوفر'}</td>
-                    <td>${getStatusText(order.status)}</td>
-                    <td>
-                        ${order.status === 'confirmed' ? 
-                            `<button class="action-btn receive-btn" data-order="${order._id}">استلام</button>` : ''}
-                        ${order.status === 'processing' ? 
-                            `<button class="action-btn complete-btn" data-order="${order._id}">إكمال</button>` : ''}
-                        <button class="action-btn view-btn" data-order="${order._id}">عرض الملف</button>
-                    </td>
-                `;
-                
-                tbody.appendChild(tr);
-            });
+  const tbody = document.getElementById('ordersTableBody');
+  tbody.innerHTML = '';
+  
+  if (orders.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">لا توجد طلبات</td></tr>';
+    return;
+  }
+  
+  orders.forEach(order => {
+    const tr = document.createElement('tr');
+    
+    tr.innerHTML = `
+      <td>${order.orderNumber || order._id}</td>
+      <td>${order.parentName || 'غير متوفر'}</td>
+      <td>${order.studentName || 'غير متوفر'}</td>
+      <td>${order.grade || 'غير متوفر'}</td>
+      <td>${getStatusText(order.status)}</td>
+      <td>
+        ${order.status === 'confirmed' ? 
+          `<button class="action-btn receive-btn" data-order="${order._id}">استلام الطلب</button>` : ''}
+        ${order.status === 'processing' ? 
+          `<button class="action-btn complete-btn" data-order="${order._id}">تم التوصيل</button>` : ''}
+        <button class="action-btn view-btn" data-order="${order._id}">عرض الملف</button>
+      </td>
+    `;
+    
+    tbody.appendChild(tr);
+  });
             
             // Add event listeners
-            document.querySelectorAll('.receive-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    updateOrderStatus(this.dataset.order, 'processing');
-                });
-            });
-            
-            document.querySelectorAll('.complete-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    updateOrderStatus(this.dataset.order, 'completed');
-                });
-            });
-            
-            document.querySelectorAll('.view-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    viewOrderFile(this.dataset.order);
-                });
-            });
+             document.querySelectorAll('.receive-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      updateOrderStatus(this.dataset.order, 'processing');
+    });
+  });
+  
+  document.querySelectorAll('.complete-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      updateOrderStatus(this.dataset.order, 'delivered');
+    });
+  });
+  
+  document.querySelectorAll('.view-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      viewOrderFile(this.dataset.order);
+    });
+  });
         }
         
         function updateOrderStatus(orderId, status) {
-            const endpoint = status === 'processing' ? 'receive' : 'complete';
-            
-            fetch(`${API_BASE}/api/library/orders/${orderId}/${endpoint}`, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${authToken}`
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                alert('تم تحديث حالة الطلب');
-                loadLibraryOrders();
-            })
-            .catch(error => {
-                alert('خطأ في تحديث حالة الطلب');
-            });
-        }
+  const endpoint = status === 'processing' ? 'receive' : 'complete';
+  
+  fetch(`${API_BASE}/api/library/orders/${orderId}/${endpoint}`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${authToken}`
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    alert('تم تحديث حالة الطلب');
+    loadLibraryOrders();
+    
+    // If order is completed, refresh to remove it from list
+    if (status === 'delivered') {
+      setTimeout(loadLibraryOrders, 1000);
+    }
+  })
+  .catch(error => {
+    alert('خطأ في تحديث حالة الطلب');
+  });
+}
         
         function viewOrderFile(orderId) {
             fetch(`${API_BASE}/api/orders/${orderId}`, {
@@ -349,14 +354,14 @@
         }
         
         function getStatusText(status) {
-            switch(status) {
-                case 'pending': return 'قيد المعالجة';
-                case 'confirmed': return 'تم التأكيد';
-                case 'processing': return 'قيد التجهيز';
-                case 'completed': return 'مكتمل';
-                default: return status;
-            }
-        }
+  switch(status) {
+    case 'pending': return 'قيد المعالجة';
+    case 'confirmed': return 'تم التأكيد';
+    case 'processing': return 'قيد التجهيز';
+    case 'delivered': return 'تم التوصيل';
+    default: return status;
+  }
+}
     </script>
 </body>
 </html>

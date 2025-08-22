@@ -492,7 +492,7 @@ app.get('/api/library/orders', authenticateLibrary, async (req, res) => {
   try {
     const orders = await Order.find({ 
       assignedTo: req.library._id,
-      status: { $in: ['confirmed', 'processing'] }
+      status: { $in: ['confirmed', 'processing'] } // Include confirmed status
     }).select('-phone -location');
     
     res.json(orders);
@@ -579,7 +579,7 @@ app.put('/api/library/orders/:id/complete', authenticateLibrary, async (req, res
   try {
     const order = await Order.findOneAndUpdate(
       { _id: req.params.id, assignedTo: req.library._id },
-      { status: 'completed' },
+      { status: 'delivered' },
       { new: true }
     );
     
