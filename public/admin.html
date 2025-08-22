@@ -75,7 +75,14 @@
         .btn:hover {
             background: rgba(255, 255, 255, 0.3);
         }
-        
+        .nearest-badge {
+    background-color: #4CAF50;
+    color: white;
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-size: 0.8em;
+    margin-left: 10px;
+}
         .admin-content {
             padding: 20px;
             position: relative;
@@ -663,9 +670,12 @@
     <p>الطلب: <span id="assignOrderNumber"></span></p>
     
     <div id="librariesListForAssign" style="margin-top: 20px;">
-      <h3>اختر مكتبة:</h3>
-      <div id="librariesForAssignContainer"></div>
-    </div>
+    <h3>اختر مكتبة:</h3>
+    <p id="nearestLibraryNote" style="color: #4CAF50; font-style: italic; display: none;">
+        تم تحديد أقرب مكتبة بناءً على موقع العميل
+    </p>
+    <div id="librariesForAssignContainer"></div>
+</div>
   </div>
 </div>
     <script>
@@ -1346,21 +1356,42 @@ function resetLibraryForm() {
   map.setView([35.5762, -5.3684], 13);
 }
 
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Earth's radius in kilometers
+    const dLat = deg2rad(lat2 - lat1);
+    const dLon = deg2rad(lon2 - lon1);
+    const a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+        Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+    const distance = R * c; // Distance in kilometers
+    return distance;
+}
+
+function deg2rad(deg) {
+    return deg * (Math.PI/180);
+}
 // Open assign order modal
 function openAssignOrderModal(orderId) {
-  // Try to find the order in allOrders
-  const order = allOrders.find(o => o._id === orderId || o.id === orderId);
-  
-  if (!order) {
-    console.error('Order not found in allOrders:', orderId);
-    alert('تعذر العثور على الطلب. يرجى تحديث الصفحة والمحاولة مرة أخرى.');
-    return;
-  }
-  
-  currentOrderIdForAssign = orderId;
-  document.getElementById('assignOrderModal').style.display = 'block';
-  document.getElementById('assignOrderNumber').textContent = order.orderNumber || order._id || 'N/A';
-  loadLibrariesForAssign();
+    const order = allOrders.find(o => o._id === orderId || o.id === orderId);
+    
+    if (!order) {
+        console.error('Order not found in allOrders:', orderId);
+        alert('تعذر العثور على الطلب. يرجى تحديث الصفحة والمحاولة مرة أخرى.');
+        return;
+    }
+    
+    currentOrderIdForAssign = orderId;
+    document.getElementById('assignOrderModal').style.display = 'block';
+    document.getElementById('assignOrderNumber').textContent = order.orderNumber || order._id || 'N/A';
+    
+    // Pass order location to load libraries
+    if (order.location && order.location.coordinates) {
+        loadLibrariesForAssign(order.location.coordinates);
+    } else {
+        loadLibrariesForAssign(null);
+    }
 }
 // Close assign order modal
 function closeAssignOrderModal() {
@@ -1368,49 +1399,84 @@ function closeAssignOrderModal() {
 }
 
 // Load libraries for assignment
-function loadLibrariesForAssign() {
-  fetch(`${API_BASE}/api/libraries`, {
-    headers: {
-      'Authorization': `Bearer ${authToken}`
-    }
-  })
-  .then(response => response.json())
-  .then(libraries => {
-    renderLibrariesForAssign(libraries);
-  })
-  .catch(error => console.error('Error loading libraries for assign:', error));
+function loadLibrariesForAssign(orderCoords) {
+    fetch(`${API_BASE}/api/libraries`, {
+        headers: {
+            'Authorization': `Bearer ${authToken}`
+        }
+    })
+    .then(response => response.json())
+    .then(libraries => {
+        // If we have order coordinates, sort libraries by distance
+        if (orderCoords) {
+            const [orderLng, orderLat] = orderCoords;
+            
+            // Calculate distance for each library
+            libraries.forEach(library => {
+                if (library.location && library.location.coordinates) {
+                    const [libLng, libLat] = library.location.coordinates;
+                    library.distance = calculateDistance(orderLat, orderLng, libLat, libLng);
+                } else {
+                    library.distance = Infinity; // If library has no location, put it at the end
+                }
+            });
+            
+            // Sort by distance (nearest first)
+            libraries.sort((a, b) => a.distance - b.distance);
+        }
+        
+        renderLibrariesForAssign(libraries, orderCoords !== null);
+    })
+    .catch(error => console.error('Error loading libraries for assign:', error));
 }
 
 // Render libraries for assignment
-function renderLibrariesForAssign(libraries) {
-  const container = document.getElementById('librariesForAssignContainer');
-  container.innerHTML = '';
-  
-  if (libraries.length === 0) {
-    container.innerHTML = '<p>لا توجد مكتبات</p>';
-    return;
-  }
-  
-  libraries.forEach(library => {
-    const libElement = document.createElement('div');
-    libElement.style.background = 'white';
-    libElement.style.padding = '15px';
-    libElement.style.margin = '10px 0';
-    libElement.style.borderRadius = '5px';
-    libElement.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
-    libElement.style.cursor = 'pointer';
+function renderLibrariesForAssign(libraries, hasOrderLocation) {
+    const container = document.getElementById('librariesForAssignContainer');
+    const noteElement = document.getElementById('nearestLibraryNote');
+    container.innerHTML = '';
     
-    libElement.innerHTML = `
-      <strong>${library.name}</strong> - ${library.phone}
-      <div>اسم المستخدم: ${library.username}</div>
-    `;
+    if (libraries.length === 0) {
+        container.innerHTML = '<p>لا توجد مكتبات</p>';
+        noteElement.style.display = 'none';
+        return;
+    }
     
-    libElement.addEventListener('click', function() {
-      assignOrderToLibrary(library._id);
+    // Show note if we have order location
+    noteElement.style.display = hasOrderLocation ? 'block' : 'none';
+    
+    libraries.forEach((library, index) => {
+        const libElement = document.createElement('div');
+        libElement.style.background = 'white';
+        libElement.style.padding = '15px';
+        libElement.style.margin = '10px 0';
+        libElement.style.borderRadius = '5px';
+        libElement.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
+        libElement.style.cursor = 'pointer';
+        
+        let libraryInfo = `
+            <strong>${library.name}</strong> - ${library.phone}
+            <div>اسم المستخدم: ${library.username}</div>
+        `;
+        
+        // Add distance info if available
+        if (library.distance !== undefined && library.distance !== Infinity) {
+            libraryInfo += `<div>المسافة: ${library.distance.toFixed(2)} كم</div>`;
+        }
+        
+        // Mark the first library as nearest if we have order location
+        if (hasOrderLocation && index === 0) {
+            libraryInfo += `<div><span class="nearest-badge">أقرب مكتبة</span></div>`;
+        }
+        
+        libElement.innerHTML = libraryInfo;
+        
+        libElement.addEventListener('click', function() {
+            assignOrderToLibrary(library._id);
+        });
+        
+        container.appendChild(libElement);
     });
-    
-    container.appendChild(libElement);
-  });
 }
 
 // Assign order to library
