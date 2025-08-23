@@ -302,7 +302,19 @@
             background-color: #d1ecf1;
             color: #0c5460;
         }
-        
+                        .toast {
+    padding: 15px 20px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    color: white;
+    background: #4CAF50;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    transition: opacity 0.3s;
+    opacity: 0;
+}
+.toast.error {
+    background: #f44336;
+}
         .status-select {
             padding: 6px 10px;
             border-radius: 5px;
@@ -797,6 +809,7 @@
     </div>
   </div>
 </div>
+<div id="toastContainer" style="position: fixed; top: 20px; right: 20px; z-index: 1000;"></div>
     <script>
         let authToken = localStorage.getItem('adminToken');
         const API_BASE = window.location.origin;
@@ -810,6 +823,7 @@
             document.getElementById('loginPage').classList.add('hidden');
             document.getElementById('adminPage').classList.remove('hidden');
             loadOrders();
+            setupAdminEventSource();
         } else {
             document.getElementById('loginPage').classList.remove('hidden');
             document.getElementById('adminPage').classList.add('hidden');
@@ -1016,7 +1030,31 @@ function renderOrdersTable(orders) {
                 console.error('Error updating order status:', error);
             });
         }
-        
+
+function setupAdminEventSource() {
+  const eventSource = new EventSource(`${API_BASE}/api/orders/events`, {
+    headers: {
+      'Authorization': `Bearer ${authToken}`
+    }
+  });
+
+  eventSource.addEventListener('new-order', function(event) {
+    const data = JSON.parse(event.data);
+    showToast(`New order received: ${data.orderNumber}`);
+    loadOrders();
+  });
+
+  eventSource.addEventListener('status-change', function(event) {
+    const data = JSON.parse(event.data);
+    showToast(`Order status changed: ${data.orderId}`);
+    loadOrders();
+  });
+
+  eventSource.onerror = function(err) {
+    console.error('EventSource failed:', err);
+    setTimeout(setupAdminEventSource, 5000);
+  };
+}      
         // View order details
         function viewOrderDetails(orderId) {
             fetch(`${API_BASE}/api/orders/${orderId}?populate=assignedTo`, {
@@ -1246,6 +1284,19 @@ function getDeliveryStatusText(status) {
         // Add after the existing JavaScript code
 let allOrders = [];
 
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type === 'error' ? 'error' : ''}`;
+    toast.textContent = message;
+    document.getElementById('toastContainer').appendChild(toast);
+    
+    setTimeout(() => toast.style.opacity = 1, 10);
+    setTimeout(() => {
+        toast.style.opacity = 0;
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
 function applyFilters() {
     const statusFilter = document.getElementById('statusFilter').value;
     const searchFilter = document.getElementById('searchInput').value.toLowerCase();
@@ -1396,13 +1447,13 @@ document.getElementById('saveDeliveryBtn').addEventListener('click', function() 
     const password = document.getElementById('deliveryPassword').value;
     
     if (!name || !phone || !username) {
-        alert('يرجى ملء جميع الحقول المطلوبة');
+        showToast('يرجى ملء جميع الحقول المطلوبة');
         return;
     }
     
     // For new delivery man, password is required
     if (!currentEditingDeliveryManId && !password) {
-        alert('كلمة المرور مطلوبة لمندوب التوصيل الجديد');
+        showToast('كلمة المرور مطلوبة لمندوب التوصيل الجديد');
         return;
     }
     
@@ -1463,7 +1514,7 @@ function assignOrderToDelivery(orderId) {
     .then(response => response.json())
     .then(deliveryMen => {
         if (deliveryMen.length === 0) {
-            alert('لا توجد مناديب توصيل متاحين. يرجى إضافة مناديب توصيل أولاً.');
+            showToast('لا توجد مناديب توصيل متاحين. يرجى إضافة مناديب توصيل أولاً.');
             return;
         }
         
@@ -1619,7 +1670,7 @@ function deleteLibrary(libraryId) {
     })
     .then(response => response.json())
     .then(data => {
-      alert('تم حذف المكتبة بنجاح');
+      showToast('تم حذف المكتبة بنجاح');
       loadLibraries();
     })
     .catch(error => console.error('Error deleting library:', error));
@@ -1633,7 +1684,7 @@ document.getElementById('saveLibraryBtn').addEventListener('click', function() {
     const password = document.getElementById('libraryPassword').value;
     
     if (!name || !phone || !username || !password || !marker) {
-        alert('يرجى ملء جميع الحقول وتحديد موقع على الخريطة');
+        showToast('يرجى ملء جميع الحقول وتحديد موقع على الخريطة');
         return;
     }
     
@@ -1656,7 +1707,7 @@ document.getElementById('saveLibraryBtn').addEventListener('click', function() {
     })
     .then(response => response.json())
     .then(data => {
-        alert(`تم إنشاء المكتبة بنجاح. بيانات الدخول: ${data.credentials.username} / ${data.credentials.password}`);
+        showToast(`تم إنشاء المكتبة بنجاح. بيانات الدخول: ${data.credentials.username} / ${data.credentials.password}`);
         loadLibraries();
     })
     .catch(error => console.error('Error creating library:', error));
@@ -1670,7 +1721,7 @@ document.getElementById('saveLibraryBtn').addEventListener('click', function() {
   const password = document.getElementById('libraryPassword').value;
   
   if (!name || !phone || !username || !password || !marker) {
-    alert('يرجى ملء جميع الحقول وتحديد موقع على الخريطة');
+    showToast('يرجى ملء جميع الحقول وتحديد موقع على الخريطة');
     return;
   }
   
@@ -1699,7 +1750,7 @@ document.getElementById('saveLibraryBtn').addEventListener('click', function() {
   })
   .then(response => response.json())
   .then(data => {
-    alert(currentEditingLibraryId ? 'تم تحديث المكتبة بنجاح' : 'تم إنشاء المكتبة بنجاح');
+    showToast(currentEditingLibraryId ? 'تم تحديث المكتبة بنجاح' : 'تم إنشاء المكتبة بنجاح');
     loadLibraries();
     resetLibraryForm();
   })
@@ -1749,7 +1800,7 @@ function openAssignOrderModal(orderId) {
     
     if (!order) {
         console.error('Order not found in allOrders:', orderId);
-        alert('تعذر العثور على الطلب. يرجى تحديث الصفحة والمحاولة مرة أخرى.');
+        showToast('تعذر العثور على الطلب. يرجى تحديث الصفحة والمحاولة مرة أخرى.');
         return;
     }
     
@@ -1862,12 +1913,12 @@ function assignOrderToLibrary(libraryId) {
   })
   .then(response => response.json())
   .then(data => {
-    alert('تم تعيين الطلب إلى المكتبة');
+    showToast('تم تعيين الطلب إلى المكتبة');
     closeAssignOrderModal();
     loadOrders(); // Reload orders to update the status
   })
   .catch(error => {
-    alert('خطأ في تعيين الطلب');
+    showToast('خطأ في تعيين الطلب');
     console.error('Error assigning order:', error);
   });
 }

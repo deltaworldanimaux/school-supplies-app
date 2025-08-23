@@ -300,6 +300,7 @@
         document.getElementById('libraryPage').classList.remove('hidden');
         document.getElementById('libraryName').textContent = library.name;
         loadLibraryOrders();
+        setupLibraryEventSource();
     })
     .catch(() => {
         localStorage.removeItem('libraryToken');
@@ -389,6 +390,31 @@ function showToast(message, type = 'success') {
         toast.style.opacity = 0;
         setTimeout(() => toast.remove(), 300);
     }, 3000);
+}
+
+function setupLibraryEventSource() {
+  const eventSource = new EventSource(`${API_BASE}/api/library/events`, {
+    headers: {
+      'Authorization': `Bearer ${authToken}`
+    }
+  });
+
+  eventSource.addEventListener('new-order', function(event) {
+    const data = JSON.parse(event.data);
+    showToast(`New order assigned: ${data.orderNumber}`);
+    loadLibraryOrders();
+  });
+
+  eventSource.addEventListener('order-update', function(event) {
+    const data = JSON.parse(event.data);
+    showToast(`Order updated: ${data.orderId}`);
+    loadLibraryOrders();
+  });
+
+  eventSource.onerror = function(err) {
+    console.error('EventSource failed:', err);
+    setTimeout(setupLibraryEventSource, 5000);
+  };
 }
 
 function renderLibraryOrders(orders) {
