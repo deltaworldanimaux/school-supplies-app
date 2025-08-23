@@ -799,31 +799,7 @@
         let deliveryMap, deliveryMarker;
         let deliveryMen = [];
         let currentEditingDeliveryManId = null
-        const deliveryStyle = `
-    .delivery-indicator {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        padding: 4px 8px;
-        background-color: #e3f2fd;
-        border-radius: 12px;
-        font-size: 14px;
-    }
-    
-    .delivery-assigned {
-        background-color: #e8f5e9;
-        color: #2e7d32;
-    }
-    
-    .delivery-pending {
-        background-color: #fff3e0;
-        color: #f57c00;
-    }
-`;
-const styleElement = document.createElement('style');
-styleElement.textContent = deliveryStyle;
-document.head.appendChild(styleElement);
-
+        
         // Check if user is already logged in
         if (authToken) {
             document.getElementById('loginPage').classList.add('hidden');
@@ -956,73 +932,49 @@ function setupEventSource() {
 }
         // Render orders table
 function renderOrdersTable(orders) {
-    const tbody = document.getElementById('ordersTableBody');
-    if (!tbody) return;
+  const tbody = document.getElementById('ordersTableBody');
+  if (!tbody) return;
+  
+  tbody.innerHTML = '';
+  
+  if (orders.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">لا توجد طلبات</td></tr>';
+    return;
+  }
+  
+  orders.forEach(order => {
+    const tr = document.createElement('tr');
+    const orderId = order._id || order.id;
+    const orderDate = new Date(order.createdAt).toLocaleDateString('ar-MA');
     
-    tbody.innerHTML = '';
+    tr.innerHTML = `
+      <td>${order.orderNumber || orderId || 'N/A'}</td>
+      <td>${order.parentName || 'غير متوفر'}</td>
+      <td>${order.studentName || 'غير متوفر'}</td>
+      <td>${order.phone || 'غير متوفر'}</td>
+      <td>${order.grade || 'غير متوفر'}</td>
+      <td>
+        <select class="status-select" data-order="${orderId}">
+  <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>قيد المعالجة</option>
+  <option value="confirmed" ${order.status === 'confirmed' ? 'selected' : ''}>تم التأكيد</option>
+  <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>قيد التجهيز</option>
+  <option value="ready" ${order.status === 'ready' ? 'selected' : ''}>جاهز</option> <!-- Changed -->
+  <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>تم التوصيل</option> <!-- New -->
+</select>
+      </td>
+      <td>${orderDate}</td>
+      <td>
+        <button class="action-btn view-btn" data-order="${orderId}">عرض</button>
+        ${order.assignedTo ? 
+          '<button class="action-btn assigned-btn" style="background-color: #28ba0b; cursor: default;" disabled>تم الإرسال</button>' : 
+          `<button class="action-btn assign-btn" data-order="${orderId}">تعيين إلى مكتبة</button>`
+        }
+        <button class="action-btn delete-btn" data-order="${orderId}">حذف</button>
+      </td>
+    `;
     
-    if (orders.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">لا توجد طلبات</td></tr>';
-        return;
-    }
-    
-    // Update the table header to include the new column
-    const tableHeader = document.querySelector('.orders-table thead tr');
-    if (tableHeader && !tableHeader.innerHTML.includes('مندوب التوصيل')) {
-        tableHeader.innerHTML = `
-            <th>رقم الطلب</th>
-            <th>اسم ولي الأمر</th>
-            <th>اسم التلميذ</th>
-            <th>الهاتف</th>
-            <th>المستوى الدراسي</th>
-            <th>الحالة</th>
-            <th>مندوب التوصيل</th>
-            <th>التاريخ</th>
-            <th>الإجراءات</th>
-        `;
-    }
-    
-    orders.forEach(order => {
-        const tr = document.createElement('tr');
-        const orderId = order._id || order.id;
-        const orderDate = new Date(order.createdAt).toLocaleDateString('ar-MA');
-        
-        tr.innerHTML = `
-            <td>${order.orderNumber || orderId || 'N/A'}</td>
-            <td>${order.parentName || 'غير متوفر'}</td>
-            <td>${order.studentName || 'غير متوفر'}</td>
-            <td>${order.phone || 'غير متوفر'}</td>
-            <td>${order.grade || 'غير متوفر'}</td>
-            <td>
-                <select class="status-select" data-order="${orderId}">
-                    <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>قيد المعالجة</option>
-                    <option value="confirmed" ${order.status === 'confirmed' ? 'selected' : ''}>تم التأكيد</option>
-                    <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>قيد التجهيز</option>
-                    <option value="ready" ${order.status === 'ready' ? 'selected' : ''}>جاهز</option>
-                    <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>تم التوصيل</option>
-                </select>
-            </td>
-            <td>${renderDeliveryInfo(order)}</td>
-            <td>${orderDate}</td>
-            <td>
-                <button class="action-btn view-btn" data-order="${orderId}">عرض</button>
-                ${order.assignedTo ? 
-                    '<button class="action-btn assigned-btn" style="background-color: #28ba0b; cursor: default;" disabled>تم الإرسال</button>' : 
-                    `<button class="action-btn assign-btn" data-order="${orderId}">تعيين إلى مكتبة</button>`
-                }
-                <button class="action-btn delete-btn" data-order="${orderId}">حذف</button>
-            </td>
-        `;
-        
-        tbody.appendChild(tr);
-    });
-    
-    // Add event listeners to delivery assignment buttons
-    document.querySelectorAll('.assign-delivery-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            assignOrderToDelivery(this.dataset.order);
-        });
-    });
+    tbody.appendChild(tr);
+  });
 }
         
         // Update order status
@@ -1056,170 +1008,128 @@ function renderOrdersTable(orders) {
         }
         
         // View order details
-function viewOrderDetails(orderId) {
-    fetch(`${API_BASE}/api/orders/${orderId}?populate=assignedTo&populate=deliveryMan`, {
-        headers: {
-            'Authorization': `Bearer ${authToken}`
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        return response.json();
-    })
-    .then(order => {
-        currentOrder = order;
-        const modal = document.getElementById('orderDetailsModal');
-        const content = document.getElementById('orderDetailsContent');
-        const viewImageBtn = document.getElementById('viewImageBtn');
-        const viewLocationBtn = document.getElementById('viewLocationBtn');
-        const imagePreview = document.getElementById('imagePreview');
-        
-        if (!modal || !content) return;
-        
-        // Format date
-        const orderDate = new Date(order.createdAt).toLocaleDateString('ar-MA');
-        
-        // File link if exists
-        let fileLink = 'لا يوجد ملف';
-        if (order.suppliesList) {
-            const isFullUrl = order.suppliesList.startsWith('http');
-            const fileUrl = isFullUrl ? order.suppliesList : `${API_BASE}/uploads/${order.suppliesList}`;
-            fileLink = `<a href="${fileUrl}" target="_blank" class="file-link">عرض الملف على ImgBB</a>`;
-            
-            // Set up view image button
-            viewImageBtn.style.display = 'inline-block';
-            viewImageBtn.onclick = function() {
-                window.open(fileUrl, '_blank');
-            };
-            
-            // Show image preview if it's an image
-            if (fileUrl.match(/\.(jpeg|jpg|png|gif)$/i)) {
-                imagePreview.src = fileUrl;
-                imagePreview.style.display = 'block';
-            } else {
-                imagePreview.style.display = 'none';
-            }
-        } else {
-            viewImageBtn.style.display = 'none';
-            imagePreview.style.display = 'none';
-        }
-        
-        // Location link if exists
-        let locationLink = 'غير متوفر';
-        if (order.location && order.location.coordinates) {
-            const [lng, lat] = order.location.coordinates;
-            const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
-            locationLink = `<a href="${mapsUrl}" target="_blank" class="map-link">عرض الموقع على خرائط جوجل</a>`;
-            
-            // Set up view location button
-            viewLocationBtn.style.display = 'inline-block';
-            viewLocationBtn.onclick = function() {
-                window.open(mapsUrl, '_blank');
-            };
-        } else {
-            viewLocationBtn.style.display = 'none';
-        }
-        
-        // Delivery man info if exists
-        let deliveryInfo = '';
-        if (order.deliveryMan) {
-            deliveryInfo = `
-                <div class="detail-row">
-                    <div class="detail-label">مندوب التوصيل:</div>
-                    <div class="detail-value">
-                        <span style="display: flex; align-items: center; gap: 5px;">
-                            <span style="font-size: 16px;">🚚</span>
-                            <span>${order.deliveryMan.name}</span>
-                        </span>
+        function viewOrderDetails(orderId) {
+            fetch(`${API_BASE}/api/orders/${orderId}?populate=assignedTo`, {
+  headers: {
+    'Authorization': `Bearer ${authToken}`
+  }
+})
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(order => {
+                currentOrder = order;
+                const modal = document.getElementById('orderDetailsModal');
+                const content = document.getElementById('orderDetailsContent');
+                const viewImageBtn = document.getElementById('viewImageBtn');
+                const viewLocationBtn = document.getElementById('viewLocationBtn');
+                const imagePreview = document.getElementById('imagePreview');
+                
+                if (!modal || !content) return;
+                
+                // Format date
+                const orderDate = new Date(order.createdAt).toLocaleDateString('ar-MA');
+                
+                // File link if exists
+                let fileLink = 'لا يوجد ملف';
+                if (order.suppliesList) {
+                    const isFullUrl = order.suppliesList.startsWith('http');
+                    const fileUrl = isFullUrl ? order.suppliesList : `${API_BASE}/uploads/${order.suppliesList}`;
+                    fileLink = `<a href="${fileUrl}" target="_blank" class="file-link">عرض الملف على ImgBB</a>`;
+                    
+                    // Set up view image button
+                    viewImageBtn.style.display = 'inline-block';
+                    viewImageBtn.onclick = function() {
+                        window.open(fileUrl, '_blank');
+                    };
+                    
+                    // Show image preview if it's an image
+                    if (fileUrl.match(/\.(jpeg|jpg|png|gif)$/i)) {
+                        imagePreview.src = fileUrl;
+                        imagePreview.style.display = 'block';
+                    } else {
+                        imagePreview.style.display = 'none';
+                    }
+                } else {
+                    viewImageBtn.style.display = 'none';
+                    imagePreview.style.display = 'none';
+                }
+                
+                // Location link if exists
+                let locationLink = 'غير متوفر';
+                if (order.location && order.location.coordinates) {
+                    const [lng, lat] = order.location.coordinates;
+                    const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+                    locationLink = `<a href="${mapsUrl}" target="_blank" class="map-link">عرض الموقع على خرائط جوجل</a>`;
+                    
+                    // Set up view location button
+                    viewLocationBtn.style.display = 'inline-block';
+                    viewLocationBtn.onclick = function() {
+                        window.open(mapsUrl, '_blank');
+                    };
+                } else {
+                    viewLocationBtn.style.display = 'none';
+                }
+                
+                content.innerHTML = `
+  <div class="detail-row">
+    <div class="detail-label">رقم الطلب:</div>
+    <div class="detail-value">${order.orderNumber || order._id || order.id || 'N/A'}</div>
+  </div>
+                    <div class="detail-row">
+                        <div class="detail-label">اسم ولي الأمر:</div>
+                        <div class="detail-value">${order.parentName || 'غير متوفر'}</div>
                     </div>
-                </div>
-                <div class="detail-row">
-                    <div class="detail-label">هاتف المندوب:</div>
-                    <div class="detail-value">${order.deliveryMan.phone || 'غير متوفر'}</div>
-                </div>
-            `;
-        } else if (order.status === 'ready') {
-            deliveryInfo = `
-                <div class="detail-row">
-                    <div class="detail-label">التوصيل:</div>
-                    <div class="detail-value">
-                        <button class="action-btn assign-delivery-btn" data-order="${order._id || order.id}" 
-                                style="background-color: #ff9800; color: white;">
-                            تعيين إلى مندوب التوصيل
-                        </button>
+                    <div class="detail-row">
+                        <div class="detail-label">هاتف ولي الأمر:</div>
+                        <div class="detail-value">${order.phone || 'غير متوفر'}</div>
                     </div>
-                </div>
-            `;
-        }
-        
-        content.innerHTML = `
-            <div class="detail-row">
-                <div class="detail-label">رقم الطلب:</div>
-                <div class="detail-value">${order.orderNumber || order._id || order.id || 'N/A'}</div>
-            </div>
-            <div class="detail-row">
-                <div class="detail-label">اسم ولي الأمر:</div>
-                <div class="detail-value">${order.parentName || 'غير متوفر'}</div>
-            </div>
-            <div class="detail-row">
-                <div class="detail-label">هاتف ولي الأمر:</div>
-                <div class="detail-value">${order.phone || 'غير متوفر'}</div>
-            </div>
-            <div class="detail-row">
-                <div class="detail-label">اسم التلميذ:</div>
-                <div class="detail-value">${order.studentName || 'غير متوفر'}</div>
-            </div>
-            <div class="detail-row">
-                <div class="detail-label">المستوى الدراسي:</div>
-                <div class="detail-value">${order.grade || 'غير متوفر'}</div>
-            </div>
-            <div class="detail-row">
-                <div class="detail-label">الحالة:</div>
-                <div class="detail-value">
-                    <span class="status-badge ${getStatusClass(order.status)}">${getStatusText(order.status)}</span>
-                </div>
-            </div>
-            <div class="detail-row">
-                <div class="detail-label">تاريخ الطلب:</div>
-                <div class="detail-value">${orderDate}</div>
-            </div>
-            <div class="detail-row">
-                <div class="detail-label">المكتبة:</div>
-                <div class="detail-value" id="libraryDetail">${order.assignedTo ? order.assignedTo.name : 'غير معين'}</div>
-            </div>
-            <div class="detail-row">
-                <div class="detail-label">التكلفة:</div>
-                <div class="detail-value">${order.cost ? order.cost + ' درهم' : 'غير محدد'}</div>
-            </div>
-            ${deliveryInfo}
-            <div class="detail-row">
-                <div class="detail-label">قائمة اللوازم:</div>
-                <div class="detail-value">${fileLink}</div>
-            </div>
-            <div class="detail-row">
-                <div class="detail-label">الموقع:</div>
-                <div class="detail-value">${locationLink}</div>
-            </div>
-        `;
-        
-        // Add event listener to delivery assignment button in modal
-        const assignDeliveryBtn = content.querySelector('.assign-delivery-btn');
-        if (assignDeliveryBtn) {
-            assignDeliveryBtn.addEventListener('click', function() {
-                assignOrderToDelivery(this.dataset.order);
-                modal.classList.remove('active');
+                    <div class="detail-row">
+                        <div class="detail-label">اسم التلميذ:</div>
+                        <div class="detail-value">${order.studentName || 'غير متوفر'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">المستوى الدراسي:</div>
+                        <div class="detail-value">${order.grade || 'غير متوفر'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">الحالة:</div>
+                        <div class="detail-value">
+                            <span class="status-badge ${getStatusClass(order.status)}">${getStatusText(order.status)}</span>
+                        </div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">تاريخ الطلب:</div>
+                        <div class="detail-value">${orderDate}</div>
+                    </div>
+                    <div class="detail-row">
+  <div class="detail-label">المكتبة:</div>
+  <div class="detail-value" id="libraryDetail">${order.assignedTo ? order.assignedTo.name : 'غير معين'}</div>
+</div>
+<div class="detail-row">
+  <div class="detail-label">التكلفة:</div>
+  <div class="detail-value">${order.cost ? order.cost + ' درهم' : 'غير محدد'}</div>
+</div>
+                    <div class="detail-row">
+                        <div class="detail-label">قائمة اللوازم:</div>
+                        <div class="detail-value">${fileLink}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">الموقع:</div>
+                        <div class="detail-value">${locationLink}</div>
+                    </div>
+                `;
+                
+                modal.classList.add('active');
+            })
+            .catch(error => {
+                showAlert('ordersAlert', 'error', 'فشل في تحميل تفاصيل الطلب');
+                console.error('Error loading order details:', error);
             });
         }
-        
-        modal.classList.add('active');
-    })
-    .catch(error => {
-        showAlert('ordersAlert', 'error', 'فشل في تحميل تفاصيل الطلب');
-        console.error('Error loading order details:', error);
-    });
-}
         
         // Delete order
         function deleteOrder(orderId) {
