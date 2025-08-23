@@ -335,7 +335,7 @@ function sendEventToClients(event, data) {
 // Get all orders (admin only)
 app.get('/api/orders', authenticateAdmin, async (req, res) => {
   try {
-    const orders = await Order.find().sort({ createdAt: -1 });
+    const orders = await Order.find().sort({ createdAt: -1 }).populate('deliveryMan', 'name phone');
     res.json(orders);
   } catch (error) {
     console.error('Fetch orders error:', error);
@@ -376,7 +376,7 @@ app.get('/api/orders/:id', authenticateAdmin, async (req, res) => {
       return res.status(400).json({ message: 'Invalid order ID format' });
     }
     
-    let query = Order.findById(req.params.id);
+    let query = Order.findById(req.params.id).populate('deliveryMan', 'name phone');
     
     // Check if populate is requested
     if (req.query.populate === 'assignedTo') {
@@ -798,14 +798,13 @@ app.get('/api/delivery/available-orders', authenticateDeliveryMan, async (req, r
       status: 'ready',
       deliveryStatus: 'pending',
       deliveryMan: { $exists: false }
-    }).populate('assignedTo', 'name phone location');
+    }).populate('assignedTo', 'name phone location').populate('deliveryMan', 'name phone');
     
     res.json(orders);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching orders', error: error.message });
   }
 });
-
 // Delivery man picks up order
 app.put('/api/delivery/orders/:id/pickup', authenticateDeliveryMan, async (req, res) => {
   try {
@@ -839,7 +838,7 @@ app.get('/api/delivery/my-orders', authenticateDeliveryMan, async (req, res) => 
     const orders = await Order.find({ 
       deliveryMan: req.deliveryMan._id,
       deliveryStatus: { $in: ['assigned', 'picked_up'] }
-    }).populate('assignedTo', 'name phone location');
+    }).populate('assignedTo', 'name phone location').populate('deliveryMan', 'name phone');
     
     res.json(orders);
   } catch (error) {

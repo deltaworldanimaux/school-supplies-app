@@ -674,6 +674,7 @@
                         <th>الحالة</th>
                         <th>التاريخ</th>
                         <th>الإجراءات</th>
+                        <th>مندوب التوصيل</th>
                     </tr>
                 </thead>
                 <tbody id="ordersTableBody">
@@ -964,6 +965,11 @@ function renderOrdersTable(orders) {
       </td>
       <td>${orderDate}</td>
       <td>
+  ${order.deliveryMan ? '🚚 مكلف بالتوصيل' : ''}
+  ${order.deliveryStatus === 'picked_up' ? '📦 تم الاستلام' : ''}
+  ${order.deliveryStatus === 'delivered' ? '✅ تم التوصيل' : ''}
+</td>
+      <td>
         <button class="action-btn view-btn" data-order="${orderId}">عرض</button>
         ${order.assignedTo ? 
           '<button class="action-btn assigned-btn" style="background-color: #28ba0b; cursor: default;" disabled>تم الإرسال</button>' : 
@@ -1121,6 +1127,13 @@ function renderOrdersTable(orders) {
                         <div class="detail-label">الموقع:</div>
                         <div class="detail-value">${locationLink}</div>
                     </div>
+                    <div class="detail-row">
+  <div class="detail-label">مندوب التوصيل:</div>
+  <div class="detail-value">
+    ${order.deliveryMan ? order.deliveryMan.name : 'غير معين'}
+    ${order.deliveryStatus ? `(${getDeliveryStatusText(order.deliveryStatus)})` : ''}
+  </div>
+</div>
                 `;
                 
                 modal.classList.add('active');
@@ -1130,7 +1143,16 @@ function renderOrdersTable(orders) {
                 console.error('Error loading order details:', error);
             });
         }
-        
+
+function getDeliveryStatusText(status) {
+  switch(status) {
+    case 'pending': return 'في الانتظار';
+    case 'assigned': return 'مكلف';
+    case 'picked_up': return 'تم الاستلام';
+    case 'delivered': return 'تم التوصيل';
+    default: return status;
+  }
+}        
         // Delete order
         function deleteOrder(orderId) {
             if (!confirm('هل أنت متأكد من حذف هذا الطلب؟')) return;
