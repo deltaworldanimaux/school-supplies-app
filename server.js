@@ -37,8 +37,7 @@ console.log('📩 Incoming message:', msg.text, 'from', msg.chat.id);
 
 const chatId = msg.chat.id;
 const text = msg.text;
-let libraryClients = [];
-let deliveryClients = [];
+
 
 if (!text) return;
 
@@ -373,51 +372,20 @@ score: req.deliveryMan.score
 app.put('/api/orders/:id/status', authenticateAdmin, async (req, res) => {
   try {
     const { status } = req.body;
+    // Add validation for new status values
     const validStatuses = ['pending', 'confirmed', 'processing', 'ready', 'delivered'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ message: 'Invalid status' });
     }
-    
     const order = await Order.findByIdAndUpdate(
       req.params.id,
       { status },
       { new: true }
-    ).populate('assignedTo deliveryMan');
+    );
     
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
-    
-    // Send event to admin clients
-    sendEventToClients('status-change', { 
-      orderId: order._id, 
-      status: order.status 
-    });
-    
-    // Send event to library if assigned
-    if (order.assignedTo) {
-      sendEventToLibraryClients(order.assignedTo._id, 'order-update', {
-        orderId: order._id,
-        status: order.status
-      });
-    }
-    
-    // Send event to delivery if assigned
-    if (order.deliveryMan) {
-      sendEventToDeliveryClients('order-update', {
-        orderId: order._id,
-        status: order.status
-      });
-    }
-    
-    // Send event to all delivery clients for ready orders
-    if (status === 'ready') {
-      sendEventToAllDeliveryClients('new-available-order', {
-        orderId: order._id,
-        orderNumber: order.orderNumber
-      });
-    }
-    
     res.json({ message: 'Order status updated', order });
   } catch (error) {
     console.error('Update order error:', error);
@@ -604,6 +572,8 @@ app.post('/api/library/login', async (req, res) => {
 app.post('/api/orders/:id/assign', authenticateAdmin, async (req, res) => {
   try {
     const { libraryId } = req.body;
+    
+    // Get the library details
     const library = await Library.findById(libraryId);
     if (!library) {
       return res.status(404).json({ message: 'Library not found' });
@@ -622,18 +592,14 @@ app.post('/api/orders/:id/assign', authenticateAdmin, async (req, res) => {
       return res.status(404).json({ message: 'Order not found' });
     }
     
-    // Send event to the assigned library
-    sendEventToLibraryClients(libraryId, 'new-order', {
-      orderId: order._id,
-      orderNumber: order.orderNumber
-    });
-    
-    // Send Telegram notification
+    // Send Telegram notification to the library if they have a chat ID
     if (library.telegramChatId) {
       try {
         await sendLibraryNotification(libraryId, `🆕 تم تعيين طلب جديد!\nرقم الطلب: ${order.orderNumber}\nاسم ولي الأمر: ${order.parentName}\nاسم التلميذ: ${order.studentName}\nالمستوى الدراسي: ${order.grade}`);
+        console.log('Telegram notification sent to library');
       } catch (telegramError) {
         console.error('Error sending Telegram notification to library:', telegramError);
+        // Don't fail the request if Telegram notification fails
       }
     }
     
@@ -672,69 +638,6 @@ app.get('/api/library/orders', authenticateLibrary, async (req, res) => {
     res.status(500).json({ message: 'Error fetching orders', error: error.message });
   }
 });
-
-// Library events endpoint
-app.get('/api/library/events', authenticateLibrary, (req, res) => {
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  res.flushHeaders();
-
-  const clientId = Date.now();
-  const newClient = {
-    id: clientId,
-    res,
-    libraryId: req.library._id
-  };
-  libraryClients.push(newClient);
-
-  req.on('close', () => {
-    libraryClients = libraryClients.filter(client => client.id !== clientId);
-  });
-});
-
-// Delivery events endpoint
-app.get('/api/delivery/events', authenticateDeliveryMan, (req, res) => {
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  res.flushHeaders();
-
-  const clientId = Date.now();
-  const newClient = {
-    id: clientId,
-    res,
-    deliveryManId: req.deliveryMan._id
-  };
-  deliveryClients.push(newClient);
-
-  req.on('close', () => {
-    deliveryClients = deliveryClients.filter(client => client.id !== clientId);
-  });
-});
-
-// Function to send events to library clients
-function sendEventToLibraryClients(libraryId, event, data) {
-  libraryClients.forEach(client => {
-    if (client.libraryId.toString() === libraryId.toString()) {
-      client.res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
-    }
-  });
-}
-
-// Function to send events to delivery clients
-function sendEventToDeliveryClients(event, data) {
-  deliveryClients.forEach(client => {
-    client.res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
-  });
-}
-
-// Function to send events to all delivery clients for new available orders
-function sendEventToAllDeliveryClients(event, data) {
-  deliveryClients.forEach(client => {
-    client.res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
-  });
-}
 
 app.get('/api/library/profile', authenticateLibrary, async (req, res) => {
   res.json({
@@ -898,6 +801,7 @@ app.post('/api/delivery/login', async (req, res) => {
 app.post('/api/orders/:id/assign-delivery', authenticateAdmin, async (req, res) => {
   try {
     const { deliveryManId } = req.body;
+    
     const deliveryMan = await DeliveryMan.findById(deliveryManId);
     if (!deliveryMan) {
       return res.status(404).json({ message: 'Delivery man not found' });
@@ -915,12 +819,6 @@ app.post('/api/orders/:id/assign-delivery', authenticateAdmin, async (req, res) 
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
-    
-    // Send event to the assigned delivery man
-    sendEventToDeliveryClients('order-assigned', {
-      orderId: order._id,
-      orderNumber: order.orderNumber
-    });
     
     res.json({ message: 'Order assigned to delivery man', order });
   } catch (error) {
