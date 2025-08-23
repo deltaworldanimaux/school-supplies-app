@@ -811,17 +811,22 @@ app.post('/api/orders/:id/assign-delivery', authenticateAdmin, async (req, res) 
 
 // Get available orders for delivery (status: ready)
 app.get('/api/delivery/available-orders', authenticateDeliveryMan, async (req, res) => {
-  try {
-    const orders = await Order.find({ 
-      status: 'ready',
-      deliveryStatus: 'pending',
-      deliveryMan: { $exists: false }
-    }).populate('assignedTo', 'name phone location');
-    
-    res.json(orders);
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching orders', error: error.message });
-  }
+try {
+const orders = await Order.find({
+status: 'ready', // Already set when library completes order
+$or: [
+{ deliveryStatus: { $exists: false } },
+{ deliveryStatus: 'pending' }
+],
+$or: [
+{ deliveryMan: { $exists: false } },
+{ deliveryMan: null }
+]
+}).populate('assignedTo', 'name phone location');
+res.json(orders);
+} catch (error) {
+res.status(500).json({ message: 'Error fetching orders', error: error.message });
+}
 });
 
 // Delivery man picks up order
