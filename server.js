@@ -273,6 +273,23 @@ sendEventToClients('new-order', {
   }
 });
 
+// Delivery Man authentication middleware
+const authenticateDeliveryMan = async (req, res, next) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    if (!token) return res.status(401).json({ message: 'Access denied' });
+    
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+    const deliveryMan = await DeliveryMan.findById(decoded.id);
+    
+    if (!deliveryMan) return res.status(401).json({ message: 'Invalid token' });
+    
+    req.deliveryMan = deliveryMan;
+    next();
+  } catch (error) {
+    res.status(400).json({ message: 'Invalid token' });
+  }
+};
 
 // Admin login
 app.post('/api/admin/login', async (req, res) => {
@@ -647,23 +664,7 @@ app.get('/api/library/orders/:id', authenticateLibrary, async (req, res) => {
   }
 });
 
-// Delivery Man authentication middleware
-const authenticateDeliveryMan = async (req, res, next) => {
-  try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
-    if (!token) return res.status(401).json({ message: 'Access denied' });
-    
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
-    const deliveryMan = await DeliveryMan.findById(decoded.id);
-    
-    if (!deliveryMan) return res.status(401).json({ message: 'Invalid token' });
-    
-    req.deliveryMan = deliveryMan;
-    next();
-  } catch (error) {
-    res.status(400).json({ message: 'Invalid token' });
-  }
-};
+
 
 // Create delivery man (admin only)
 app.post('/api/delivery-men', authenticateAdmin, async (req, res) => {
