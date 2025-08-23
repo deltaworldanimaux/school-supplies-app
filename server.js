@@ -813,7 +813,7 @@ app.post('/api/orders/:id/assign-delivery', authenticateAdmin, async (req, res) 
 app.get('/api/delivery/available-orders', authenticateDeliveryMan, async (req, res) => {
   try {
     const orders = await Order.find({ 
-      status: 'ready',
+      status: 'ready', // Changed from 'ready' to include ready orders
       deliveryStatus: 'pending',
       deliveryMan: { $exists: false }
     }).populate('assignedTo', 'name phone location').populate('deliveryMan', 'name phone');
@@ -823,6 +823,7 @@ app.get('/api/delivery/available-orders', authenticateDeliveryMan, async (req, r
     res.status(500).json({ message: 'Error fetching orders', error: error.message });
   }
 });
+
 // Delivery man picks up order
 app.put('/api/delivery/orders/:id/pickup', authenticateDeliveryMan, async (req, res) => {
   try {
