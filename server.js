@@ -343,6 +343,14 @@ app.get('/api/orders', authenticateAdmin, async (req, res) => {
   }
 });
 
+app.get('/api/delivery/profile', authenticateDeliveryMan, async (req, res) => {
+res.json({
+id: req.deliveryMan._id,
+name: req.deliveryMan.name,
+score: req.deliveryMan.score
+});
+});
+
 // Update order status (admin only)
 app.put('/api/orders/:id/status', authenticateAdmin, async (req, res) => {
   try {
@@ -612,6 +620,14 @@ app.get('/api/library/orders', authenticateLibrary, async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Error fetching orders', error: error.message });
   }
+});
+
+app.get('/api/library/profile', authenticateLibrary, async (req, res) => {
+  res.json({
+    id: req.library._id,
+    name: req.library.name,
+    phone: req.library.phone
+  });
 });
 
 app.get('/api/library/orders/:id', authenticateLibrary, async (req, res) => {

@@ -401,13 +401,36 @@
         
         // Check if user is already logged in
         if (authToken) {
-            document.getElementById('loginPage').classList.add('hidden');
-            document.getElementById('deliveryPage').classList.remove('hidden');
-            loadDeliveryData();
-        } else {
-            document.getElementById('loginPage').classList.remove('hidden');
-            document.getElementById('deliveryPage').classList.add('hidden');
-        }
+document.getElementById('loginPage').classList.add('hidden');
+document.getElementById('deliveryPage').classList.remove('hidden');
+
+
+// Fetch profile first, then load orders
+fetch(`${API_BASE}/api/delivery/profile`, {
+headers: { 'Authorization': `Bearer ${authToken}` }
+})
+.then(res => {
+if (!res.ok) throw new Error('Unauthorized');
+return res.json();
+})
+.then(data => {
+document.getElementById('deliveryName').textContent = data.name;
+document.getElementById('deliveryScore').textContent = data.score;
+document.getElementById('totalScore').textContent = data.score;
+
+
+// ✅ now load orders
+loadDeliveryData();
+})
+.catch(() => {
+localStorage.removeItem('deliveryToken');
+document.getElementById('loginPage').classList.remove('hidden');
+document.getElementById('deliveryPage').classList.add('hidden');
+});
+} else {
+document.getElementById('loginPage').classList.remove('hidden');
+document.getElementById('deliveryPage').classList.add('hidden');
+}
         
         // Login functionality
         document.getElementById('deliveryLoginBtn').addEventListener('click', function() {

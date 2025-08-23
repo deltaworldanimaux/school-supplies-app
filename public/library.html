@@ -287,24 +287,26 @@
         }
         
         function verifyLibraryToken() {
-            fetch(`${API_BASE}/api/library/orders`, {
-                headers: {
-                    'Authorization': `Bearer ${authToken}`
-                }
-            })
-            .then(response => {
-                if (response.ok) {
-                    document.getElementById('loginPage').classList.add('hidden');
-                    document.getElementById('libraryPage').classList.remove('hidden');
-                    loadLibraryOrders();
-                } else {
-                    localStorage.removeItem('libraryToken');
-                }
-            })
-            .catch(() => {
-                localStorage.removeItem('libraryToken');
-            });
-        }
+    fetch(`${API_BASE}/api/library/profile`, {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Unauthorized');
+        return response.json();
+    })
+    .then(library => {
+        currentLibrary = library;
+        document.getElementById('loginPage').classList.add('hidden');
+        document.getElementById('libraryPage').classList.remove('hidden');
+        document.getElementById('libraryName').textContent = library.name;
+        loadLibraryOrders();
+    })
+    .catch(() => {
+        localStorage.removeItem('libraryToken');
+        document.getElementById('loginPage').classList.remove('hidden');
+        document.getElementById('libraryPage').classList.add('hidden');
+    });
+}
         
         document.getElementById('libraryLoginBtn').addEventListener('click', function() {
             const username = document.getElementById('libraryUsername').value;
