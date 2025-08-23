@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>منصة مندوبي التوصيل - مدرستي</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <style>
         :root {
             --primary: #4CAF50;
@@ -381,18 +379,18 @@
 
         <!-- Order Details Modal -->
         <div id="orderModal" class="order-modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>تفاصيل الطلب</h2>
-                    <button class="close-btn" id="closeModalBtn">&times;</button>
-                </div>
-                <div id="orderDetails">
-                    <!-- Order details will be populated here -->
-                </div>
-                <div id="map"></div>
-                <button id="confirmDeliveryBtn" class="action-btn deliver-btn" style="margin-top: 20px; display: none;">تأكيد التسليم</button>
-            </div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>تفاصيل الطلب</h2>
+            <button class="close-btn" id="closeModalBtn">&times;</button>
         </div>
+        <div id="orderDetails">
+            <!-- Order details will be populated here -->
+        </div>
+        <button id="paymentMadeBtn" class="action-btn" style="margin-top: 20px; display: none;">تم الدفع للمكتبة</button>
+        <button id="confirmDeliveryBtn" class="action-btn deliver-btn" style="margin-top: 20px; display: none;">تأكيد التسليم</button>
+    </div>
+</div>
     </div>
 
     <script>
@@ -645,107 +643,97 @@
         
         // View order details
         function viewOrderDetails(orderId) {
-            fetch(`${API_BASE}/api/delivery/orders/${orderId}`, {
-                headers: {
-                    'Authorization': `Bearer ${authToken}`
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(order => {
-                currentOrder = order;
-                const modal = document.getElementById('orderModal');
-                const content = document.getElementById('orderDetails');
-                const confirmBtn = document.getElementById('confirmDeliveryBtn');
-                
-                if (!modal || !content) return;
-                
-                // Format date
-                const orderDate = new Date(order.createdAt).toLocaleDateString('ar-MA');
-                
-                content.innerHTML = `
-                    <div class="detail-item">
-                        <span class="detail-label">رقم الطلب:</span>
-                        <span>${order.orderNumber}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">اسم ولي الأمر:</span>
-                        <span>${order.parentName}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">هاتف ولي الأمر:</span>
-                        <span>${order.phone}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">اسم التلميذ:</span>
-                        <span>${order.studentName}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">المستوى الدراسي:</span>
-                        <span>${order.grade}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">المكتبة:</span>
-                        <span>${order.assignedTo?.name || 'غير معين'}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">هاتف المكتبة:</span>
-                        <span>${order.assignedTo?.phone || 'غير متوفر'}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">التكلفة:</span>
-                        <span>${order.cost ? order.cost + ' درهم' : 'غير محدد'}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">تاريخ الطلب:</span>
-                        <span>${orderDate}</span>
-                    </div>
-                `;
-                
-                // Show confirm button only if order is assigned
-                if (order.deliveryStatus === 'assigned') {
-                    confirmBtn.style.display = 'block';
-                    confirmBtn.onclick = function() {
-                        deliverOrder(order._id);
-                    };
-                } else {
-                    confirmBtn.style.display = 'none';
-                }
-                
-                // Initialize map if location is available
-                if (order.assignedTo?.location?.coordinates) {
-                    initMap(order.assignedTo.location.coordinates);
-                }
-                
-                modal.classList.add('active');
-            })
-            .catch(error => {
-                showAlert('ordersAlert', 'error', 'فشل في تحميل تفاصيل الطلب');
-                console.error('Error loading order details:', error);
-            });
+    fetch(`${API_BASE}/api/delivery/orders/${orderId}`, {
+        headers: {
+            'Authorization': `Bearer ${authToken}`
         }
-        
-        // Initialize map
-        function initMap(coordinates) {
-            if (map) {
-                map.remove();
-            }
-            
-            const [lng, lat] = coordinates;
-            map = L.map('map').setView([lat, lng], 15);
-            
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap contributors'
-            }).addTo(map);
-            
-            L.marker([lat, lng]).addTo(map)
-                .bindPopup('موقع المكتبة')
-                .openPopup();
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
         }
+        return response.json();
+    })
+    .then(order => {
+        currentOrder = order;
+        const modal = document.getElementById('orderModal');
+        const content = document.getElementById('orderDetails');
+        const paymentBtn = document.getElementById('paymentMadeBtn');
+        const confirmBtn = document.getElementById('confirmDeliveryBtn');
+
+        if (!modal || !content) return;
+
+        // Format date
+        const orderDate = new Date(order.createdAt).toLocaleDateString('ar-MA');
+
+        content.innerHTML = `
+            <div class="detail-item">
+                <span class="detail-label">رقم الطلب:</span>
+                <span>${order.orderNumber}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">التكلفة:</span>
+                <span>${order.cost ? order.cost + ' درهم' : 'غير محدد'}</span>
+            </div>
+            <h3 style="margin-top: 20px;">معلومات المكتبة</h3>
+            <div class="detail-item">
+                <span class="detail-label">المكتبة:</span>
+                <span>${order.assignedTo?.name || 'غير معين'}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">هاتف المكتبة:</span>
+                <span>${order.assignedTo?.phone || 'غير متوفر'}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">موقع المكتبة:</span>
+                <span><a href="https://www.google.com/maps?q=${order.assignedTo?.location?.coordinates[1]},${order.assignedTo?.location?.coordinates[0]}" target="_blank">عرض على الخريطة</a></span>
+            </div>
+            <div id="clientInfoSection" style="display: none;">
+                <h3 style="margin-top: 20px;">معلومات العميل</h3>
+                <div class="detail-item">
+                    <span class="detail-label">اسم ولي الأمر:</span>
+                    <span>${order.parentName}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">هاتف ولي الأمر:</span>
+                    <span>${order.phone}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">موقع التوصيل:</span>
+                    <span><a href="https://www.google.com/maps?q=${order.location.coordinates[1]},${order.location.coordinates[0]}" target="_blank">عرض على الخريطة</a></span>
+                </div>
+            </div>
+        `;
+
+        // Show/hide buttons based on order status
+        if (order.deliveryStatus === 'assigned') {
+            paymentBtn.style.display = 'block';
+            confirmBtn.style.display = 'none';
+        } else {
+            paymentBtn.style.display = 'none';
+            confirmBtn.style.display = 'none';
+        }
+
+        // Set up payment button click event
+        paymentBtn.onclick = function() {
+            // Hide payment button and show client info and confirm delivery button
+            paymentBtn.style.display = 'none';
+            document.getElementById('clientInfoSection').style.display = 'block';
+            confirmBtn.style.display = 'block';
+        };
+
+        // Set up confirm delivery button click event
+        confirmBtn.onclick = function() {
+            deliverOrder(order._id);
+        };
+
+        modal.classList.add('active');
+    })
+    .catch(error => {
+        showAlert('ordersAlert', 'error', 'فشل في تحميل تفاصيل الطلب');
+        console.error('Error loading order details:', error);
+    });
+}
         
         // Deliver order
         function deliverOrder(orderId) {
