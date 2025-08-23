@@ -518,6 +518,84 @@
             border-radius: 5px;
             padding: 5px;
         }
+        /* Delivery Man Modal Styles */
+#deliveryModal .modal-content {
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.delivery-man-card {
+    background: white;
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.delivery-man-card strong {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 16px;
+}
+
+.delivery-man-card div {
+    margin: 3px 0;
+    color: #555;
+}
+
+.delivery-man-actions {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+}
+
+.delivery-man-actions button {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.edit-delivery-btn {
+    background: var(--secondary);
+    color: white;
+}
+
+.delete-delivery-btn {
+    background: #dc3545;
+    color: white;
+}
+
+/* Form styles */
+#deliveryModal input {
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0 15px 0;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+#deliveryModal label {
+    font-weight: 600;
+    color: #444;
+}
+
+#saveDeliveryBtn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 10px;
+}
+
+#saveDeliveryBtn:hover {
+    background: #3d8b40;
+}
     </style>
 </head>
 <body>
@@ -543,6 +621,7 @@
     <div class="auth-info">
         <span>مرحباً, <span id="adminName">Admin</span></span>
         <button id="manageLibrariesBtn" class="btn" style="margin-left: 10px;">إدارة المكتبات</button>
+        <button id="manageDeliveryBtn" class="btn" style="margin-left: 10px;">إدارة مندوبي التوصيل</button>
         <button id="logoutBtn" class="btn">تسجيل الخروج</button>
     </div>
 </header>
@@ -678,10 +757,48 @@
 </div>
   </div>
 </div>
+
+<div id="deliveryModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+  <div class="modal-content" style="background-color: #fefefe; margin: 5% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 800px; border-radius: 10px;">
+    <span class="close" style="color: #aaa; float: left; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+    <h2>إدارة مندوبي التوصيل</h2>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
+      <div>
+        <label>الاسم:</label>
+        <input type="text" id="deliveryName" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+      </div>
+      <div>
+        <label>الهاتف:</label>
+        <input type="text" id="deliveryPhone" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+      </div>
+      <div>
+        <label>اسم المستخدم:</label>
+        <input type="text" id="deliveryUsername" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+      </div>
+      <div>
+        <label>كلمة المرور:</label>
+        <input type="password" id="deliveryPassword" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+      </div>
+    </div>
+    
+    <button id="saveDeliveryBtn" style="background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+      حفظ مندوب التوصيل
+    </button>
+    
+    <div id="deliveryList" style="margin-top: 20px;">
+      <h3>مندوبو التوصيل</h3>
+      <div id="deliveryContainer"></div>
+    </div>
+  </div>
+</div>
     <script>
         let authToken = localStorage.getItem('adminToken');
         const API_BASE = window.location.origin;
         let currentOrder = null;
+        let deliveryMap, deliveryMarker;
+        let deliveryMen = [];
+        let currentEditingDeliveryManId = null
         
         // Check if user is already logged in
         if (authToken) {
@@ -1144,6 +1261,232 @@ function toggleLibrarySection() {
     }
 }
 
+// Open delivery man modal
+function openDeliveryModal() {
+    document.getElementById('deliveryModal').style.display = 'block';
+    loadDeliveryMen();
+    resetDeliveryForm();
+}
+
+// Close delivery modal
+function closeDeliveryModal() {
+    document.getElementById('deliveryModal').style.display = 'none';
+}
+
+// Load delivery men
+function loadDeliveryMen() {
+    fetch(`${API_BASE}/api/delivery-men`, {
+        headers: {
+            'Authorization': `Bearer ${authToken}`
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        deliveryMen = data;
+        renderDeliveryMen();
+    })
+    .catch(error => {
+        console.error('Error loading delivery men:', error);
+        showAlert('ordersAlert', 'error', 'فشل في تحميل بيانات مندوبي التوصيل');
+    });
+}
+
+// Render delivery men list
+function renderDeliveryMen() {
+    const container = document.getElementById('deliveryContainer');
+    container.innerHTML = '';
+    
+    if (deliveryMen.length === 0) {
+        container.innerHTML = '<p>لا توجد سجلات لمناديب التوصيل</p>';
+        return;
+    }
+    
+    deliveryMen.forEach(deliveryMan => {
+        const deliveryElement = document.createElement('div');
+        deliveryElement.style.background = 'white';
+        deliveryElement.style.padding = '15px';
+        deliveryElement.style.margin = '10px 0';
+        deliveryElement.style.borderRadius = '5px';
+        deliveryElement.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
+        
+        deliveryElement.innerHTML = `
+            <strong>${deliveryMan.name}</strong> - ${deliveryMan.phone}
+            <div>اسم المستخدم: ${deliveryMan.username}</div>
+            <div>النقاط: ${deliveryMan.score || 0}</div>
+            <div>الحالة: ${deliveryMan.isAvailable ? 'متاح' : 'غير متاح'}</div>
+            <div style="margin-top: 10px;">
+                <button onclick="editDeliveryMan('${deliveryMan._id}')" style="background: var(--secondary); color: white; border: none; padding: 5px 10px; border-radius: 3px; margin-right: 5px; cursor: pointer;">
+                    تعديل
+                </button>
+                <button onclick="deleteDeliveryMan('${deliveryMan._id}')" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">
+                    حذف
+                </button>
+            </div>
+        `;
+        
+        container.appendChild(deliveryElement);
+    });
+}
+
+// Edit delivery man
+function editDeliveryMan(deliveryManId) {
+    const deliveryMan = deliveryMen.find(dm => dm._id === deliveryManId);
+    if (deliveryMan) {
+        currentEditingDeliveryManId = deliveryManId;
+        document.getElementById('deliveryName').value = deliveryMan.name;
+        document.getElementById('deliveryPhone').value = deliveryMan.phone;
+        document.getElementById('deliveryUsername').value = deliveryMan.username;
+        document.getElementById('deliveryPassword').value = '';
+    }
+}
+
+// Delete delivery man
+function deleteDeliveryMan(deliveryManId) {
+    if (confirm('هل أنت متأكد من حذف مندوب التوصيل هذا؟')) {
+        fetch(`${API_BASE}/api/delivery-men/${deliveryManId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            showAlert('ordersAlert', 'success', 'تم حذف مندوب التوصيل بنجاح');
+            loadDeliveryMen();
+        })
+        .catch(error => {
+            console.error('Error deleting delivery man:', error);
+            showAlert('ordersAlert', 'error', 'فشل في حذف مندوب التوصيل');
+        });
+    }
+}
+
+// Save delivery man (create or update)
+document.getElementById('saveDeliveryBtn').addEventListener('click', function() {
+    const name = document.getElementById('deliveryName').value;
+    const phone = document.getElementById('deliveryPhone').value;
+    const username = document.getElementById('deliveryUsername').value;
+    const password = document.getElementById('deliveryPassword').value;
+    
+    if (!name || !phone || !username) {
+        alert('يرجى ملء جميع الحقول المطلوبة');
+        return;
+    }
+    
+    // For new delivery man, password is required
+    if (!currentEditingDeliveryManId && !password) {
+        alert('كلمة المرور مطلوبة لمندوب التوصيل الجديد');
+        return;
+    }
+    
+    const url = currentEditingDeliveryManId ? 
+        `${API_BASE}/api/delivery-men/${currentEditingDeliveryManId}` : 
+        `${API_BASE}/api/delivery-men`;
+    
+    const method = currentEditingDeliveryManId ? 'PUT' : 'POST';
+    
+    fetch(url, {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({
+            name,
+            phone,
+            username,
+            password: password || undefined // Only send password if provided
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.message) {
+            showAlert('ordersAlert', 'success', currentEditingDeliveryManId ? 
+                'تم تحديث مندوب التوصيل بنجاح' : 'تم إنشاء مندوب التوصيل بنجاح');
+            loadDeliveryMen();
+            resetDeliveryForm();
+        } else {
+            showAlert('ordersAlert', 'error', data.message || 'فشل في حفظ مندوب التوصيل');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving delivery man:', error);
+        showAlert('ordersAlert', 'error', 'خطأ في الاتصال بالخادم');
+    });
+});
+
+// Reset delivery form
+function resetDeliveryForm() {
+    currentEditingDeliveryManId = null;
+    document.getElementById('deliveryName').value = '';
+    document.getElementById('deliveryPhone').value = '';
+    document.getElementById('deliveryUsername').value = '';
+    document.getElementById('deliveryPassword').value = '';
+}
+
+// Assign order to delivery man
+function assignOrderToDelivery(orderId) {
+    // First, load available delivery men
+    fetch(`${API_BASE}/api/delivery-men`, {
+        headers: {
+            'Authorization': `Bearer ${authToken}`
+        }
+    })
+    .then(response => response.json())
+    .then(deliveryMen => {
+        if (deliveryMen.length === 0) {
+            alert('لا توجد مناديب توصيل متاحين. يرجى إضافة مناديب توصيل أولاً.');
+            return;
+        }
+        
+        // Create a modal or dropdown to select a delivery man
+        const deliveryOptions = deliveryMen.map(dm => 
+            `<option value="${dm._id}">${dm.name} - ${dm.phone} (النقاط: ${dm.score || 0})</option>`
+        ).join('');
+        
+        const selectHtml = `
+            <div style="margin: 20px 0;">
+                <label>اختر مندوب التوصيل:</label>
+                <select id="deliveryManSelect" style="width: 100%; padding: 10px; margin-top: 10px;">
+                    ${deliveryOptions}
+                </select>
+            </div>
+        `;
+        
+        // You can use a modal library or create your own modal
+        if (confirm(`هل تريد تعيين هذا الطلب إلى مندوب توصيل؟${selectHtml}`)) {
+            const deliveryManId = document.getElementById('deliveryManSelect').value;
+            
+            fetch(`${API_BASE}/api/orders/${orderId}/assign-delivery`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                },
+                body: JSON.stringify({ deliveryManId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    showAlert('ordersAlert', 'success', 'تم تعيين الطلب إلى مندوب التوصيل بنجاح');
+                    loadOrders();
+                } else {
+                    showAlert('ordersAlert', 'error', data.message || 'فشل في تعيين الطلب');
+                }
+            })
+            .catch(error => {
+                console.error('Error assigning order to delivery:', error);
+                showAlert('ordersAlert', 'error', 'خطأ في الاتصال بالخادم');
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error loading delivery men:', error);
+        showAlert('ordersAlert', 'error', 'فشل في تحميل مناديب التوصيل');
+    });
+}
+document.getElementById('manageDeliveryBtn').addEventListener('click', openDeliveryModal);
+
 // Initialize map
 function initMap() {
   map = L.map('map').setView([35.5762, -5.3684], 13); // Tetouan coordinates
@@ -1514,6 +1857,9 @@ window.addEventListener('click', function(event) {
   if (event.target.classList.contains('modal')) {
     event.target.style.display = 'none';
   }
+  if (event.target.classList.contains('modal')) {
+        event.target.style.display = 'none';
+    }
 });
 
 document.getElementById('ordersTableBody').addEventListener('click', function(e) {
@@ -1536,6 +1882,9 @@ document.getElementById('ordersTableBody').addEventListener('click', function(e)
   else if (target.classList.contains('delete-btn')) {
     deleteOrder(orderId);
   }
+  else if (target.classList.contains('assign-delivery-btn')) {
+        assignOrderToDelivery(orderId);
+    }
 });
 
 document.getElementById('ordersTableBody').addEventListener('change', function(e) {

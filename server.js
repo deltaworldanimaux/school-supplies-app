@@ -23,6 +23,7 @@ let clients = [];
 const Order = require('./models/Order');
 const Admin = require('./models/Admin');
 const Library = require('./models/Library');
+const DeliveryMan = require('./models/DeliveryMan');
 const GITHUB_TOKEN = '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';
 const GITHUB_REPO = 'deltaworldanimaux/myproject3';
 const GITHUB_BRANCH = 'main';
@@ -627,6 +628,254 @@ app.get('/api/library/orders/:id', authenticateLibrary, async (req, res) => {
     res.json(order);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching order', error: error.message });
+  }
+});
+
+// Delivery Man authentication middleware
+const authenticateDeliveryMan = async (req, res, next) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    if (!token) return res.status(401).json({ message: 'Access denied' });
+    
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+    const deliveryMan = await DeliveryMan.findById(decoded.id);
+    
+    if (!deliveryMan) return res.status(401).json({ message: 'Invalid token' });
+    
+    req.deliveryMan = deliveryMan;
+    next();
+  } catch (error) {
+    res.status(400).json({ message: 'Invalid token' });
+  }
+};
+
+// Create delivery man (admin only)
+app.post('/api/delivery-men', authenticateAdmin, async (req, res) => {
+  try {
+    const { name, phone, username, password } = req.body;
+    
+    const hashedPassword = await bcrypt.hash(password, 12);
+    
+    const deliveryMan = new DeliveryMan({
+      name,
+      phone,
+      username,
+      password: hashedPassword
+    });
+    
+    await deliveryMan.save();
+    
+    res.status(201).json({
+      message: 'Delivery man created successfully',
+      deliveryMan: {
+        _id: deliveryMan._id,
+        name: deliveryMan.name,
+        phone: deliveryMan.phone,
+        username: deliveryMan.username,
+        password: password // Return plain text password for admin reference
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error creating delivery man', error: error.message });
+  }
+});
+
+// Get all delivery men (admin only)
+app.get('/api/delivery-men', authenticateAdmin, async (req, res) => {
+  try {
+    const deliveryMen = await DeliveryMan.find().select('-password');
+    res.json(deliveryMen);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching delivery men', error: error.message });
+  }
+});
+
+// Update delivery man (admin only)
+app.put('/api/delivery-men/:id', authenticateAdmin, async (req, res) => {
+  try {
+    const { name, phone, username, password } = req.body;
+    
+    const updateData = { name, phone, username };
+    
+    if (password) {
+      const hashedPassword = await bcrypt.hash(password, 12);
+      updateData.password = hashedPassword;
+    }
+    
+    const deliveryMan = await DeliveryMan.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true }
+    ).select('-password');
+    
+    if (!deliveryMan) {
+      return res.status(404).json({ message: 'Delivery man not found' });
+    }
+    
+    res.json({ message: 'Delivery man updated successfully', deliveryMan });
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating delivery man', error: error.message });
+  }
+});
+
+// Delete delivery man (admin only)
+app.delete('/api/delivery-men/:id', authenticateAdmin, async (req, res) => {
+  try {
+    const deliveryMan = await DeliveryMan.findByIdAndDelete(req.params.id);
+    
+    if (!deliveryMan) {
+      return res.status(404).json({ message: 'Delivery man not found' });
+    }
+    
+    res.json({ message: 'Delivery man deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting delivery man', error: error.message });
+  }
+});
+
+// Delivery man login
+app.post('/api/delivery/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const deliveryMan = await DeliveryMan.findOne({ username });
+    
+    if (!deliveryMan || !(await bcrypt.compare(password, deliveryMan.password))) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+    
+    const token = jwt.sign(
+      { id: deliveryMan._id },
+      process.env.JWT_SECRET || 'fallback_secret',
+      { expiresIn: '24h' }
+    );
+    
+    res.json({ 
+      token, 
+      deliveryMan: { 
+        id: deliveryMan._id, 
+        name: deliveryMan.name,
+        score: deliveryMan.score
+      } 
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Login error', error: error.message });
+  }
+});
+
+// Assign order to delivery man
+app.post('/api/orders/:id/assign-delivery', authenticateAdmin, async (req, res) => {
+  try {
+    const { deliveryManId } = req.body;
+    
+    const deliveryMan = await DeliveryMan.findById(deliveryManId);
+    if (!deliveryMan) {
+      return res.status(404).json({ message: 'Delivery man not found' });
+    }
+    
+    const order = await Order.findByIdAndUpdate(
+      req.params.id,
+      { 
+        deliveryMan: deliveryManId,
+        deliveryStatus: 'assigned'
+      },
+      { new: true }
+    );
+    
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+    
+    res.json({ message: 'Order assigned to delivery man', order });
+  } catch (error) {
+    res.status(500).json({ message: 'Error assigning order', error: error.message });
+  }
+});
+
+// Get available orders for delivery (status: ready)
+app.get('/api/delivery/available-orders', authenticateDeliveryMan, async (req, res) => {
+  try {
+    const orders = await Order.find({ 
+      status: 'ready',
+      deliveryStatus: 'pending',
+      deliveryMan: { $exists: false }
+    }).populate('assignedTo', 'name phone location');
+    
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching orders', error: error.message });
+  }
+});
+
+// Delivery man picks up order
+app.put('/api/delivery/orders/:id/pickup', authenticateDeliveryMan, async (req, res) => {
+  try {
+    const order = await Order.findOneAndUpdate(
+      { 
+        _id: req.params.id, 
+        status: 'ready',
+        deliveryStatus: 'pending',
+        deliveryMan: { $exists: false }
+      },
+      { 
+        deliveryMan: req.deliveryMan._id,
+        deliveryStatus: 'assigned'
+      },
+      { new: true }
+    ).populate('assignedTo', 'name phone location');
+    
+    if (!order) {
+      return res.status(404).json({ message: 'Order not available or already taken' });
+    }
+    
+    res.json({ message: 'Order assigned to you successfully', order });
+  } catch (error) {
+    res.status(500).json({ message: 'Error picking up order', error: error.message });
+  }
+});
+
+// Get orders for delivery man
+app.get('/api/delivery/my-orders', authenticateDeliveryMan, async (req, res) => {
+  try {
+    const orders = await Order.find({ 
+      deliveryMan: req.deliveryMan._id,
+      deliveryStatus: { $in: ['assigned', 'picked_up'] }
+    }).populate('assignedTo', 'name phone location');
+    
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching orders', error: error.message });
+  }
+});
+
+// Delivery man marks order as delivered
+app.put('/api/delivery/orders/:id/deliver', authenticateDeliveryMan, async (req, res) => {
+  try {
+    const order = await Order.findOneAndUpdate(
+      { 
+        _id: req.params.id, 
+        deliveryMan: req.deliveryMan._id,
+        deliveryStatus: 'assigned'
+      },
+      { 
+        deliveryStatus: 'delivered',
+        status: 'delivered'
+      },
+      { new: true }
+    );
+    
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found or not assigned to you' });
+    }
+    
+    // Increase delivery man's score
+    await DeliveryMan.findByIdAndUpdate(
+      req.deliveryMan._id,
+      { $inc: { score: 10 } }
+    );
+    
+    res.json({ message: 'Order delivered successfully', order });
+  } catch (error) {
+    res.status(500).json({ message: 'Error delivering order', error: error.message });
   }
 });
 
