@@ -813,10 +813,10 @@ app.post('/api/orders/:id/assign-delivery', authenticateAdmin, async (req, res) 
 app.get('/api/delivery/available-orders', authenticateDeliveryMan, async (req, res) => {
   try {
     const orders = await Order.find({ 
-      status: 'ready', // Changed from 'ready' to include ready orders
+      status: 'ready',
       deliveryStatus: 'pending',
       deliveryMan: { $exists: false }
-    }).populate('assignedTo', 'name phone location').populate('deliveryMan', 'name phone');
+    }).populate('assignedTo', 'name phone location');
     
     res.json(orders);
   } catch (error) {

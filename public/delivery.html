@@ -531,9 +531,9 @@
                 
                 orderCard.innerHTML = `
                     <div class="order-header">
-                        <div class="order-number">${order.orderNumber}</div>
-                        <div class="order-status status-pending">متاح</div>
-                    </div>
+    <div class="order-number">${order.orderNumber}</div>
+    <div class="order-status status-ready">جاهز للتوصيل</div>
+  </div>
                     <div class="order-details">
                         <div class="detail-item">
                             <span class="detail-label">المكتبة:</span>
@@ -557,7 +557,24 @@
                 });
             });
         }
-        
+
+        function getStatusClass(status) {
+  switch(status) {
+    case 'ready': return 'status-ready';
+    case 'assigned': return 'status-assigned';
+    case 'picked_up': return 'status-picked_up';
+    default: return 'status-pending';
+  }
+}
+
+function getStatusText(status) {
+  switch(status) {
+    case 'ready': return 'جاهز للتوصيل';
+    case 'assigned': return 'قيد التوصيل';
+    case 'picked_up': return 'تم الاستلام';
+    default: return status;
+  }
+}
         // Render my orders
         function renderMyOrders(orders) {
             const container = document.getElementById('myOrders');
