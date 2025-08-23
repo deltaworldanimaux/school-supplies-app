@@ -690,6 +690,24 @@ app.get('/api/delivery-men', authenticateAdmin, async (req, res) => {
   }
 });
 
+// Get order details for delivery man
+app.get('/api/delivery/orders/:id', authenticateDeliveryMan, async (req, res) => {
+  try {
+    const order = await Order.findOne({
+      _id: req.params.id,
+      deliveryMan: req.deliveryMan._id
+    }).populate('assignedTo', 'name phone location');
+
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found or not assigned to you' });
+    }
+
+    res.json(order);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching order', error: error.message });
+  }
+});
+
 // Update delivery man (admin only)
 app.put('/api/delivery-men/:id', authenticateAdmin, async (req, res) => {
   try {

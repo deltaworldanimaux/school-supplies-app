@@ -645,7 +645,7 @@
         
         // View order details
         function viewOrderDetails(orderId) {
-            fetch(`${API_BASE}/api/orders/${orderId}?populate=assignedTo`, {
+            fetch(`${API_BASE}/api/delivery/orders/${orderId}`, {
                 headers: {
                     'Authorization': `Bearer ${authToken}`
                 }
