@@ -579,10 +579,16 @@
 .cancel-btn {
     background-color: #e74c3c;
     color: white;
+    margin-top: 10px;
 }
 
 .cancel-btn:hover {
     background-color: #c0392b;
+}
+
+.cancel-btn:disabled {
+    background-color: #95a5a6;
+    cursor: not-allowed;
 }
 .cost-item {
     display: flex;
@@ -1603,17 +1609,25 @@ function cancelOrder(orderId) {
     })
     .then(response => {
         if (!response.ok) {
-            throw new Error('Network response was not ok');
+            return response.json().then(err => { throw new Error(err.message); });
         }
         return response.json();
     })
     .then(data => {
         showAlert('ordersAlert', 'success', 'تم إلغاء الطلب بنجاح');
         hasActiveOrder = false;
-        loadDeliveryData();
+        
+        // Remove the order from UI without refreshing
+        document.querySelector(`.order-card button[data-order="${orderId}"]`).closest('.order-card').remove();
+        
+        // Refresh available orders
+        loadAvailableOrders();
+        
+        // Update profile to reflect no active order
+        fetchProfile();
     })
     .catch(error => {
-        showAlert('ordersAlert', 'error', 'فشل في إلغاء الطلب');
+        showAlert('ordersAlert', 'error', error.message || 'فشل في إلغاء الطلب');
         console.error('Error canceling order:', error);
     });
 }

@@ -33,7 +33,11 @@ deliveryStatus: {
   default: 'pending',
   enum: ['pending', 'assigned', 'picked_up', 'delivered']
 },
-deliveryCost: { type: Number, default: null }
+deliveryCost: { type: Number, default: null },
+rejectedBy: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'DeliveryMan'
+  }]
 }, {
   timestamps: true
 });

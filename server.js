@@ -959,8 +959,9 @@ app.post('/api/orders/:id/assign-delivery', authenticateAdmin, async (req, res) 
 app.get('/api/delivery/available-orders', authenticateDeliveryMan, async (req, res) => {
   try {
     const orders = await Order.find({
-      status: 'ready', // Already set when library completes order
-      deliveryStatus: 'pending', // Only pending deliveries
+      status: 'ready',
+      deliveryStatus: 'pending',
+      rejectedBy: { $ne: req.deliveryMan._id }, // Exclude orders rejected by this delivery man
       $or: [
         { deliveryMan: { $exists: false } },
         { deliveryMan: null }
@@ -983,6 +984,7 @@ app.put('/api/delivery/orders/:id/cancel', authenticateDeliveryMan, async (req, 
         deliveryStatus: 'assigned'
       },
       {
+        $push: { rejectedBy: req.deliveryMan._id }, // Track who rejected this order
         deliveryStatus: 'pending',
         deliveryMan: null
       },
