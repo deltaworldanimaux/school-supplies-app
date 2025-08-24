@@ -446,11 +446,11 @@
     currentLibrary = data.library;
     
     // Fetch the full library info to get phone number
-    fetch(`${API_BASE}/api/libraries/${data.library.id}`, {
-      headers: {
-        'Authorization': `Bearer ${authToken}`
-      }
-    })
+    fetch(`${API_BASE}/api/library/profile`, {
+  headers: {
+    'Authorization': `Bearer ${authToken}`
+  }
+})
     .then(response => response.json())
     .then(libraryInfo => {
       currentLibrary = {...data.library, ...libraryInfo};
