@@ -1459,6 +1459,26 @@ function showOrderDetails(order) {
         clientMapLink.style.display = 'none';
     }
     
+    // ADD CANCEL BUTTON TO STEP 1 CONTENT
+    const step1Content = document.querySelector('[data-step="1"]');
+    // Check if cancel button already exists to avoid duplicates
+    if (!step1Content.querySelector('#cancelOrderBtn')) {
+        const cancelBtn = document.createElement('button');
+        cancelBtn.id = 'cancelOrderBtn';
+        cancelBtn.className = 'modal-action-btn cancel-btn';
+        cancelBtn.textContent = 'إلغاء الطلب';
+        cancelBtn.addEventListener('click', function() {
+            if (confirm('هل أنت متأكد من إلغاء هذا الطلب؟')) {
+                cancelOrder(order._id);
+                document.getElementById('orderModal').classList.remove('active');
+            }
+        });
+        
+        // Add the cancel button after the map link
+        const libraryInfo = step1Content.querySelector('.library-info');
+        libraryInfo.appendChild(cancelBtn);
+    }
+    
     // Reset steps based on order status
     if (order.deliveryStatus === 'assigned') {
         currentStep = 1;
