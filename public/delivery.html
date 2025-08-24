@@ -559,6 +559,17 @@
                 align-items: flex-end;
             }
         }
+        .map-link {
+    display: inline-block;
+    margin-top: 8px;
+    color: #2196F3;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.map-link:hover {
+    text-decoration: underline;
+}
     </style>
 </head>
 <body>
@@ -656,11 +667,11 @@
                             <h3>استلام الطلب</h3>
                             <p>تم استلام الطلب بنجاح. توجه الآن إلى المكتبة لاستلام المواد.</p>
                             <div class="library-info">
-                                <h4>معلومات المكتبة:</h4>
-                                <p id="libraryName"></p>
-                                <p id="libraryPhone"></p>
-                                <p id="libraryAddress"></p>
-                            </div>
+    <h4>معلومات المكتبة:</h4>
+    <p id="libraryName"></p>
+    <p id="libraryPhone"></p>
+    <a id="libraryMapLink" target="_blank" class="map-link">عرض على الخريطة</a>
+</div>
                             <button class="modal-action-btn next-step" data-next="2">وصلت إلى المكتبة</button>
                         </div>
                         
@@ -681,11 +692,11 @@
                             <h3>التسليم للعميل</h3>
                             <p>تم الدفع بنجاح. توجه الآن إلى العميل لتسليم الطلب.</p>
                             <div class="client-info">
-                                <h4>معلومات العميل:</h4>
-                                <p id="clientName"></p>
-                                <p id="clientPhone"></p>
-                                <p id="clientAddress"></p>
-                            </div>
+    <h4>معلومات العميل:</h4>
+    <p id="clientName"></p>
+    <p id="clientPhone"></p>
+    <a id="clientMapLink" target="_blank" class="map-link">عرض على الخريطة</a>
+</div>
                             <button class="modal-action-btn next-step" data-next="4">وصلت إلى العميل</button>
                         </div>
                         
@@ -1091,28 +1102,46 @@
         
         // Show order details in modal
         function showOrderDetails(order) {
-            // Update modal with order details
-            document.getElementById('modalOrderNumber').textContent = order.orderNumber;
-            document.getElementById('libraryName').textContent = order.assignedTo?.name || 'غير معين';
-            document.getElementById('libraryPhone').textContent = order.assignedTo?.phone || 'غير متوفر';
-            document.getElementById('libraryAddress').textContent = 'عرض على الخريطة';
-            document.getElementById('orderCost').textContent = order.cost ? order.cost + ' درهم' : 'غير محدد';
-            document.getElementById('clientName').textContent = order.parentName;
-            document.getElementById('clientPhone').textContent = order.phone;
-            document.getElementById('clientAddress').textContent = 'عرض على الخريطة';
-            
-            // Reset steps based on order status
-            if (order.deliveryStatus === 'assigned') {
-                currentStep = 1;
-            } else if (order.deliveryStatus === 'picked_up') {
-                currentStep = 3;
-            }
-            
-            updateSteps();
-            
-            // Show modal
-            document.getElementById('orderModal').classList.add('active');
-        }
+    // Update modal with order details
+    document.getElementById('modalOrderNumber').textContent = order.orderNumber;
+    document.getElementById('libraryName').textContent = order.assignedTo?.name || 'غير معين';
+    document.getElementById('libraryPhone').textContent = order.assignedTo?.phone || 'غير متوفر';
+    document.getElementById('orderCost').textContent = order.cost ? order.cost + ' درهم' : 'غير محدد';
+    document.getElementById('clientName').textContent = order.parentName;
+    document.getElementById('clientPhone').textContent = order.phone;
+    
+    // Set up map links
+    const libraryMapLink = document.getElementById('libraryMapLink');
+    const clientMapLink = document.getElementById('clientMapLink');
+    
+    if (order.assignedTo?.location?.coordinates) {
+        const [lng, lat] = order.assignedTo.location.coordinates;
+        libraryMapLink.href = `https://www.google.com/maps?q=${lat},${lng}`;
+        libraryMapLink.style.display = 'inline';
+    } else {
+        libraryMapLink.style.display = 'none';
+    }
+    
+    if (order.location?.coordinates) {
+        const [lng, lat] = order.location.coordinates;
+        clientMapLink.href = `https://www.google.com/maps?q=${lat},${lng}`;
+        clientMapLink.style.display = 'inline';
+    } else {
+        clientMapLink.style.display = 'none';
+    }
+    
+    // Reset steps based on order status
+    if (order.deliveryStatus === 'assigned') {
+        currentStep = 1;
+    } else if (order.deliveryStatus === 'picked_up') {
+        currentStep = 3;
+    }
+    
+    updateSteps();
+    
+    // Show modal
+    document.getElementById('orderModal').classList.add('active');
+}
         
         // Function to update step visualization
         function updateSteps() {
