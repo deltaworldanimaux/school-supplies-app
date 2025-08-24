@@ -398,7 +398,8 @@
         const API_BASE = window.location.origin;
         let currentOrder = null;
         let map = null;
-        
+        let currentDeliveryManId = null; 
+        let eventSource = null; 
         // Check if user is already logged in
         if (authToken) {
 document.getElementById('loginPage').classList.add('hidden');
@@ -421,6 +422,7 @@ document.getElementById('totalScore').textContent = data.score;
 
 // ✅ now load orders
 loadDeliveryData();
+
 })
 .catch(() => {
 localStorage.removeItem('deliveryToken');
@@ -464,6 +466,8 @@ document.getElementById('deliveryPage').classList.add('hidden');
                     document.getElementById('deliveryName').textContent = data.deliveryMan.name;
                     document.getElementById('deliveryScore').textContent = data.deliveryMan.score;
                     document.getElementById('totalScore').textContent = data.deliveryMan.score;
+                    currentDeliveryManId = data.deliveryMan.id;
+                    setupEventSource();
                     loadDeliveryData();
                 } else {
                     showAlert('loginAlert', 'error', data.message || 'فشل تسجيل الدخول');
@@ -477,10 +481,14 @@ document.getElementById('deliveryPage').classList.add('hidden');
         
         // Logout functionality
         document.getElementById('logoutBtn').addEventListener('click', function() {
-            localStorage.removeItem('deliveryToken');
-            document.getElementById('loginPage').classList.remove('hidden');
-            document.getElementById('deliveryPage').classList.add('hidden');
-        });
+  if (eventSource) {
+    eventSource.close();
+    eventSource = null;
+  }
+  localStorage.removeItem('deliveryToken');
+  document.getElementById('loginPage').classList.remove('hidden');
+  document.getElementById('deliveryPage').classList.add('hidden');
+});
         
         // Load delivery data
         function loadDeliveryData() {
@@ -680,7 +688,33 @@ function getStatusText(status) {
                 console.error('Error picking up order:', error);
             });
         }
-        
+
+function setupEventSource() {
+  const eventSource = new EventSource(`${API_BASE}/api/delivery/events`, {
+    headers: { 'Authorization': `Bearer ${authToken}` }
+  });
+  
+  eventSource.addEventListener('order-taken', function(event) {
+    const data = JSON.parse(event.data);
+    
+    // If this order was taken by someone else, remove it from our available list
+    if (data.takenBy !== currentDeliveryManId) {
+      const orderElement = document.querySelector(`[data-order="${data.orderId}"]`);
+      if (orderElement) {
+        orderElement.closest('.order-card').remove();
+      }
+    }
+    
+    // Reload data to ensure we have the latest state
+    loadDeliveryData();
+  });
+  
+  eventSource.onerror = function(error) {
+    console.error('EventSource failed:', error);
+    // Attempt to reconnect after a delay
+    setTimeout(setupEventSource, 5000);
+  };
+}  
         // View order details
         function viewOrderDetails(orderId) {
     fetch(`${API_BASE}/api/delivery/orders/${orderId}`, {

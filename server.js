@@ -19,6 +19,7 @@ app.use('/uploads', express.static('uploads'));
 // MongoDB Connection
 const MONGODB_URI = "mongodb+srv://deltaworldanimaux:SYQ0SLzI97c73EKS@supply.v7ebphf.mongodb.net/school_supplies?retryWrites=true&w=majority&appName=supply";
 let clients = [];
+let deliveryClients = [];
 // MongoDB Models
 const Order = require('./models/Order');
 const Admin = require('./models/Admin');
@@ -367,6 +368,47 @@ name: req.deliveryMan.name,
 score: req.deliveryMan.score
 });
 });
+
+app.get('/api/delivery/events', async (req, res) => {
+  try {
+    const token = req.query.token;
+    
+    if (!token) {
+      return res.status(401).json({ message: 'No token provided' });
+    }
+    
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+    const deliveryMan = await DeliveryMan.findById(decoded.id);
+    
+    if (!deliveryMan) {
+      return res.status(401).json({ message: 'Invalid token' });
+    }
+    
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+
+    const clientId = Date.now();
+    const newClient = {
+      id: clientId,
+      res,
+      deliveryManId: deliveryMan._id
+    };
+    deliveryClients.push(newClient);
+
+    req.on('close', () => {
+      deliveryClients = deliveryClients.filter(client => client.id !== clientId);
+    });
+  } catch (error) {
+    res.status(400).json({ message: 'Invalid token' });
+  }
+});
+
+// Function to send events to all delivery clients
+function sendEventToDeliveryClients(event, data) {
+  deliveryClients.forEach(client => client.res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
+}
 
 // Update order status (admin only)
 app.put('/api/orders/:id/status', authenticateAdmin, async (req, res) => {
@@ -866,6 +908,12 @@ app.put('/api/delivery/orders/:id/pickup', authenticateDeliveryMan, async (req, 
     if (!order) {
       return res.status(404).json({ message: 'Order not available or already taken' });
     }
+    
+    // Send event to all delivery clients
+    sendEventToDeliveryClients('order-taken', { 
+      orderId: order._id,
+      takenBy: req.deliveryMan._id
+    });
     
     res.json({ message: 'Order assigned to you successfully', order });
   } catch (error) {
