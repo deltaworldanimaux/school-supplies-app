@@ -841,9 +841,14 @@ app.get('/api/delivery/orders/:id', authenticateDeliveryMan, async (req, res) =>
 // Update delivery man (admin only)
 app.put('/api/delivery-men/:id', authenticateAdmin, async (req, res) => {
   try {
-    const { name, phone, username, password } = req.body;
+    const { name, phone, username, password, score } = req.body;
     
     const updateData = { name, phone, username };
+    
+    // Add score to update data if provided
+    if (score !== undefined) {
+      updateData.score = score;
+    }
     
     if (password) {
       const hashedPassword = await bcrypt.hash(password, 12);
