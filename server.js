@@ -329,6 +329,11 @@ const authenticateDeliveryMan = async (req, res, next) => {
     
     if (!deliveryMan) return res.status(401).json({ message: 'Invalid token' });
     
+    // Check if password version matches
+    if (decoded.pv !== deliveryMan.passwordVersion) {
+      return res.status(401).json({ message: 'Session expired. Please login again.' });
+    }
+    
     req.deliveryMan = deliveryMan;
     next();
   } catch (error) {
@@ -790,7 +795,8 @@ app.post('/api/delivery-men', authenticateAdmin, async (req, res) => {
       name,
       phone,
       username,
-      password: hashedPassword
+      password: hashedPassword,
+      passwordVersion: 0 // Set initial password version
     });
     
     await deliveryMan.save();
@@ -853,6 +859,8 @@ app.put('/api/delivery-men/:id', authenticateAdmin, async (req, res) => {
     if (password) {
       const hashedPassword = await bcrypt.hash(password, 12);
       updateData.password = hashedPassword;
+      // Increment password version to invalidate existing sessions
+      updateData.passwordVersion = (updateData.passwordVersion || 0) + 1;
     }
     
     const deliveryMan = await DeliveryMan.findByIdAndUpdate(
@@ -897,7 +905,10 @@ app.post('/api/delivery/login', async (req, res) => {
     }
     
     const token = jwt.sign(
-      { id: deliveryMan._id },
+      { 
+        id: deliveryMan._id,
+        pv: deliveryMan.passwordVersion // Include password version in token
+      },
       process.env.JWT_SECRET || 'fallback_secret',
       { expiresIn: '24h' }
     );

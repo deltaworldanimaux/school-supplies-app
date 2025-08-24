@@ -20,6 +20,10 @@ const deliveryManSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  passwordVersion: {
+    type: Number,
+    default: 0
+  },
   score: {
     type: Number,
     default: 0
