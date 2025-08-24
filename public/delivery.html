@@ -154,6 +154,11 @@
             color: #155724;
         }
         
+        .status-ready {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        
         .order-details {
             margin-bottom: 15px;
         }
@@ -177,11 +182,16 @@
             font-weight: 500;
             margin-top: 10px;
             width: 100%;
+            transition: all 0.3s;
         }
         
         .pickup-btn {
             background-color: var(--primary);
             color: white;
+        }
+        
+        .pickup-btn:hover:not(.disabled) {
+            background-color: #3d8b40;
         }
         
         .deliver-btn {
@@ -244,6 +254,7 @@
             padding: 15px;
             border-radius: 5px;
             margin-bottom: 20px;
+            transition: all 0.3s;
         }
         
         .alert-error {
@@ -258,57 +269,24 @@
             border: 1px solid #c3e6cb;
         }
         
+        .alert-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
         .hidden {
             display: none;
         }
         
-        .order-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
+        .disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
         
-        .order-modal.active {
-            display: flex;
-        }
-        
-        .modal-content {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            width: 90%;
-            max-width: 500px;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-        
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .close-btn {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-        }
-        
-        #map {
-            height: 200px;
-            margin-top: 15px;
-            border-radius: 8px;
+        .cost-amount {
+            font-weight: bold;
+            color: #2c5aa0;
         }
         
         .section-title {
@@ -316,6 +294,270 @@
             padding-bottom: 10px;
             border-bottom: 2px solid #eee;
             color: var(--dark);
+        }
+        
+        /* Modal Styles */
+        .order-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .order-modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+        }
+        
+        .order-modal.active .modal-content {
+            transform: translateY(0);
+        }
+        
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h2 {
+            margin: 0;
+            color: #333;
+            font-size: 1.5rem;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+            transition: color 0.2s;
+        }
+        
+        .close-btn:hover {
+            color: #e74c3c;
+        }
+        
+        .delivery-process {
+            padding: 20px;
+        }
+        
+        .process-steps {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        .process-steps::before {
+            content: '';
+            position: absolute;
+            top: 30px;
+            left: 10%;
+            right: 10%;
+            height: 2px;
+            background: #ddd;
+            z-index: 1;
+        }
+        
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .step-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #f1f1f1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .step.active .step-icon {
+            background: #4CAF50;
+            color: white;
+            box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3);
+        }
+        
+        .step.completed .step-icon {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .step-label {
+            font-size: 0.85rem;
+            text-align: center;
+            color: #777;
+            font-weight: 500;
+        }
+        
+        .step.active .step-label {
+            color: #4CAF50;
+            font-weight: 600;
+        }
+        
+        .step.completed .step-label {
+            color: #4CAF50;
+        }
+        
+        .process-content {
+            margin-top: 20px;
+        }
+        
+        .step-content {
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .step-content h3 {
+            margin-top: 0;
+            color: #333;
+            font-size: 1.3rem;
+        }
+        
+        .step-content p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        
+        .cost-display {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .cost-label {
+            display: block;
+            color: #777;
+            margin-bottom: 5px;
+        }
+        
+        .cost-amount-modal {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        
+        .library-info, .client-info {
+            background: #f5f7f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .library-info h4, .client-info h4 {
+            margin-top: 0;
+            color: #444;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 8px;
+        }
+        
+        .modal-action-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            display: block;
+            width: 100%;
+            margin-top: 15px;
+            transition: background 0.2s;
+        }
+        
+        .modal-action-btn:hover {
+            background: #3d8b40;
+        }
+        
+        .secondary-btn {
+            background: #f1f1f1;
+            color: #333;
+        }
+        
+        .secondary-btn:hover {
+            background: #e5e5e5;
+        }
+        
+        .payment-actions, .delivery-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .payment-actions .modal-action-btn, 
+        .delivery-actions .modal-action-btn {
+            flex: 1;
+        }
+        
+        .completion-actions {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .process-steps {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 15px;
+            }
+            
+            .process-steps::before {
+                display: none;
+            }
+            
+            .step {
+                flex: 0 0 calc(33.333% - 15px);
+            }
+            
+            .payment-actions, .delivery-actions {
+                flex-direction: column;
+            }
+            
+            .auth-info {
+                flex-direction: column;
+                gap: 8px;
+                align-items: flex-end;
+            }
         }
     </style>
 </head>
@@ -379,60 +621,137 @@
 
         <!-- Order Details Modal -->
         <div id="orderModal" class="order-modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2>تفاصيل الطلب</h2>
-            <button class="close-btn" id="closeModalBtn">&times;</button>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>تفاصيل الطلب <span id="modalOrderNumber"></span></h2>
+                    <button class="close-btn" id="closeModalBtn">&times;</button>
+                </div>
+                
+                <div class="delivery-process">
+                    <div class="process-steps">
+                        <div class="step active" data-step="1">
+                            <div class="step-icon">📦</div>
+                            <div class="step-label">استلام الطلب</div>
+                        </div>
+                        <div class="step" data-step="2">
+                            <div class="step-icon">🏪</div>
+                            <div class="step-label">الذهاب إلى المكتبة</div>
+                        </div>
+                        <div class="step" data-step="3">
+                            <div class="step-icon">💵</div>
+                            <div class="step-label">الدفع للمكتبة</div>
+                        </div>
+                        <div class="step" data-step="4">
+                            <div class="step-icon">🚗</div>
+                            <div class="step-label">التسليم للعميل</div>
+                        </div>
+                        <div class="step" data-step="5">
+                            <div class="step-icon">✅</div>
+                            <div class="step-label">اكتمال الطلب</div>
+                        </div>
+                    </div>
+                    
+                    <div class="process-content">
+                        <div class="step-content" data-step="1">
+                            <h3>استلام الطلب</h3>
+                            <p>تم استلام الطلب بنجاح. توجه الآن إلى المكتبة لاستلام المواد.</p>
+                            <div class="library-info">
+                                <h4>معلومات المكتبة:</h4>
+                                <p id="libraryName"></p>
+                                <p id="libraryPhone"></p>
+                                <p id="libraryAddress"></p>
+                            </div>
+                            <button class="modal-action-btn next-step" data-next="2">وصلت إلى المكتبة</button>
+                        </div>
+                        
+                        <div class="step-content hidden" data-step="2">
+                            <h3>الدفع للمكتبة</h3>
+                            <p>الطلب جاهز. قم بدفع المبلغ للمكتبة.</p>
+                            <div class="cost-display">
+                                <span class="cost-label">المبلغ المستحق:</span>
+                                <span class="cost-amount-modal" id="orderCost"></span>
+                            </div>
+                            <div class="payment-actions">
+                                <button class="modal-action-btn secondary-btn" id="issueWithPayment">وجدت مشكلة في الدفع</button>
+                                <button class="modal-action-btn next-step" data-next="3">تم الدفع</button>
+                            </div>
+                        </div>
+                        
+                        <div class="step-content hidden" data-step="3">
+                            <h3>التسليم للعميل</h3>
+                            <p>تم الدفع بنجاح. توجه الآن إلى العميل لتسليم الطلب.</p>
+                            <div class="client-info">
+                                <h4>معلومات العميل:</h4>
+                                <p id="clientName"></p>
+                                <p id="clientPhone"></p>
+                                <p id="clientAddress"></p>
+                            </div>
+                            <button class="modal-action-btn next-step" data-next="4">وصلت إلى العميل</button>
+                        </div>
+                        
+                        <div class="step-content hidden" data-step="4">
+                            <h3>تسليم الطلب</h3>
+                            <p>قم بتسليم الطلب للعميل واستلام المبلغ.</p>
+                            <div class="delivery-actions">
+                                <button class="modal-action-btn secondary-btn" id="deliveryIssue">واجهت مشكلة في التسليم</button>
+                                <button class="modal-action-btn confirm-delivery" id="confirmDeliveryBtn">تم التسليم والدفع</button>
+                            </div>
+                        </div>
+                        
+                        <div class="step-content hidden" data-step="5">
+                            <h3>تم إكمال الطلب بنجاح! 🎉</h3>
+                            <p>شكراً لك على تقديم خدمة ممتازة. تم إضافة <strong>10 نقاط</strong> إلى رصيدك.</p>
+                            <div class="completion-actions">
+                                <button class="modal-action-btn" id="closeAfterCompletion">إغلاق</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div id="orderDetails">
-            <!-- Order details will be populated here -->
-        </div>
-        <button id="paymentMadeBtn" class="action-btn" style="margin-top: 20px; display: none;">تم الدفع للمكتبة</button>
-        <button id="confirmDeliveryBtn" class="action-btn deliver-btn" style="margin-top: 20px; display: none;">تأكيد التسليم</button>
-    </div>
-</div>
     </div>
 
     <script>
         let authToken = localStorage.getItem('deliveryToken');
         const API_BASE = window.location.origin;
         let currentOrder = null;
-        let map = null;
         let currentDeliveryManId = null; 
-        let eventSource = null; 
+        let eventSource = null;
+        let hasActiveOrder = false;
+        let currentStep = 1;
+        
         // Check if user is already logged in
         if (authToken) {
-document.getElementById('loginPage').classList.add('hidden');
-document.getElementById('deliveryPage').classList.remove('hidden');
-
-
-// Fetch profile first, then load orders
-fetch(`${API_BASE}/api/delivery/profile`, {
-headers: { 'Authorization': `Bearer ${authToken}` }
-})
-.then(res => {
-if (!res.ok) throw new Error('Unauthorized');
-return res.json();
-})
-.then(data => {
-document.getElementById('deliveryName').textContent = data.name;
-document.getElementById('deliveryScore').textContent = data.score;
-document.getElementById('totalScore').textContent = data.score;
-
-
-// ✅ now load orders
-loadDeliveryData();
-
-})
-.catch(() => {
-localStorage.removeItem('deliveryToken');
-document.getElementById('loginPage').classList.remove('hidden');
-document.getElementById('deliveryPage').classList.add('hidden');
-});
-} else {
-document.getElementById('loginPage').classList.remove('hidden');
-document.getElementById('deliveryPage').classList.add('hidden');
-}
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('deliveryPage').classList.remove('hidden');
+            
+            // Fetch profile first, then load orders
+            fetch(`${API_BASE}/api/delivery/profile`, {
+                headers: { 'Authorization': `Bearer ${authToken}` }
+            })
+            .then(res => {
+                if (!res.ok) throw new Error('Unauthorized');
+                return res.json();
+            })
+            .then(data => {
+                document.getElementById('deliveryName').textContent = data.name;
+                document.getElementById('deliveryScore').textContent = data.score;
+                document.getElementById('totalScore').textContent = data.score;
+                hasActiveOrder = data.hasActiveOrder || false;
+                
+                // ✅ now load orders
+                loadDeliveryData();
+                setupEventSource();
+            })
+            .catch(() => {
+                localStorage.removeItem('deliveryToken');
+                document.getElementById('loginPage').classList.remove('hidden');
+                document.getElementById('deliveryPage').classList.add('hidden');
+            });
+        } else {
+            document.getElementById('loginPage').classList.remove('hidden');
+            document.getElementById('deliveryPage').classList.add('hidden');
+        }
         
         // Login functionality
         document.getElementById('deliveryLoginBtn').addEventListener('click', function() {
@@ -467,6 +786,7 @@ document.getElementById('deliveryPage').classList.add('hidden');
                     document.getElementById('deliveryScore').textContent = data.deliveryMan.score;
                     document.getElementById('totalScore').textContent = data.deliveryMan.score;
                     currentDeliveryManId = data.deliveryMan.id;
+                    hasActiveOrder = data.deliveryMan.hasActiveOrder || false;
                     setupEventSource();
                     loadDeliveryData();
                 } else {
@@ -481,19 +801,42 @@ document.getElementById('deliveryPage').classList.add('hidden');
         
         // Logout functionality
         document.getElementById('logoutBtn').addEventListener('click', function() {
-  if (eventSource) {
-    eventSource.close();
-    eventSource = null;
-  }
-  localStorage.removeItem('deliveryToken');
-  document.getElementById('loginPage').classList.remove('hidden');
-  document.getElementById('deliveryPage').classList.add('hidden');
-});
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
+            }
+            localStorage.removeItem('deliveryToken');
+            document.getElementById('loginPage').classList.remove('hidden');
+            document.getElementById('deliveryPage').classList.add('hidden');
+        });
         
         // Load delivery data
         function loadDeliveryData() {
             loadAvailableOrders();
             loadMyOrders();
+            // Refresh profile to check for active orders
+            fetchProfile();
+        }
+        
+        // Fetch delivery man profile
+        function fetchProfile() {
+            fetch(`${API_BASE}/api/delivery/profile`, {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to fetch profile');
+                return response.json();
+            })
+            .then(data => {
+                hasActiveOrder = data.hasActiveOrder || false;
+                document.getElementById('deliveryScore').textContent = data.score;
+                document.getElementById('totalScore').textContent = data.score;
+            })
+            .catch(error => {
+                console.error('Error fetching profile:', error);
+            });
         }
         
         // Load available orders
@@ -562,9 +905,9 @@ document.getElementById('deliveryPage').classList.add('hidden');
                 
                 orderCard.innerHTML = `
                     <div class="order-header">
-    <div class="order-number">${order.orderNumber}</div>
-    <div class="order-status status-ready">جاهز للتوصيل</div>
-  </div>
+                        <div class="order-number">${order.orderNumber}</div>
+                        <div class="order-status status-ready">جاهز للتوصيل</div>
+                    </div>
                     <div class="order-details">
                         <div class="detail-item">
                             <span class="detail-label">المكتبة:</span>
@@ -572,17 +915,21 @@ document.getElementById('deliveryPage').classList.add('hidden');
                         </div>
                         <div class="detail-item">
                             <span class="detail-label">التكلفة:</span>
-                            <span>${order.cost ? order.cost + ' درهم' : 'غير محدد'}</span>
+                            <span class="cost-amount">${order.cost ? order.cost + ' درهم' : 'غير محدد'}</span>
                         </div>
                     </div>
-                    <button class="action-btn pickup-btn" data-order="${order._id}">استلام الطلب</button>
+                    <button class="action-btn pickup-btn ${hasActiveOrder ? 'disabled' : ''}" 
+                            data-order="${order._id}"
+                            ${hasActiveOrder ? 'disabled' : ''}>
+                        ${hasActiveOrder ? 'لديك طلب نشط' : 'استلام الطلب'}
+                    </button>
                 `;
                 
                 container.appendChild(orderCard);
             });
             
             // Add event listeners to pickup buttons
-            document.querySelectorAll('.pickup-btn').forEach(btn => {
+            document.querySelectorAll('.pickup-btn:not(.disabled)').forEach(btn => {
                 btn.addEventListener('click', function() {
                     pickupOrder(this.dataset.order);
                 });
@@ -590,22 +937,23 @@ document.getElementById('deliveryPage').classList.add('hidden');
         }
 
         function getStatusClass(status) {
-  switch(status) {
-    case 'ready': return 'status-ready';
-    case 'assigned': return 'status-assigned';
-    case 'picked_up': return 'status-picked_up';
-    default: return 'status-pending';
-  }
-}
+            switch(status) {
+                case 'ready': return 'status-ready';
+                case 'assigned': return 'status-assigned';
+                case 'picked_up': return 'status-picked_up';
+                default: return 'status-pending';
+            }
+        }
 
-function getStatusText(status) {
-  switch(status) {
-    case 'ready': return 'جاهز للتوصيل';
-    case 'assigned': return 'قيد التوصيل';
-    case 'picked_up': return 'تم الاستلام';
-    default: return status;
-  }
-}
+        function getStatusText(status) {
+            switch(status) {
+                case 'ready': return 'جاهز للتوصيل';
+                case 'assigned': return 'قيد التوصيل';
+                case 'picked_up': return 'تم الاستلام';
+                default: return status;
+            }
+        }
+        
         // Render my orders
         function renderMyOrders(orders) {
             const container = document.getElementById('myOrders');
@@ -675,145 +1023,121 @@ function getStatusText(status) {
             })
             .then(response => {
                 if (!response.ok) {
-                    throw new Error('Network response was not ok');
+                    return response.json().then(err => { throw new Error(err.message || 'فشل في استلام الطلب'); });
                 }
                 return response.json();
             })
             .then(data => {
                 showAlert('ordersAlert', 'success', 'تم استلام الطلب بنجاح');
+                hasActiveOrder = true;
                 loadDeliveryData();
             })
             .catch(error => {
-                showAlert('ordersAlert', 'error', 'فشل في استلام الطلب');
+                showAlert('ordersAlert', 'error', error.message || 'فشل في استلام الطلب');
                 console.error('Error picking up order:', error);
             });
         }
 
-function setupEventSource() {
-if (eventSource) {
-eventSource.close();
-}
-
-
-eventSource = new EventSource(`${API_BASE}/api/delivery/events?token=${authToken}`);
-
-
-eventSource.addEventListener('order-taken', function(event) {
-const data = JSON.parse(event.data);
-
-
-// If another delivery man took the order, remove it and show toast
-if (data.takenBy !== currentDeliveryManId) {
-const orderElement = document.querySelector(`[data-order="${data.orderId}"]`);
-if (orderElement) {
-orderElement.closest('.order-card').remove();
-showAlert('ordersAlert', 'error', '🚨 تم حجز هذا الطلب من طرف مندوب آخر');
-}
-}
-
-
-loadDeliveryData();
-});
-
-
-eventSource.onerror = function(error) {
-console.error('EventSource failed:', error);
-setTimeout(setupEventSource, 5000); // Retry connection
-};
-}
+        function setupEventSource() {
+            if (eventSource) {
+                eventSource.close();
+            }
+            
+            eventSource = new EventSource(`${API_BASE}/api/delivery/events?token=${authToken}`);
+            
+            eventSource.addEventListener('order-taken', function(event) {
+                const data = JSON.parse(event.data);
+                
+                // If another delivery man took the order, remove it and show toast
+                if (data.takenBy !== currentDeliveryManId) {
+                    const orderElement = document.querySelector(`[data-order="${data.orderId}"]`);
+                    if (orderElement) {
+                        orderElement.closest('.order-card').remove();
+                        showAlert('ordersAlert', 'error', '🚨 تم حجز هذا الطلب من طرف مندوب آخر');
+                    }
+                }
+                
+                loadDeliveryData();
+            });
+            
+            eventSource.onerror = function(error) {
+                console.error('EventSource failed:', error);
+                setTimeout(setupEventSource, 5000); // Retry connection
+            };
+        }
+        
         // View order details
         function viewOrderDetails(orderId) {
-    fetch(`${API_BASE}/api/delivery/orders/${orderId}`, {
-        headers: {
-            'Authorization': `Bearer ${authToken}`
+            fetch(`${API_BASE}/api/delivery/orders/${orderId}`, {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(order => {
+                currentOrder = order;
+                showOrderDetails(order);
+            })
+            .catch(error => {
+                showAlert('ordersAlert', 'error', 'فشل في تحميل تفاصيل الطلب');
+                console.error('Error loading order details:', error);
+            });
         }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
+        
+        // Show order details in modal
+        function showOrderDetails(order) {
+            // Update modal with order details
+            document.getElementById('modalOrderNumber').textContent = order.orderNumber;
+            document.getElementById('libraryName').textContent = order.assignedTo?.name || 'غير معين';
+            document.getElementById('libraryPhone').textContent = order.assignedTo?.phone || 'غير متوفر';
+            document.getElementById('libraryAddress').textContent = 'عرض على الخريطة';
+            document.getElementById('orderCost').textContent = order.cost ? order.cost + ' درهم' : 'غير محدد';
+            document.getElementById('clientName').textContent = order.parentName;
+            document.getElementById('clientPhone').textContent = order.phone;
+            document.getElementById('clientAddress').textContent = 'عرض على الخريطة';
+            
+            // Reset steps based on order status
+            if (order.deliveryStatus === 'assigned') {
+                currentStep = 1;
+            } else if (order.deliveryStatus === 'picked_up') {
+                currentStep = 3;
+            }
+            
+            updateSteps();
+            
+            // Show modal
+            document.getElementById('orderModal').classList.add('active');
         }
-        return response.json();
-    })
-    .then(order => {
-        currentOrder = order;
-        const modal = document.getElementById('orderModal');
-        const content = document.getElementById('orderDetails');
-        const paymentBtn = document.getElementById('paymentMadeBtn');
-        const confirmBtn = document.getElementById('confirmDeliveryBtn');
-
-        if (!modal || !content) return;
-
-        // Format date
-        const orderDate = new Date(order.createdAt).toLocaleDateString('ar-MA');
-
-        content.innerHTML = `
-            <div class="detail-item">
-                <span class="detail-label">رقم الطلب:</span>
-                <span>${order.orderNumber}</span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">التكلفة:</span>
-                <span>${order.cost ? order.cost + ' درهم' : 'غير محدد'}</span>
-            </div>
-            <h3 style="margin-top: 20px;">معلومات المكتبة</h3>
-            <div class="detail-item">
-                <span class="detail-label">المكتبة:</span>
-                <span>${order.assignedTo?.name || 'غير معين'}</span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">هاتف المكتبة:</span>
-                <span>${order.assignedTo?.phone || 'غير متوفر'}</span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">موقع المكتبة:</span>
-                <span><a href="https://www.google.com/maps?q=${order.assignedTo?.location?.coordinates[1]},${order.assignedTo?.location?.coordinates[0]}" target="_blank">عرض على الخريطة</a></span>
-            </div>
-            <div id="clientInfoSection" style="display: none;">
-                <h3 style="margin-top: 20px;">معلومات العميل</h3>
-                <div class="detail-item">
-                    <span class="detail-label">اسم ولي الأمر:</span>
-                    <span>${order.parentName}</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">هاتف ولي الأمر:</span>
-                    <span>${order.phone}</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">موقع التوصيل:</span>
-                    <span><a href="https://www.google.com/maps?q=${order.location.coordinates[1]},${order.location.coordinates[0]}" target="_blank">عرض على الخريطة</a></span>
-                </div>
-            </div>
-        `;
-
-        // Show/hide buttons based on order status
-        if (order.deliveryStatus === 'assigned') {
-            paymentBtn.style.display = 'block';
-            confirmBtn.style.display = 'none';
-        } else {
-            paymentBtn.style.display = 'none';
-            confirmBtn.style.display = 'none';
+        
+        // Function to update step visualization
+        function updateSteps() {
+            document.querySelectorAll('.step').forEach(step => {
+                const stepNum = parseInt(step.dataset.step);
+                if (stepNum < currentStep) {
+                    step.classList.add('completed');
+                    step.classList.remove('active');
+                } else if (stepNum === currentStep) {
+                    step.classList.add('active');
+                    step.classList.remove('completed');
+                } else {
+                    step.classList.remove('active', 'completed');
+                }
+            });
+            
+            document.querySelectorAll('.step-content').forEach(content => {
+                const contentStep = parseInt(content.dataset.step);
+                if (contentStep === currentStep) {
+                    content.classList.remove('hidden');
+                } else {
+                    content.classList.add('hidden');
+                }
+            });
         }
-
-        // Set up payment button click event
-        paymentBtn.onclick = function() {
-            // Hide payment button and show client info and confirm delivery button
-            paymentBtn.style.display = 'none';
-            document.getElementById('clientInfoSection').style.display = 'block';
-            confirmBtn.style.display = 'block';
-        };
-
-        // Set up confirm delivery button click event
-        confirmBtn.onclick = function() {
-            deliverOrder(order._id);
-        };
-
-        modal.classList.add('active');
-    })
-    .catch(error => {
-        showAlert('ordersAlert', 'error', 'فشل في تحميل تفاصيل الطلب');
-        console.error('Error loading order details:', error);
-    });
-}
         
         // Deliver order
         function deliverOrder(orderId) {
@@ -832,6 +1156,7 @@ setTimeout(setupEventSource, 5000); // Retry connection
             .then(data => {
                 showAlert('ordersAlert', 'success', 'تم تسليم الطلب بنجاح وتمت إضافة 10 نقاط إلى رصيدك');
                 document.getElementById('orderModal').classList.remove('active');
+                hasActiveOrder = false;
                 loadDeliveryData();
                 
                 // Update score
@@ -847,20 +1172,18 @@ setTimeout(setupEventSource, 5000); // Retry connection
         
         // Show alert message
         function showAlert(containerId, type, message) {
-const alert = document.getElementById(containerId);
-if (!alert) return;
-
-
-alert.textContent = message;
-alert.classList.remove('hidden', 'alert-error', 'alert-success');
-alert.classList.add(`alert-${type}`);
-
-
-// Auto hide after 5 seconds
-setTimeout(() => {
-alert.classList.add('hidden');
-}, 5000);
-}
+            const alert = document.getElementById(containerId);
+            if (!alert) return;
+            
+            alert.textContent = message;
+            alert.classList.remove('hidden', 'alert-error', 'alert-success', 'alert-info');
+            alert.classList.add(`alert-${type}`);
+            
+            // Auto hide after 5 seconds
+            setTimeout(() => {
+                alert.classList.add('hidden');
+            }, 5000);
+        }
         
         // Close modal
         document.getElementById('closeModalBtn').addEventListener('click', function() {
@@ -872,6 +1195,35 @@ alert.classList.add('hidden');
             if (e.target === this) {
                 this.classList.remove('active');
             }
+        });
+        
+        // Next step buttons
+        document.querySelectorAll('.next-step').forEach(button => {
+            button.addEventListener('click', function() {
+                currentStep = parseInt(this.dataset.next);
+                updateSteps();
+            });
+        });
+        
+        // Confirm delivery
+        document.getElementById('confirmDeliveryBtn').addEventListener('click', function() {
+            deliverOrder(currentOrder._id);
+        });
+        
+        // Close modal after completion
+        document.getElementById('closeAfterCompletion').addEventListener('click', function() {
+            document.getElementById('orderModal').classList.remove('active');
+            loadDeliveryData(); // Refresh the orders list
+        });
+        
+        // Issue with payment
+        document.getElementById('issueWithPayment').addEventListener('click', function() {
+            alert('سيتم التواصل مع الدعم الفوري للمساعدة في حل المشكلة.');
+        });
+        
+        // Delivery issue
+        document.getElementById('deliveryIssue').addEventListener('click', function() {
+            alert('سيتم التواصل مع الدعم الفوري للمساعدة في حل المشكلة.');
         });
         
         // Refresh orders every 30 seconds

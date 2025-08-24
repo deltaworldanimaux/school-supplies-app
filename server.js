@@ -362,11 +362,16 @@ app.get('/api/orders', authenticateAdmin, async (req, res) => {
 });
 
 app.get('/api/delivery/profile', authenticateDeliveryMan, async (req, res) => {
-res.json({
-id: req.deliveryMan._id,
-name: req.deliveryMan.name,
-score: req.deliveryMan.score
-});
+  const deliveryMan = await DeliveryMan.findById(req.deliveryMan._id)
+    .populate('currentOrder', 'orderNumber');
+  
+  res.json({
+    id: deliveryMan._id,
+    name: deliveryMan.name,
+    score: deliveryMan.score,
+    hasActiveOrder: !!deliveryMan.currentOrder,
+    currentOrder: deliveryMan.currentOrder
+  });
 });
 
 app.get('/api/delivery/events', async (req, res) => {
@@ -889,15 +894,16 @@ app.get('/api/delivery/available-orders', authenticateDeliveryMan, async (req, r
 // Delivery man picks up order
 app.put('/api/delivery/orders/:id/pickup', authenticateDeliveryMan, async (req, res) => {
   try {
+    // Check if delivery man already has an active order
+    if (req.deliveryMan.currentOrder) {
+      return res.status(400).json({ message: 'لديك طلب نشط بالفعل. يجب تسليمه أولاً' });
+    }
+
     const order = await Order.findOneAndUpdate(
       {
         _id: req.params.id,
         status: 'ready',
-        deliveryStatus: 'pending', // Must be pending to be picked up
-        $or: [
-          { deliveryMan: { $exists: false } },
-          { deliveryMan: null }
-        ]
+        deliveryStatus: 'pending'
       },
       {
         deliveryMan: req.deliveryMan._id,
@@ -907,18 +913,24 @@ app.put('/api/delivery/orders/:id/pickup', authenticateDeliveryMan, async (req, 
     ).populate('assignedTo', 'name phone location');
 
     if (!order) {
-      return res.status(404).json({ message: 'Order not available or already taken' });
+      return res.status(404).json({ message: 'الطلب غير متاح أو تم أخذه' });
     }
 
-    // Notify all delivery clients that the order was taken
+    // Update delivery man's current order
+    await DeliveryMan.findByIdAndUpdate(
+      req.deliveryMan._id,
+      { currentOrder: order._id }
+    );
+
+    // Notify other delivery men
     sendEventToDeliveryClients('order-taken', {
       orderId: order._id,
       takenBy: req.deliveryMan._id
     });
 
-    res.json({ message: 'Order assigned to you successfully', order });
+    res.json({ message: 'تم تعيين الطلب لك بنجاح', order });
   } catch (error) {
-    res.status(500).json({ message: 'Error picking up order', error: error.message });
+    res.status(500).json({ message: 'خطأ في استلام الطلب', error: error.message });
   }
 });
 
@@ -953,18 +965,21 @@ app.put('/api/delivery/orders/:id/deliver', authenticateDeliveryMan, async (req,
     );
     
     if (!order) {
-      return res.status(404).json({ message: 'Order not found or not assigned to you' });
+      return res.status(404).json({ message: 'الطلب غير موجود أو غير معين لك' });
     }
     
-    // Increase delivery man's score
+    // Increase score and clear current order
     await DeliveryMan.findByIdAndUpdate(
       req.deliveryMan._id,
-      { $inc: { score: 10 } }
+      { 
+        $inc: { score: 10 },
+        $set: { currentOrder: null }
+      }
     );
     
-    res.json({ message: 'Order delivered successfully', order });
+    res.json({ message: 'تم تسليم الطلب بنجاح', order });
   } catch (error) {
-    res.status(500).json({ message: 'Error delivering order', error: error.message });
+    res.status(500).json({ message: 'خطأ في تسليم الطلب', error: error.message });
   }
 });
 

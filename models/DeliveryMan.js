@@ -27,7 +27,12 @@ const deliveryManSchema = new mongoose.Schema({
   isAvailable: {
     type: Boolean,
     default: true
-  }
+  },
+  currentOrder: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: 'Order',
+  default: null
+}
 }, {
   timestamps: true
 });
