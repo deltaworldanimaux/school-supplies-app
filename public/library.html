@@ -100,6 +100,14 @@
   border-radius: 10px;
   text-align: center;
 }
+#costModal, #refuseModal {
+    z-index: 1001 !important;
+}
+
+.modal-content {
+    z-index: 1002 !important;
+    position: relative;
+}
         .btn:hover {
             background: rgba(255, 255, 255, 0.3);
         }
@@ -210,16 +218,16 @@
 
 /* Modal Styles */
 .modal {
-  display: none;
-  position: fixed;
-  z-index: 1000;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  opacity: 0;
-  transition: opacity 0.3s ease;
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
 .modal.show {
@@ -561,7 +569,7 @@ document.querySelectorAll('.ready-btn').forEach(btn => {
 btn.addEventListener('click', function(e) {
 e.preventDefault();
 currentOrderIdForCost = this.dataset.order;
-document.getElementById('costModal').style.display = 'block';
+document.getElementById('costModal').classList.add('show');
 });
 });
 
@@ -780,12 +788,12 @@ document.addEventListener('click', function(e) {
   if (e.target.classList.contains('ready-btn')) {
     e.preventDefault();
     currentOrderIdForCost = e.target.dataset.order;
-    document.getElementById('costModal').style.display = 'block';
+    document.getElementById('costModal').classList.add('show');
   }
   if (e.target.classList.contains('refuse-btn')) {
     e.preventDefault();
     currentOrderIdForRefuse = e.target.dataset.order;
-    document.getElementById('refuseModal').style.display = 'block';
+    document.getElementById('refuseModal').classList.add('show');
   }
 });
 // Handle refuse form submission
@@ -799,20 +807,20 @@ document.getElementById('refuseForm').addEventListener('submit', function(e) {
   }
   
   refuseOrder(currentOrderIdForRefuse, reason);
-  document.getElementById('refuseModal').style.display = 'none';
+  document.getElementById('refuseModal').classList.remove('show');
   document.getElementById('refuseReason').value = '';
 });
 
 // Close refuse modal
 document.getElementById('refuseModal').addEventListener('click', function(e) {
   if (e.target.id === 'refuseModal') {
-    document.getElementById('refuseModal').style.display = 'none';
+    document.getElementById('refuseModal').classList.remove('show');
     document.getElementById('refuseReason').value = '';
   }
 });
 
 document.getElementById('cancelRefuseBtn').addEventListener('click', function() {
-  document.getElementById('refuseModal').style.display = 'none';
+  document.getElementById('refuseModal').classList.remove('show');
   document.getElementById('refuseReason').value = '';
 });
 
@@ -830,17 +838,17 @@ return;
 
 
 updateOrderStatus(currentOrderIdForCost, 'ready', parseFloat(costValue));
-document.getElementById('costModal').style.display = 'none';
+document.getElementById('costModal').classList.remove('show');
 costInput.value = '';
 });
 document.getElementById('costModal').addEventListener('click', function(e) {
   if (e.target.id === 'costModal') {
-    document.getElementById('costModal').style.display = 'none';
+    document.getElementById('costModal').classList.remove('show');
     document.getElementById('costInput').value = '';
   }
 });
 document.getElementById('cancelCostBtn').addEventListener('click', function() {
-  document.getElementById('costModal').style.display = 'none';
+  document.getElementById('costModal').classList.remove('show');
   document.getElementById('costInput').value = '';
 });
 // Telegram help modal functionality
