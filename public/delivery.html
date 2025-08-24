@@ -727,9 +727,21 @@
                             </div>
                         </div>
                         
-                        <div class="step-content hidden" data-step="3">
-    <h3>التسليم للعميل</h3>
-    <p>تم الدفع بنجاح. توجه الآن إلى العميل لتسليم الطلب واستلام المبلغ.</p>
+<div class="step-content hidden" data-step="3">
+                            <h3>التسليم للعميل</h3>
+                            <p>تم الدفع بنجاح. توجه الآن إلى العميل لتسليم الطلب.</p>
+                            <div class="client-info">
+                                <h4>معلومات العميل:</h4>
+                                <p id="clientName"></p>
+                                <p id="clientPhone"></p>
+                                <p id="clientAddress"></p>
+                            </div>
+                            <button class="modal-action-btn next-step" data-next="4">وصلت إلى العميل</button>
+                        </div>
+                        
+                        <div class="step-content hidden" data-step="4">
+    <h3>تسليم الطلب</h3>
+    <p>قم بتسليم الطلب للعميل واستلام المبلغ.</p>
     
     <div class="cost-summary">
         <div class="cost-item">
@@ -738,7 +750,7 @@
         </div>
         <div class="cost-item">
             <span class="cost-label">رسوم التوصيل:</span>
-            <span class="cost-value" id="serviceFee">50 درهم</span>
+            <span class="cost-value" id="serviceFee">20 درهم</span>
         </div>
         <div class="cost-divider"></div>
         <div class="cost-item total">
@@ -754,17 +766,11 @@
         <a id="clientMapLink" target="_blank" class="map-link">عرض على الخريطة</a>
     </div>
     
-    <button class="modal-action-btn next-step" data-next="4">وصلت إلى العميل</button>
+    <div class="delivery-actions">
+        <button class="modal-action-btn secondary-btn" id="deliveryIssue">واجهت مشكلة في التسليم</button>
+        <button class="modal-action-btn confirm-delivery" id="confirmDeliveryBtn">تم التسليم والدفع</button>
+    </div>
 </div>
-                        
-                        <div class="step-content hidden" data-step="4">
-                            <h3>تسليم الطلب</h3>
-                            <p>قم بتسليم الطلب للعميل واستلام المبلغ.</p>
-                            <div class="delivery-actions">
-                                <button class="modal-action-btn secondary-btn" id="deliveryIssue">واجهت مشكلة في التسليم</button>
-                                <button class="modal-action-btn confirm-delivery" id="confirmDeliveryBtn">تم التسليم والدفع</button>
-                            </div>
-                        </div>
                         
                         <div class="step-content hidden" data-step="5">
                             <h3>تم إكمال الطلب بنجاح! 🎉</h3>
@@ -1167,9 +1173,9 @@ function showOrderDetails(order) {
     document.getElementById('clientName').textContent = order.parentName;
     document.getElementById('clientPhone').textContent = order.phone;
     
-
+    // Calculate and display total amount (library cost + service fee)
     const libraryCost = order.cost || 0;
-    const serviceFee = 50;
+    const serviceFee = 20; // 20 MAD service fee
     const totalAmount = libraryCost + serviceFee;
     
     document.getElementById('libraryCost').textContent = libraryCost + ' درهم';
