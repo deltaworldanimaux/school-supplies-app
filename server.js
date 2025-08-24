@@ -711,7 +711,22 @@ app.get('/api/library/orders/:id', authenticateLibrary, async (req, res) => {
   }
 });
 
-
+app.post('/api/report-issue', authenticateDeliveryMan, async (req, res) => {
+    try {
+        const { type, description, deliveryManName, orderNumber, orderId } = req.body;
+        
+        // Format Telegram message
+        const message = `🚨 مشكلة في التوصيل\n\nالنوع: ${type === 'payment' ? 'مشكلة في الدفع' : 'مشكلة في التسليم'}\nوصف المشكلة: ${description}\nاسم المندوب: ${deliveryManName}\nرقم الطلب: ${orderNumber}\nمعرف الطلب: ${orderId}`;
+        
+        // Send Telegram notification
+        await sendTelegramNotification(message);
+        
+        res.json({ message: 'Issue reported successfully' });
+    } catch (error) {
+        console.error('Error reporting issue:', error);
+        res.status(500).json({ message: 'Error reporting issue', error: error.message });
+    }
+});
 
 // Create delivery man (admin only)
 app.post('/api/delivery-men', authenticateAdmin, async (req, res) => {

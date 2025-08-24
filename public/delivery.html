@@ -609,6 +609,50 @@
     background: #ddd;
     margin: 8px 0;
 }
+/* Issue reporting styles */
+.issue-form {
+    padding: 20px;
+}
+
+.options-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.option-btn {
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #f9f9f9;
+    text-align: right;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.option-btn:hover {
+    background: #f1f1f1;
+}
+
+.option-btn.selected {
+    background: #e3f2fd;
+    border-color: #2196F3;
+    color: #2196F3;
+}
+
+.option-btn input {
+    margin-left: 8px;
+}
+
+textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-family: inherit;
+    resize: vertical;
+}
     </style>
 </head>
 <body>
@@ -777,7 +821,31 @@
             </div>
         </div>
     </div>
-
+<div id="issueModal" class="order-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="issueModalTitle">الإبلاغ عن مشكلة</h2>
+            <button class="close-btn" id="closeIssueModalBtn">&times;</button>
+        </div>
+        
+        <div class="issue-form">
+            <div id="issueType" class="hidden"></div>
+            <div class="form-group">
+                <label>نوع المشكلة:</label>
+                <div id="issueOptions" class="options-container">
+                    <!-- Options will be populated by JavaScript -->
+                </div>
+            </div>
+            
+            <div class="form-group hidden" id="customIssueGroup">
+                <label for="customIssue">وصف المشكلة:</label>
+                <textarea id="customIssue" rows="3" placeholder="صف المشكلة التي تواجهها..."></textarea>
+            </div>
+            
+            <button id="submitIssueBtn" class="modal-action-btn">إرسال التقرير</button>
+        </div>
+    </div>
+</div>
     <script>
         let authToken = localStorage.getItem('deliveryToken');
         const API_BASE = window.location.origin;
@@ -786,7 +854,26 @@
         let eventSource = null;
         let hasActiveOrder = false;
         let currentStep = 1;
-        
+        let currentIssueType = null;
+let currentIssueOrderId = null;
+
+// Define issue options
+const issueOptions = {
+    payment: [
+        "العميل يرفض الدفع",
+        "العميل غير متوفر",
+        "مشكلة في طريقة الدفع",
+        "المبلغ غير كافي",
+        "أخرى"
+    ],
+    delivery: [
+        "عنوان العميل غير صحيح",
+        "العميل غير متوفر",
+        "العميل يرفض استلام الطلب",
+        "مشكلة في المنتج",
+        "أخرى"
+    ]
+};
         // Check if user is already logged in
         if (authToken) {
             document.getElementById('loginPage').classList.add('hidden');
@@ -905,7 +992,144 @@
                 console.error('Error fetching profile:', error);
             });
         }
+
+// Initialize issue reporting
+function initIssueReporting() {
+    // Payment issue button
+    document.getElementById('issueWithPayment').addEventListener('click', function() {
+        showIssueModal('payment');
+    });
+    
+    // Delivery issue button
+    document.getElementById('deliveryIssue').addEventListener('click', function() {
+        showIssueModal('delivery');
+    });
+    
+    // Close issue modal
+    document.getElementById('closeIssueModalBtn').addEventListener('click', function() {
+        document.getElementById('issueModal').classList.remove('active');
+    });
+    
+    // Close issue modal when clicking outside
+    document.getElementById('issueModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.classList.remove('active');
+        }
+    });
+    
+    // Submit issue report
+    document.getElementById('submitIssueBtn').addEventListener('click', submitIssueReport);
+}
+
+// Show issue modal with options
+function showIssueModal(type) {
+    currentIssueType = type;
+    currentIssueOrderId = currentOrder._id;
+    
+    // Set modal title
+    const title = type === 'payment' ? 'الإبلاغ عن مشكلة في الدفع' : 'الإبلاغ عن مشكلة في التسليم';
+    document.getElementById('issueModalTitle').textContent = title;
+    
+    // Populate options
+    const optionsContainer = document.getElementById('issueOptions');
+    optionsContainer.innerHTML = '';
+    
+    issueOptions[type].forEach(option => {
+        const optionBtn = document.createElement('div');
+        optionBtn.className = 'option-btn';
+        optionBtn.innerHTML = `
+            <input type="radio" name="issueOption" value="${option}" id="option-${option}">
+            <label for="option-${option}">${option}</label>
+        `;
+        optionsContainer.appendChild(optionBtn);
         
+        // Add click event to select option
+        optionBtn.addEventListener('click', function() {
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            this.classList.add('selected');
+            this.querySelector('input').checked = true;
+            
+            // Show custom issue field if "أخرى" is selected
+            if (option === 'أخرى') {
+                document.getElementById('customIssueGroup').classList.remove('hidden');
+            } else {
+                document.getElementById('customIssueGroup').classList.add('hidden');
+            }
+        });
+    });
+    
+    // Reset form
+    document.getElementById('customIssueGroup').classList.add('hidden');
+    document.getElementById('customIssue').value = '';
+    
+    // Show modal
+    document.getElementById('issueModal').classList.add('active');
+}
+
+// Submit issue report
+function submitIssueReport() {
+    const selectedOption = document.querySelector('input[name="issueOption"]:checked');
+    
+    if (!selectedOption) {
+        alert('يرجى اختيار نوع المشكلة');
+        return;
+    }
+    
+    let issueDescription = selectedOption.value;
+    
+    // If "أخرى" is selected, use custom text
+    if (selectedOption.value === 'أخرى') {
+        const customIssue = document.getElementById('customIssue').value.trim();
+        if (!customIssue) {
+            alert('يرجى وصف المشكلة');
+            return;
+        }
+        issueDescription = customIssue;
+    }
+    
+    // Get delivery man info
+    const deliveryManName = document.getElementById('deliveryName').textContent;
+    const orderNumber = currentOrder.orderNumber;
+    
+    // Prepare data for API
+    const issueData = {
+        type: currentIssueType,
+        description: issueDescription,
+        deliveryManName: deliveryManName,
+        orderNumber: orderNumber,
+        orderId: currentIssueOrderId
+    };
+    
+    // Send to server (you'll need to implement this endpoint)
+    fetch(`${API_BASE}/api/report-issue`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify(issueData)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        alert('تم إرسال التقرير بنجاح. سيتم التواصل معك قريباً.');
+        document.getElementById('issueModal').classList.remove('active');
+    })
+    .catch(error => {
+        console.error('Error reporting issue:', error);
+        alert('حدث خطأ أثناء إرسال التقرير. يرجى المحاولة مرة أخرى.');
+    });
+}
+// Initialize issue reporting when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initIssueReporting();
+});
         // Load available orders
         function loadAvailableOrders() {
             fetch(`${API_BASE}/api/delivery/available-orders`, {
