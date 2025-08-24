@@ -1261,11 +1261,7 @@ app.put('/api/library/orders/:id/complete', authenticateLibrary, async (req, res
     
     // Notify available delivery men
     notifyAvailableDeliveryMen(order);
-    sendEventToDeliveryClients('new-order-available', {
-  orderId: order._id,
-  orderNumber: order.orderNumber,
-  cost: order.cost
-});
+    
     res.json({ message: 'تم إكمال الطلب', order });
   } catch (error) {
     console.error('Complete order error:', error);

@@ -548,34 +548,12 @@ function renderLibraryOrders(orders) {
   attachEventListeners();
 }
 function attachEventListeners() {
-  // Use event delegation for all buttons to handle dynamically created elements
-  document.addEventListener('click', function(e) {
-    // Receive button
-    if (e.target.classList.contains('receive-btn')) {
-      updateOrderStatus(e.target.dataset.order, 'processing');
-    }
-    // Ready button
-    else if (e.target.classList.contains('ready-btn')) {
-      e.preventDefault();
-      currentOrderIdForCost = e.target.dataset.order;
-      document.getElementById('costModal').style.display = 'block';
-    }
-    // Deliver button
-    else if (e.target.classList.contains('deliver-btn')) {
-      updateOrderStatus(e.target.dataset.order, 'delivered');
-    }
-    // View button
-    else if (e.target.classList.contains('view-btn')) {
-      viewOrderFile(e.target.dataset.order);
-    }
-    // Refuse button
-    else if (e.target.classList.contains('refuse-btn')) {
-      e.preventDefault();
-      currentOrderIdForRefuse = e.target.dataset.order;
-      document.getElementById('refuseModal').style.display = 'block';
-    }
-  });
-}
+// Receive button
+document.querySelectorAll('.receive-btn').forEach(btn => {
+btn.addEventListener('click', function() {
+updateOrderStatus(this.dataset.order, 'processing');
+});
+});
 
 
 // Ready button → only open modal, not call updateOrderStatus directly
@@ -602,7 +580,7 @@ btn.addEventListener('click', function() {
 viewOrderFile(this.dataset.order);
 });
 });
-
+}   
 function updateOrderStatus(orderId, status, cost = null) {
   let endpoint;
   let body = {};
@@ -798,7 +776,18 @@ printWindow.document.close();
     default: return status;
   }
 }
-
+document.addEventListener('click', function(e) {
+  if (e.target.classList.contains('ready-btn')) {
+    e.preventDefault();
+    currentOrderIdForCost = e.target.dataset.order;
+    document.getElementById('costModal').style.display = 'block';
+  }
+  if (e.target.classList.contains('refuse-btn')) {
+    e.preventDefault();
+    currentOrderIdForRefuse = e.target.dataset.order;
+    document.getElementById('refuseModal').style.display = 'block';
+  }
+});
 // Handle refuse form submission
 document.getElementById('refuseForm').addEventListener('submit', function(e) {
   e.preventDefault();

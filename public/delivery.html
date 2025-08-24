@@ -1273,28 +1273,30 @@ document.addEventListener('DOMContentLoaded', function() {
     initIssueReporting();
 });
         // Load available orders
-function loadAvailableOrders() {
-    fetch(`${API_BASE}/api/delivery/available-orders`, {
-        headers: {
-            'Authorization': `Bearer ${authToken}`
+        function loadAvailableOrders() {
+            fetch(`${API_BASE}/api/delivery/available-orders`, {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            })
+            .then(response => {
+                if (response.status === 401) {
+                    localStorage.removeItem('deliveryToken');
+                    document.getElementById('loginPage').classList.remove('hidden');
+                    document.getElementById('deliveryPage').classList.add('hidden');
+                    return Promise.reject('Unauthorized');
+                }
+                return response.json();
+            })
+            .then(orders => {
+                renderAvailableOrders(orders);
+            })
+            .catch(error => {
+                if (error !== 'Unauthorized') {
+                    console.error('Error loading available orders:', error);
+                }
+            });
         }
-    })
-    .then(response => {
-        if (response.status === 401) {
-            // Handle unauthorized (already exists)
-            return Promise.reject('Unauthorized');
-        }
-        return response.json();
-    })
-    .then(orders => {
-        renderAvailableOrders(orders);
-    })
-    .catch(error => {
-        if (error !== 'Unauthorized') {
-            console.error('Error loading available orders:', error);
-        }
-    });
-}
         
         // Load my orders
         function loadMyOrders() {
@@ -1499,11 +1501,6 @@ function closeIssueModal() {
                 console.error('EventSource failed:', error);
                 setTimeout(setupEventSource, 5000); // Retry connection
             };
-            eventSource.addEventListener('new-order-available', function(event) {
-    const data = JSON.parse(event.data);
-    showAlert('ordersAlert', 'info', `طلب جديد متاح: ${data.orderNumber} - ${data.cost} درهم`);
-    loadAvailableOrders(); // Refresh available orders
-});
         }
         
         // View order details
