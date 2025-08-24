@@ -794,7 +794,7 @@ textarea {
         </div>
         <div class="cost-item">
             <span class="cost-label">رسوم التوصيل:</span>
-            <span class="cost-value" id="serviceFee">20 درهم</span>
+            <span class="cost-value" id="serviceFee">50 درهم</span>
         </div>
         <div class="cost-divider"></div>
         <div class="cost-item total">
@@ -1418,7 +1418,7 @@ function showOrderDetails(order) {
     
     // Calculate and display total amount (library cost + service fee)
     const libraryCost = order.cost || 0;
-    const serviceFee = 20; // 20 MAD service fee
+    const serviceFee = 50; 
     const totalAmount = libraryCost + serviceFee;
     
     document.getElementById('libraryCost').textContent = libraryCost + ' درهم';
