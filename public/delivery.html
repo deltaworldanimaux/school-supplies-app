@@ -570,6 +570,45 @@
 .map-link:hover {
     text-decoration: underline;
 }
+.cost-summary {
+    background: #f9f9f9;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 20px 0;
+}
+
+.cost-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.cost-item.total {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed #ccc;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.cost-label {
+    color: #555;
+}
+
+.cost-value {
+    font-weight: 500;
+}
+
+.cost-item.total .cost-value {
+    color: #4CAF50;
+    font-size: 1.2em;
+}
+
+.cost-divider {
+    height: 1px;
+    background: #ddd;
+    margin: 8px 0;
+}
     </style>
 </head>
 <body>
@@ -689,16 +728,34 @@
                         </div>
                         
                         <div class="step-content hidden" data-step="3">
-                            <h3>التسليم للعميل</h3>
-                            <p>تم الدفع بنجاح. توجه الآن إلى العميل لتسليم الطلب.</p>
-                            <div class="client-info">
-    <h4>معلومات العميل:</h4>
-    <p id="clientName"></p>
-    <p id="clientPhone"></p>
-    <a id="clientMapLink" target="_blank" class="map-link">عرض على الخريطة</a>
+    <h3>التسليم للعميل</h3>
+    <p>تم الدفع بنجاح. توجه الآن إلى العميل لتسليم الطلب واستلام المبلغ.</p>
+    
+    <div class="cost-summary">
+        <div class="cost-item">
+            <span class="cost-label">تكلفة المكتبة:</span>
+            <span class="cost-value" id="libraryCost"></span>
+        </div>
+        <div class="cost-item">
+            <span class="cost-label">رسوم التوصيل:</span>
+            <span class="cost-value" id="serviceFee">50 درهم</span>
+        </div>
+        <div class="cost-divider"></div>
+        <div class="cost-item total">
+            <span class="cost-label">المبلغ الإجمالي المستحق:</span>
+            <span class="cost-value" id="totalAmount"></span>
+        </div>
+    </div>
+    
+    <div class="client-info">
+        <h4>معلومات العميل:</h4>
+        <p id="clientName"></p>
+        <p id="clientPhone"></p>
+        <a id="clientMapLink" target="_blank" class="map-link">عرض على الخريطة</a>
+    </div>
+    
+    <button class="modal-action-btn next-step" data-next="4">وصلت إلى العميل</button>
 </div>
-                            <button class="modal-action-btn next-step" data-next="4">وصلت إلى العميل</button>
-                        </div>
                         
                         <div class="step-content hidden" data-step="4">
                             <h3>تسليم الطلب</h3>
@@ -1101,7 +1158,7 @@
         }
         
         // Show order details in modal
-        function showOrderDetails(order) {
+function showOrderDetails(order) {
     // Update modal with order details
     document.getElementById('modalOrderNumber').textContent = order.orderNumber;
     document.getElementById('libraryName').textContent = order.assignedTo?.name || 'غير معين';
@@ -1109,6 +1166,14 @@
     document.getElementById('orderCost').textContent = order.cost ? order.cost + ' درهم' : 'غير محدد';
     document.getElementById('clientName').textContent = order.parentName;
     document.getElementById('clientPhone').textContent = order.phone;
+    
+
+    const libraryCost = order.cost || 0;
+    const serviceFee = 50;
+    const totalAmount = libraryCost + serviceFee;
+    
+    document.getElementById('libraryCost').textContent = libraryCost + ' درهم';
+    document.getElementById('totalAmount').textContent = totalAmount + ' درهم';
     
     // Set up map links
     const libraryMapLink = document.getElementById('libraryMapLink');
