@@ -29,10 +29,14 @@ const deliveryManSchema = new mongoose.Schema({
     default: true
   },
   currentOrder: {
-  type: mongoose.Schema.Types.ObjectId,
-  ref: 'Order',
-  default: null
-}
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Order',
+    default: null
+  },
+  telegramChatId: {
+    type: String,
+    default: null
+  }
 }, {
   timestamps: true
 });

@@ -33,22 +33,44 @@ const TELEGRAM_BOT_TOKEN = '8282280616:AAEILrAJbJ_HnSjPO01HENUYrMHNuoU4cTs';
 const TELEGRAM_CHAT_ID = '7779679746';
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
 bot.on('message', async (msg) => {
-console.log('📩 Incoming message:', msg.text, 'from', msg.chat.id);
+  console.log('📩 Incoming message:', msg.text, 'from', msg.chat.id);
+
+  const chatId = msg.chat.id;
+  const text = msg.text;
+
+  if (!text) return;
+
+  if (text === '/start') {
+    return bot.sendMessage(chatId, 'مرحباً! استخدم:\n/register_delivery [username] [password] - للتسجيل كمندوب توصيل\n/register_library [username] [password] - للتسجيل كمكتبة');
+  }
+
+  if (text.startsWith('/register_delivery')) {
+    const [ , username, ...passParts ] = text.split(' ');
+    const password = passParts.join(' ');
+
+    if (!username || !password) {
+      return bot.sendMessage(chatId, '❌ الصيغة غير صحيحة. استخدم: /register_delivery username password');
+    }
+
+    try {
+      const deliveryMan = await DeliveryMan.findOne({ username });
+      if (!deliveryMan) return bot.sendMessage(chatId, '❌ اسم المستخدم غير صحيح');
+
+      const valid = await bcrypt.compare(password, deliveryMan.password);
+      if (!valid) return bot.sendMessage(chatId, '❌ كلمة المرور غير صحيحة');
+
+      deliveryMan.telegramChatId = chatId;
+      await deliveryMan.save();
+
+      return bot.sendMessage(chatId, `✅ تم ربط المندوب: ${deliveryMan.name}`);
+    } catch (err) {
+      console.error('Telegram delivery register error:', err);
+      return bot.sendMessage(chatId, '⚠️ خطأ داخلي، حاول لاحقاً');
+    }
+  }
 
 
-const chatId = msg.chat.id;
-const text = msg.text;
-
-
-if (!text) return;
-
-
-if (text === '/start') {
-return bot.sendMessage(chatId, 'مرحباً! استخدم\n/register [username] [password]');
-}
-
-
-if (text.startsWith('/register')) {
+if (text.startsWith('/register_library')) {
 const [ , username, ...passParts ] = text.split(' ');
 const password = passParts.join(' ');
 
@@ -88,6 +110,28 @@ await bot.sendMessage(library.telegramChatId, message);
 } catch (err) {
 console.error('Error sending library notification:', err);
 }
+}
+
+async function notifyAvailableDeliveryMen(order) {
+  try {
+    // Find all delivery men without current orders
+    const availableDeliveryMen = await DeliveryMan.find({
+      currentOrder: null,
+      telegramChatId: { $exists: true, $ne: null }
+    });
+
+    // Send notification to each available delivery man
+    for (const deliveryMan of availableDeliveryMen) {
+      try {
+        const message = `🆕 طلب جديد متاح للتوصيل!\nرقم الطلب: ${order.orderNumber}\nالمكتبة: ${order.assignedTo.name}\nالتكلفة: ${order.cost} درهم`;
+        await bot.sendMessage(deliveryMan.telegramChatId, message);
+      } catch (error) {
+        console.error(`Error sending notification to delivery man ${deliveryMan.name}:`, error);
+      }
+    }
+  } catch (error) {
+    console.error('Error notifying delivery men:', error);
+  }
 }
 // Function to send Telegram notification
 async function sendTelegramNotification(message) {
@@ -1080,7 +1124,7 @@ app.put('/api/library/orders/:id/refuse', authenticateLibrary, async (req, res) 
         assignedTo: null // Remove assignment
       },
       { new: true }
-    );
+    ).populate('assignedTo', 'name');
     
     if (!order) {
       return res.status(404).json({ 
@@ -1091,6 +1135,11 @@ app.put('/api/library/orders/:id/refuse', authenticateLibrary, async (req, res) 
     // Send Telegram notification for refused order
     const refusalMessage = `❌ Order Refused!\nOrder Number: ${order.orderNumber}\nLibrary: ${req.library.name}\nReason: ${reason}`;
     sendTelegramNotification(refusalMessage);
+    
+    // If the order was in processing status and had a cost, notify delivery men
+    if (order.cost) {
+      notifyAvailableDeliveryMen(order);
+    }
     
     res.json({ message: 'تم رفض الطلب', order });
   } catch (error) {
@@ -1193,7 +1242,7 @@ app.put('/api/library/orders/:id/complete', authenticateLibrary, async (req, res
         cost: parseFloat(cost)
       },
       { new: true }
-    );
+    ).populate('assignedTo', 'name');
     
     if (!order) {
       return res.status(404).json({ 
@@ -1204,6 +1253,9 @@ app.put('/api/library/orders/:id/complete', authenticateLibrary, async (req, res
     // Send Telegram notification for completed order
     const readyMessage = `✅ Order Ready!\nOrder Number: ${order.orderNumber}\nLibrary: ${req.library.name}\nCost: ${cost} MAD`;
     sendTelegramNotification(readyMessage);
+    
+    // Notify available delivery men
+    notifyAvailableDeliveryMen(order);
     
     res.json({ message: 'تم إكمال الطلب', order });
   } catch (error) {
