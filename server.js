@@ -870,51 +870,52 @@ app.post('/api/orders/:id/assign-delivery', authenticateAdmin, async (req, res) 
 
 // Get available orders for delivery (status: ready)
 app.get('/api/delivery/available-orders', authenticateDeliveryMan, async (req, res) => {
-try {
-const orders = await Order.find({
-status: 'ready', // Already set when library completes order
-$or: [
-{ deliveryStatus: { $exists: false } },
-{ deliveryStatus: 'pending' }
-],
-$or: [
-{ deliveryMan: { $exists: false } },
-{ deliveryMan: null }
-]
-}).populate('assignedTo', 'name phone location');
-res.json(orders);
-} catch (error) {
-res.status(500).json({ message: 'Error fetching orders', error: error.message });
-}
+  try {
+    const orders = await Order.find({
+      status: 'ready', // Already set when library completes order
+      deliveryStatus: 'pending', // Only pending deliveries
+      $or: [
+        { deliveryMan: { $exists: false } },
+        { deliveryMan: null }
+      ]
+    }).populate('assignedTo', 'name phone location');
+
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching orders', error: error.message });
+  }
 });
 
 // Delivery man picks up order
 app.put('/api/delivery/orders/:id/pickup', authenticateDeliveryMan, async (req, res) => {
   try {
     const order = await Order.findOneAndUpdate(
-      { 
-        _id: req.params.id, 
+      {
+        _id: req.params.id,
         status: 'ready',
-        deliveryStatus: 'pending',
-        deliveryMan: { $exists: false }
+        deliveryStatus: 'pending', // Must be pending to be picked up
+        $or: [
+          { deliveryMan: { $exists: false } },
+          { deliveryMan: null }
+        ]
       },
-      { 
+      {
         deliveryMan: req.deliveryMan._id,
         deliveryStatus: 'assigned'
       },
       { new: true }
     ).populate('assignedTo', 'name phone location');
-    
+
     if (!order) {
       return res.status(404).json({ message: 'Order not available or already taken' });
     }
-    
-    // Send event to all delivery clients
-    sendEventToDeliveryClients('order-taken', { 
+
+    // Notify all delivery clients that the order was taken
+    sendEventToDeliveryClients('order-taken', {
       orderId: order._id,
       takenBy: req.deliveryMan._id
     });
-    
+
     res.json({ message: 'Order assigned to you successfully', order });
   } catch (error) {
     res.status(500).json({ message: 'Error picking up order', error: error.message });
