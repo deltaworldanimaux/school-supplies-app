@@ -715,8 +715,15 @@ app.post('/api/report-issue', authenticateDeliveryMan, async (req, res) => {
     try {
         const { type, description, deliveryManName, orderNumber, orderId } = req.body;
         
-        // Format Telegram message
-        const message = `🚨 مشكلة في التوصيل\n\nالنوع: ${type === 'payment' ? 'مشكلة في الدفع' : 'مشكلة في التسليم'}\nوصف المشكلة: ${description}\nاسم المندوب: ${deliveryManName}\nرقم الطلب: ${orderNumber}\nمعرف الطلب: ${orderId}`;
+        // Format Telegram message with more details
+        const issueType = type === 'payment' ? 'مشكلة في الدفع للمكتبة' : 'مشكلة في التسليم للعميل';
+        const message = `🚨 بلاغ مشكلة في التوصيل\n\n` +
+                       `نوع المشكلة: ${issueType}\n` +
+                       `وصف المشكلة: ${description}\n` +
+                       `اسم المندوب: ${deliveryManName}\n` +
+                       `رقم الطلب: ${orderNumber}\n` +
+                       `معرف الطلب: ${orderId}\n\n` +
+                       `يرجى التواصل مع المندوب لحل المشكلة.`;
         
         // Send Telegram notification
         await sendTelegramNotification(message);

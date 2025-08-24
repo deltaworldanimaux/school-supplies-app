@@ -598,7 +598,82 @@
 .cost-value {
     font-weight: 500;
 }
+/* Enhanced issue reporting styles */
+.issue-form {
+    padding: 20px;
+}
 
+.options-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-top: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.option-btn {
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #f9f9f9;
+    text-align: right;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+}
+
+.option-btn:hover {
+    background: #f1f1f1;
+    transform: translateX(-5px);
+}
+
+.option-btn.selected {
+    background: #e3f2fd;
+    border-color: #2196F3;
+    color: #2196F3;
+    font-weight: 500;
+}
+
+.option-btn input {
+    margin-left: 10px;
+}
+
+.option-btn label {
+    flex: 1;
+    cursor: pointer;
+    margin: 0;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.action-buttons .modal-action-btn {
+    flex: 1;
+}
+
+/* Custom scrollbar for options */
+.options-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.options-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.options-container::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 10px;
+}
+
+.options-container::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
 .cost-item.total .cost-value {
     color: #4CAF50;
     font-size: 1.2em;
@@ -1008,23 +1083,22 @@ const issueOptions = {
 function initIssueReporting() {
     // Payment issue button
     document.getElementById('issueWithPayment').addEventListener('click', function() {
-        showIssueModal('payment');
+        showIssueModal('payment', 'مشكلة في الدفع للمكتبة');
     });
     
     // Delivery issue button
     document.getElementById('deliveryIssue').addEventListener('click', function() {
-        showIssueModal('delivery');
+        showIssueModal('delivery', 'مشكلة في التسليم للعميل');
     });
     
     // Close issue modal
-    document.getElementById('closeIssueModalBtn').addEventListener('click', function() {
-        document.getElementById('issueModal').classList.remove('active');
-    });
+    document.getElementById('closeIssueModalBtn').addEventListener('click', closeIssueModal);
+    document.getElementById('cancelIssueBtn').addEventListener('click', closeIssueModal);
     
     // Close issue modal when clicking outside
     document.getElementById('issueModal').addEventListener('click', function(e) {
         if (e.target === this) {
-            this.classList.remove('active');
+            closeIssueModal();
         }
     });
     
@@ -1033,12 +1107,11 @@ function initIssueReporting() {
 }
 
 // Show issue modal with options
-function showIssueModal(type) {
+function showIssueModal(type, title) {
     currentIssueType = type;
     currentIssueOrderId = currentOrder._id;
     
     // Set modal title
-    const title = type === 'payment' ? 'الإبلاغ عن مشكلة في الدفع' : 'الإبلاغ عن مشكلة في التسليم';
     document.getElementById('issueModalTitle').textContent = title;
     
     // Populate options
@@ -1046,11 +1119,13 @@ function showIssueModal(type) {
     optionsContainer.innerHTML = '';
     
     issueOptions[type].forEach(option => {
+        const optionId = `option-${option.replace(/\s+/g, '-')}`;
+        
         const optionBtn = document.createElement('div');
         optionBtn.className = 'option-btn';
         optionBtn.innerHTML = `
-            <input type="radio" name="issueOption" value="${option}" id="option-${option}">
-            <label for="option-${option}">${option}</label>
+            <input type="radio" name="issueOption" value="${option}" id="${optionId}">
+            <label for="${optionId}">${option}</label>
         `;
         optionsContainer.appendChild(optionBtn);
         
@@ -1113,7 +1188,13 @@ function submitIssueReport() {
         orderId: currentIssueOrderId
     };
     
-    // Send to server (you'll need to implement this endpoint)
+    // Show loading state
+    const submitBtn = document.getElementById('submitIssueBtn');
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = 'جاري الإرسال...';
+    submitBtn.disabled = true;
+    
+    // Send to server
     fetch(`${API_BASE}/api/report-issue`, {
         method: 'POST',
         headers: {
@@ -1129,12 +1210,17 @@ function submitIssueReport() {
         return response.json();
     })
     .then(data => {
-        showAlert('تم إرسال التقرير بنجاح. سيتم التواصل معك قريباً.');
-        document.getElementById('issueModal').classList.remove('active');
+        showAlert('ordersAlert', 'success', 'تم إرسال التقرير بنجاح. سيتم التواصل معك قريباً.');
+        closeIssueModal();
     })
     .catch(error => {
         console.error('Error reporting issue:', error);
-        showAlert('حدث خطأ أثناء إرسال التقرير. يرجى المحاولة مرة أخرى.');
+        showAlert('ordersAlert', 'error', 'حدث خطأ أثناء إرسال التقرير. يرجى المحاولة مرة أخرى.');
+    })
+    .finally(() => {
+        // Restore button state
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
     });
 }
 // Initialize issue reporting when page loads
@@ -1191,6 +1277,10 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
         
+// Close issue modal
+function closeIssueModal() {
+    document.getElementById('issueModal').classList.remove('active');
+}
         // Render available orders
         function renderAvailableOrders(orders) {
             const container = document.getElementById('availableOrders');
