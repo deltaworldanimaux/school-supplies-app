@@ -576,7 +576,14 @@
     border-radius: 8px;
     margin: 20px 0;
 }
+.cancel-btn {
+    background-color: #e74c3c;
+    color: white;
+}
 
+.cancel-btn:hover {
+    background-color: #c0392b;
+}
 .cost-item {
     display: flex;
     justify-content: space-between;
@@ -754,6 +761,7 @@ textarea {
     <p id="libraryName"></p>
     <p id="libraryPhone"></p>
     <a id="libraryMapLink" target="_blank" class="map-link">عرض على الخريطة</a>
+    <button class="modal-action-btn cancel-btn" id="cancelOrderBtn">إلغاء الطلب</button>
 </div>
                             <button class="modal-action-btn next-step" data-next="2">وصلت إلى المكتبة</button>
                         </div>
@@ -1308,6 +1316,7 @@ function closeIssueModal() {
                         </div>
                     </div>
                     <button class="action-btn view-btn" data-order="${order._id}">عرض التفاصيل</button>
+                    <button class="action-btn cancel-btn" data-order="${order._id}">إلغاء الطلب</button>
                 `;
                 
                 container.appendChild(orderCard);
@@ -1575,6 +1584,45 @@ function showOrderDetails(order) {
                 loadDeliveryData();
             }
         }, 30000);
+// Add event listener for cancel buttons
+document.querySelectorAll('.cancel-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        if (confirm('هل أنت متأكد من إلغاء هذا الطلب؟')) {
+            cancelOrder(this.dataset.order);
+        }
+    });
+});
+
+// Cancel order function
+function cancelOrder(orderId) {
+    fetch(`${API_BASE}/api/delivery/orders/${orderId}/cancel`, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `Bearer ${authToken}`
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        showAlert('ordersAlert', 'success', 'تم إلغاء الطلب بنجاح');
+        hasActiveOrder = false;
+        loadDeliveryData();
+    })
+    .catch(error => {
+        showAlert('ordersAlert', 'error', 'فشل في إلغاء الطلب');
+        console.error('Error canceling order:', error);
+    });
+}
+document.getElementById('cancelOrderBtn').addEventListener('click', function() {
+    if (confirm('هل أنت متأكد من إلغاء هذا الطلب؟')) {
+        cancelOrder(currentOrder._id);
+        document.getElementById('orderModal').classList.remove('active');
+    }
+});
     </script>
 </body>
 </html>

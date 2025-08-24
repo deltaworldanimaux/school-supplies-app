@@ -1334,14 +1334,25 @@ function renderDeliveryMen() {
         container.innerHTML = '<p>لا توجد سجلات لمناديب التوصيل</p>';
         return;
     }
+
+    // Sort delivery men: those with score > 100 first, then others
+    const sortedDeliveryMen = [...deliveryMen].sort((a, b) => {
+        const aNeedsPayment = a.score > 100;
+        const bNeedsPayment = b.score > 100;
+        
+        if (aNeedsPayment && !bNeedsPayment) return -1;
+        if (!aNeedsPayment && bNeedsPayment) return 1;
+        return 0;
+    });
     
-    deliveryMen.forEach(deliveryMan => {
+    sortedDeliveryMen.forEach(deliveryMan => {
         const deliveryElement = document.createElement('div');
-        deliveryElement.style.background = 'white';
+        deliveryElement.style.background = deliveryMan.score > 100 ? '#fff3cd' : 'white';
         deliveryElement.style.padding = '15px';
         deliveryElement.style.margin = '10px 0';
         deliveryElement.style.borderRadius = '5px';
         deliveryElement.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
+        deliveryElement.style.border = deliveryMan.score > 100 ? '2px solid #ffc107' : 'none';
         
         // Add payment label if score is above 100
         const paymentLabel = deliveryMan.score > 100 ? 

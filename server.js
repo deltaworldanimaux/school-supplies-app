@@ -973,6 +973,41 @@ app.get('/api/delivery/available-orders', authenticateDeliveryMan, async (req, r
   }
 });
 
+// Cancel delivery order
+app.put('/api/delivery/orders/:id/cancel', authenticateDeliveryMan, async (req, res) => {
+  try {
+    const order = await Order.findOneAndUpdate(
+      {
+        _id: req.params.id,
+        deliveryMan: req.deliveryMan._id,
+        deliveryStatus: 'assigned'
+      },
+      {
+        deliveryStatus: 'pending',
+        deliveryMan: null
+      },
+      { new: true }
+    );
+
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found or not assigned to you' });
+    }
+
+    // Clear delivery man's current order
+    await DeliveryMan.findByIdAndUpdate(
+      req.deliveryMan._id,
+      { currentOrder: null }
+    );
+
+    // Notify other delivery men about available order
+    notifyAvailableDeliveryMen(order);
+
+    res.json({ message: 'Order canceled successfully', order });
+  } catch (error) {
+    res.status(500).json({ message: 'Error canceling order', error: error.message });
+  }
+});
+
 // Delivery man picks up order
 app.put('/api/delivery/orders/:id/pickup', authenticateDeliveryMan, async (req, res) => {
   try {
