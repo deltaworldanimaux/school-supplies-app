@@ -426,6 +426,14 @@
             overflow-y: auto;
         }
         
+        .payment-label {
+    background-color: #f44336;
+    color: white;
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-size: 0.8em;
+    margin-left: 10px;
+}
         .modal-header {
             display: flex;
             justify-content: space-between;
@@ -1335,8 +1343,12 @@ function renderDeliveryMen() {
         deliveryElement.style.borderRadius = '5px';
         deliveryElement.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
         
+        // Add payment label if score is above 100
+        const paymentLabel = deliveryMan.score > 100 ? 
+            '<span class="payment-label">يجب الدفع</span>' : '';
+        
         deliveryElement.innerHTML = `
-            <strong>${deliveryMan.name}</strong> - ${deliveryMan.phone}
+            <strong>${deliveryMan.name}</strong>${paymentLabel} - ${deliveryMan.phone}
             <div>اسم المستخدم: ${deliveryMan.username}</div>
             <div>النقاط: ${deliveryMan.score || 0}</div>
             <div>الحالة: ${deliveryMan.isAvailable ? 'متاح' : 'غير متاح'}</div>
