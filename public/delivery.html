@@ -829,20 +829,28 @@ textarea {
         </div>
         
         <div class="issue-form">
+            <div class="alert alert-info">
+                <strong>ملاحظة:</strong> سيتم إرسال إشعار إلى المسؤول وسيتواصل معك قريباً.
+            </div>
+            
             <div id="issueType" class="hidden"></div>
+            
             <div class="form-group">
-                <label>نوع المشكلة:</label>
+                <label>اختر نوع المشكلة:</label>
                 <div id="issueOptions" class="options-container">
                     <!-- Options will be populated by JavaScript -->
                 </div>
             </div>
             
             <div class="form-group hidden" id="customIssueGroup">
-                <label for="customIssue">وصف المشكلة:</label>
-                <textarea id="customIssue" rows="3" placeholder="صف المشكلة التي تواجهها..."></textarea>
+                <label for="customIssue">وصف المشكلة بالتفصيل:</label>
+                <textarea id="customIssue" rows="4" placeholder="صف المشكلة التي تواجهها بالتفصيل..."></textarea>
             </div>
             
-            <button id="submitIssueBtn" class="modal-action-btn">إرسال التقرير</button>
+            <div class="action-buttons">
+                <button class="modal-action-btn secondary-btn" id="cancelIssueBtn">إلغاء</button>
+                <button class="modal-action-btn" id="submitIssueBtn">إرسال التقرير</button>
+            </div>
         </div>
     </div>
 </div>
@@ -860,17 +868,20 @@ let currentIssueOrderId = null;
 // Define issue options
 const issueOptions = {
     payment: [
-        "العميل يرفض الدفع",
-        "العميل غير متوفر",
-        "مشكلة في طريقة الدفع",
-        "المبلغ غير كافي",
+        "المكتبة لم تعد الطلب بعد",
+        "المكتبة ترفض استلام الطلب",
+        "المكتبة غير متوفرة أو مغلقة",
+        "المكتبة تطلب مبلغ إضافي",
+        "مشكلة في فاتورة المكتبة",
         "أخرى"
     ],
     delivery: [
-        "عنوان العميل غير صحيح",
-        "العميل غير متوفر",
+        "العميل لا يجيب على الهاتف",
         "العميل يرفض استلام الطلب",
-        "مشكلة في المنتج",
+        "العميل يرفض دفع المبلغ",
+        "العنوان غير صحيح أو غير مكتمل",
+        "العميل غير موجود في العنوان المحدد",
+        "مشكلة في المنتج أو الطلب",
         "أخرى"
     ]
 };
@@ -1073,7 +1084,7 @@ function submitIssueReport() {
     const selectedOption = document.querySelector('input[name="issueOption"]:checked');
     
     if (!selectedOption) {
-        alert('يرجى اختيار نوع المشكلة');
+        showAlert('يرجى اختيار نوع المشكلة');
         return;
     }
     
@@ -1083,7 +1094,7 @@ function submitIssueReport() {
     if (selectedOption.value === 'أخرى') {
         const customIssue = document.getElementById('customIssue').value.trim();
         if (!customIssue) {
-            alert('يرجى وصف المشكلة');
+            showAlert('يرجى وصف المشكلة');
             return;
         }
         issueDescription = customIssue;
@@ -1118,12 +1129,12 @@ function submitIssueReport() {
         return response.json();
     })
     .then(data => {
-        alert('تم إرسال التقرير بنجاح. سيتم التواصل معك قريباً.');
+        showAlert('تم إرسال التقرير بنجاح. سيتم التواصل معك قريباً.');
         document.getElementById('issueModal').classList.remove('active');
     })
     .catch(error => {
         console.error('Error reporting issue:', error);
-        alert('حدث خطأ أثناء إرسال التقرير. يرجى المحاولة مرة أخرى.');
+        showAlert('حدث خطأ أثناء إرسال التقرير. يرجى المحاولة مرة أخرى.');
     });
 }
 // Initialize issue reporting when page loads
@@ -1535,12 +1546,12 @@ function showOrderDetails(order) {
         
         // Issue with payment
         document.getElementById('issueWithPayment').addEventListener('click', function() {
-            alert('سيتم التواصل مع الدعم الفوري للمساعدة في حل المشكلة.');
+            showAlert('سيتم التواصل مع الدعم الفوري للمساعدة في حل المشكلة.');
         });
         
         // Delivery issue
         document.getElementById('deliveryIssue').addEventListener('click', function() {
-            alert('سيتم التواصل مع الدعم الفوري للمساعدة في حل المشكلة.');
+            showAlert('سيتم التواصل مع الدعم الفوري للمساعدة في حل المشكلة.');
         });
         
         // Refresh orders every 30 seconds
