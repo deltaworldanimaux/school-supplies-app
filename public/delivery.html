@@ -653,102 +653,103 @@ textarea {
     font-family: inherit;
     resize: vertical;
 }
-/* Telegram Connection Section */
-.telegram-section {
-  margin: 30px 0;
-}
-
-.telegram-card {
-  background: linear-gradient(135deg, #0088cc 0%, #005580 100%);
-  color: white;
-  padding: 25px;
-  border-radius: 15px;
-  box-shadow: 0 10px 30px rgba(0, 136, 204, 0.3);
-}
-
-.telegram-steps {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  margin-bottom: 25px;
-}
-
-.telegram-step {
-  display: flex;
-  align-items: flex-start;
-  gap: 15px;
-}
-
-.step-number {
-  background: white;
-  color: #0088cc;
-  width: 35px;
-  height: 35px;
-  border-radius: 50%;
+/* Telegram Button */
+.telegram-btn {
+  background: #0088cc;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: bold;
-  flex-shrink: 0;
+  padding: 8px;
+  margin-left: 10px;
 }
 
-.step-content h3 {
-  margin: 0 0 8px 0;
-  font-size: 1.1rem;
+.telegram-btn:hover {
+  background: #006da3;
 }
 
-.step-content p {
-  margin: 5px 0;
-  opacity: 0.9;
+/* Modal Styles */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
-.step-content code {
-  background: rgba(255, 255, 255, 0.2);
-  padding: 5px 10px;
-  border-radius: 5px;
-  font-family: monospace;
-  direction: ltr;
-  display: inline-block;
+.modal.show {
+  display: block;
+  opacity: 1;
 }
 
-.example {
-  font-size: 0.9rem;
-  opacity: 0.8;
+.modal-content {
+  background-color: #fefefe;
+  margin: 10% auto;
+  padding: 0;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  transform: translateY(-20px);
+  transition: transform 0.3s ease;
 }
 
-.telegram-benefits {
-  background: rgba(255, 255, 255, 0.1);
-  padding: 20px;
-  border-radius: 10px;
+.modal.show .modal-content {
+  transform: translateY(0);
 }
 
-.telegram-benefits h4 {
-  margin: 0 0 15px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
-  padding-bottom: 10px;
+.modal-header {
+  padding: 15px 20px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.telegram-benefits ul {
+.modal-header h3 {
   margin: 0;
-  padding-right: 20px;
+  color: #333;
 }
 
-.telegram-benefits li {
-  margin-bottom: 8px;
+.close {
+  color: #aaa;
+  font-size: 24px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.close:hover {
+  color: #333;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.steps-list {
+  padding-right: 20px;
+  margin: 0;
+}
+
+.steps-list li {
+  margin-bottom: 15px;
   line-height: 1.5;
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .telegram-step {
-    flex-direction: column;
-    text-align: center;
-  }
-  
-  .step-number {
-    align-self: center;
-  }
+.steps-list code {
+  background: #f5f5f5;
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  direction: ltr;
+  display: inline-block;
+  margin-top: 5px;
 }
+
     </style>
 </head>
 <body>
@@ -765,7 +766,30 @@ textarea {
         </div>
         <button id="deliveryLoginBtn" class="login-btn">دخول</button>
     </div>
+<!-- Telegram Connection Button -->
+<button id="telegramHelpBtn" class="btn telegram-btn" title="تفعيل إشعارات التليجرام">
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.14.141-.259.259-.374.261l.213-3.053 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.96-.924c-.64-.203-.658-.64.136-.954l11.566-4.458c.538-.196 1.006.128.832.941z"/>
+  </svg>
+</button>
 
+<!-- Telegram Help Modal -->
+<div id="telegramHelpModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>تفعيل إشعارات التليجرام</h3>
+      <span class="close">&times;</span>
+    </div>
+    <div class="modal-body">
+      <ol class="steps-list">
+        <li>افتح تطبيق Telegram</li>
+        <li>ابحث عن البوت: <strong>@SchoolSuppliesBot</strong></li>
+        <li>أرسل الرسالة: <code>/register_delivery [اسم المستخدم] [كلمة المرور]</code></li>
+        <li>انتظر رسالة التأكيد</li>
+      </ol>
+    </div>
+  </div>
+</div>
     <div id="deliveryPage" class="container hidden">
         <header>
             <div class="logo">
@@ -795,43 +819,7 @@ textarea {
                     <div class="stat-number" id="activeOrders">0</div>
                 </div>
             </div>
-            <div class="telegram-section">
-  <h2 class="section-title">🔔 كيفية تفعيل إشعارات التليجرام</h2>
-  <div class="telegram-card">
-    <div class="telegram-steps">
-      <div class="telegram-step">
-        <div class="step-number">1</div>
-        <div class="step-content">
-          <h3>افتح تطبيق Telegram</h3>
-          <p>ابحث عن البوت: <strong>@SchoolSuppliesBot</strong></p>
-        </div>
-      </div>
-      <div class="telegram-step">
-        <div class="step-number">2</div>
-        <div class="step-content">
-          <h3>أرسل الرسالة التالية</h3>
-          <p><code>/register_delivery [اسم المستخدم] [كلمة المرور]</code></p>
-          <p class="example">مثال: <code>/register_delivery delivery123 mypassword</code></p>
-        </div>
-      </div>
-      <div class="telegram-step">
-        <div class="step-number">3</div>
-        <div class="step-content">
-          <h3>انتظر التأكيد</h3>
-          <p>ستتلقى رسالة تأكيد عند اكتمال الربط بنجاح</p>
-        </div>
-      </div>
-    </div>
-    <div class="telegram-benefits">
-      <h4>مزايا الإشعارات عبر Telegram:</h4>
-      <ul>
-        <li>إشعارات فورية عند توفر طلبات جديدة</li>
-        <li>متابعة حالة الطلبات في الوقت الحقيقي</li>
-        <li>تنبيهات عند تعيين طلبات لك</li>
-      </ul>
-    </div>
-  </div>
-</div>
+       
             <div id="ordersAlert" class="alert hidden"></div>
             
             <h2 class="section-title">الطلبات المتاحة</h2>
@@ -1707,6 +1695,20 @@ function showOrderDetails(order) {
                 loadDeliveryData();
             }
         }, 30000);
+// Telegram help modal functionality
+document.getElementById('telegramHelpBtn').addEventListener('click', function() {
+  document.getElementById('telegramHelpModal').classList.add('show');
+});
+
+document.querySelector('#telegramHelpModal .close').addEventListener('click', function() {
+  document.getElementById('telegramHelpModal').classList.remove('show');
+});
+
+window.addEventListener('click', function(event) {
+  if (event.target == document.getElementById('telegramHelpModal')) {
+    document.getElementById('telegramHelpModal').classList.remove('show');
+  }
+});
     </script>
 </body>
 </html>
