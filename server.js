@@ -114,10 +114,17 @@ console.error('Error sending library notification:', err);
 
 async function notifyAvailableDeliveryMen(order) {
   try {
-    // Find all delivery men without current orders
+    // Get the order with populated rejectedBy field
+    const populatedOrder = await Order.findById(order._id).populate('rejectedBy');
+    
+    // Extract IDs of delivery men who have rejected this order
+    const rejectedDeliveryManIds = populatedOrder.rejectedBy.map(dm => dm._id.toString());
+    
+    // Find all delivery men without current orders who haven't rejected this order
     const availableDeliveryMen = await DeliveryMan.find({
       currentOrder: null,
-      telegramChatId: { $exists: true, $ne: null }
+      telegramChatId: { $exists: true, $ne: null },
+      _id: { $nin: rejectedDeliveryManIds } // Exclude delivery men who rejected this order
     });
 
     // Send notification to each available delivery man
@@ -984,7 +991,7 @@ app.put('/api/delivery/orders/:id/cancel', authenticateDeliveryMan, async (req, 
         deliveryStatus: 'assigned'
       },
       {
-        $push: { rejectedBy: req.deliveryMan._id }, // Track who rejected this order
+        $push: { rejectedBy: req.deliveryMan._id }, // Add delivery man to rejectedBy array
         deliveryStatus: 'pending',
         deliveryMan: null
       },
