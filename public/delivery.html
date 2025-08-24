@@ -1460,9 +1460,10 @@ function showOrderDetails(order) {
     }
     
     // ADD CANCEL BUTTON TO STEP 1 CONTENT
-    const step1Content = document.querySelector('[data-step="1"]');
+     const step1Content = document.querySelector('.step-content[data-step="1"]');
+    
     // Check if cancel button already exists to avoid duplicates
-    if (!step1Content.querySelector('#cancelOrderBtn')) {
+    if (step1Content && !step1Content.querySelector('#cancelOrderBtn')) {
         const cancelBtn = document.createElement('button');
         cancelBtn.id = 'cancelOrderBtn';
         cancelBtn.className = 'modal-action-btn cancel-btn';
@@ -1474,9 +1475,11 @@ function showOrderDetails(order) {
             }
         });
         
-        // Add the cancel button after the map link
+        // Find the library-info div more specifically
         const libraryInfo = step1Content.querySelector('.library-info');
-        libraryInfo.appendChild(cancelBtn);
+        if (libraryInfo) {
+            libraryInfo.appendChild(cancelBtn);
+        }
     }
     
     // Reset steps based on order status
@@ -1610,13 +1613,14 @@ function showOrderDetails(order) {
                 loadDeliveryData();
             }
         }, 30000);
-// Add event listener for cancel buttons
-document.querySelectorAll('.cancel-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
+
+// Handle cancel buttons in order cards
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('cancel-btn') && !e.target.id) {
         if (confirm('هل أنت متأكد من إلغاء هذا الطلب؟')) {
-            cancelOrder(this.dataset.order);
+            cancelOrder(e.target.dataset.order);
         }
-    });
+    }
 });
 
 // Cancel order function
