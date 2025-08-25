@@ -285,6 +285,7 @@ app.post('/api/orders', upload.single('suppliesList'), async (req, res) => {
     const datePart = now.toISOString().slice(0, 10).replace(/-/g, '');
     const randomPart = Math.floor(1000 + Math.random() * 9000);
     const orderNumber = `ORD-${datePart}-${randomPart}`;
+    const city = await detectCityFromCoordinates(parseFloat(latitude), parseFloat(longitude));
     
     const order = new Order({
       parentName,
@@ -297,6 +298,7 @@ app.post('/api/orders', upload.single('suppliesList'), async (req, res) => {
       },
       suppliesList: fileUrl,
       status: 'pending',
+      city: city,
       orderNumber: orderNumber // Store the order number
     });
     
@@ -348,6 +350,22 @@ const authenticateDeliveryMan = async (req, res, next) => {
   }
 };
 
+const authenticateSubAdmin = async (req, res, next) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    if (!token) return res.status(401).json({ message: 'Access denied' });
+    
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+    const subAdmin = await SubAdmin.findById(decoded.id);
+    
+    if (!subAdmin) return res.status(401).json({ message: 'Invalid token' });
+    
+    req.subAdmin = subAdmin;
+    next();
+  } catch (error) {
+    res.status(400).json({ message: 'Invalid token' });
+  }
+};
 // Admin login
 app.post('/api/admin/login', async (req, res) => {
   try {
@@ -524,6 +542,27 @@ app.get('/api/orders/:id', authenticateAdmin, async (req, res) => {
   }
 });
 
+async function detectCityFromCoordinates(lat, lng) {
+  try {
+    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
+    const data = await response.json();
+    
+    if (data && data.address) {
+      // Try to get the city from various possible fields
+      return data.address.city || 
+             data.address.town || 
+             data.address.village || 
+             data.address.municipality || 
+             data.address.county || 
+             'Unknown City';
+    }
+    return 'Unknown City';
+  } catch (error) {
+    console.error('Error detecting city from coordinates:', error);
+    return 'Unknown City';
+  }
+}
+
 // Delete order (admin only)
 app.delete('/api/orders/:id', authenticateAdmin, async (req, res) => {
   try {
@@ -611,6 +650,151 @@ app.post('/api/admin/change-password', authenticateAdmin, async (req, res) => {
   }
 });
 
+// Get all sub-admins (main admin only)
+app.get('/api/subadmins', authenticateAdmin, async (req, res) => {
+  try {
+    // Check if main admin
+    if (req.admin.username !== 'admin') {
+      return res.status(403).json({ message: 'Only main admin can access this resource' });
+    }
+    
+    const subAdmins = await SubAdmin.find().select('-password');
+    res.json(subAdmins);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching sub-admins', error: error.message });
+  }
+});
+
+// Create sub-admin (main admin only)
+app.post('/api/subadmins', authenticateAdmin, async (req, res) => {
+  try {
+    // Check if main admin
+    if (req.admin.username !== 'admin') {
+      return res.status(403).json({ message: 'Only main admin can access this resource' });
+    }
+    
+    const { username, password, city } = req.body;
+    
+    const hashedPassword = await bcrypt.hash(password, 12);
+    
+    const subAdmin = new SubAdmin({
+      username,
+      password: hashedPassword,
+      city,
+      score: 0
+    });
+    
+    await subAdmin.save();
+    
+    res.status(201).json({
+      message: 'Sub-admin created successfully',
+      subAdmin: {
+        _id: subAdmin._id,
+        username: subAdmin.username,
+        city: subAdmin.city,
+        score: subAdmin.score
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error creating sub-admin', error: error.message });
+  }
+});
+
+// Update sub-admin (main admin only)
+app.put('/api/subadmins/:id', authenticateAdmin, async (req, res) => {
+  try {
+    // Check if main admin
+    if (req.admin.username !== 'admin') {
+      return res.status(403).json({ message: 'Only main admin can access this resource' });
+    }
+    
+    const { username, password, city, score } = req.body;
+    
+    const updateData = { username, city, score };
+    
+    if (password) {
+      const hashedPassword = await bcrypt.hash(password, 12);
+      updateData.password = hashedPassword;
+    }
+    
+    const subAdmin = await SubAdmin.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true }
+    ).select('-password');
+    
+    if (!subAdmin) {
+      return res.status(404).json({ message: 'Sub-admin not found' });
+    }
+    
+    res.json({ message: 'Sub-admin updated successfully', subAdmin });
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating sub-admin', error: error.message });
+  }
+});
+
+// Delete sub-admin (main admin only)
+app.delete('/api/subadmins/:id', authenticateAdmin, async (req, res) => {
+  try {
+    // Check if main admin
+    if (req.admin.username !== 'admin') {
+      return res.status(403).json({ message: 'Only main admin can access this resource' });
+    }
+    
+    const subAdmin = await SubAdmin.findByIdAndDelete(req.params.id);
+    
+    if (!subAdmin) {
+      return res.status(404).json({ message: 'Sub-admin not found' });
+    }
+    
+    res.json({ message: 'Sub-admin deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting sub-admin', error: error.message });
+  }
+});
+
+// Sub-admin login
+app.post('/api/subadmin/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const subAdmin = await SubAdmin.findOne({ username });
+    
+    if (!subAdmin || !(await bcrypt.compare(password, subAdmin.password))) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+    
+    const token = jwt.sign(
+      { id: subAdmin._id },
+      process.env.JWT_SECRET || 'fallback_secret',
+      { expiresIn: '24h' }
+    );
+    
+    res.json({ 
+      token, 
+      subAdmin: { 
+        id: subAdmin._id, 
+        username: subAdmin.username,
+        city: subAdmin.city,
+        score: subAdmin.score
+      } 
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Login error', error: error.message });
+  }
+});
+
+// Get orders for sub-admin (filtered by city)
+app.get('/api/subadmin/orders', authenticateSubAdmin, async (req, res) => {
+  try {
+    const orders = await Order.find({ 
+      city: req.subAdmin.city 
+    }).sort({ createdAt: -1 }).populate('deliveryMan', 'name phone');
+    
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching orders', error: error.message });
+  }
+});
 // Library creation endpoint
 app.post('/api/libraries', authenticateAdmin, async (req, res) => {
   try {

@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <title>لوحة تحكم مدرستي - إدارة الطلبات</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>">
     <style>
         :root {
             --primary: #4CAF50;
@@ -630,6 +631,7 @@
         <span>مرحباً, <span id="adminName">Admin</span></span>
         <button id="manageLibrariesBtn" class="btn" style="margin-left: 10px;">إدارة المكتبات</button>
         <button id="manageDeliveryBtn" class="btn" style="margin-left: 10px;">إدارة مندوبي التوصيل</button>
+        <button id="manageSubAdminsBtn" class="btn" style="margin-left: 10px; display: none;">إدارة المساعدين</button>
         <button id="logoutBtn" class="btn">تسجيل الخروج</button>
     </div>
 </header>
@@ -805,13 +807,50 @@
     </div>
   </div>
 </div>
+
+<div id="subAdminsModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+  <div class="modal-content" style="background-color: #fefefe; margin: 5% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 800px; border-radius: 10px;">
+    <span class="close">&times;</span>
+    <h2>إدارة المساعدين</h2>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
+      <div>
+        <label>اسم المستخدم:</label>
+        <input type="text" id="subAdminUsername" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+      </div>
+      <div>
+        <label>كلمة المرور:</label>
+        <input type="password" id="subAdminPassword" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+      </div>
+      <div>
+        <label>المدينة:</label>
+        <input type="text" id="subAdminCity" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+      </div>
+      <div>
+        <label>النقاط:</label>
+        <input type="number" id="subAdminScore" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+      </div>
+    </div>
+    
+    <button id="saveSubAdminBtn" style="background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+      حفظ المساعد
+    </button>
+    
+    <div id="subAdminsList" style="margin-top: 20px;">
+      <h3>المساعدون</h3>
+      <div id="subAdminsContainer"></div>
+    </div>
+  </div>
+</div>
     <script>
         let authToken = localStorage.getItem('adminToken');
         const API_BASE = window.location.origin;
         let currentOrder = null;
         let deliveryMap, deliveryMarker;
         let deliveryMen = [];
-        let currentEditingDeliveryManId = null
+        let currentEditingDeliveryManId = null;
+        let currentEditingSubAdminId = null;
+        let subAdmins = [];
         
         // Check if user is already logged in
         if (authToken) {
@@ -853,6 +892,7 @@
                     document.getElementById('loginPage').classList.add('hidden');
                     document.getElementById('adminPage').classList.remove('hidden');
                     document.getElementById('adminName').textContent = data.admin.username;
+                    checkAdminType();
                     loadOrders();
                     setupEventSource();
 
@@ -1749,6 +1789,180 @@ function resetLibraryForm() {
   // Reset map view to Tetouan
   map.setView([35.5762, -5.3684], 13);
 }
+
+// Show/hide management buttons based on admin type
+function checkAdminType() {
+  const adminName = document.getElementById('adminName').textContent;
+  if (adminName === 'admin') {
+    document.getElementById('manageSubAdminsBtn').style.display = 'inline-block';
+  } else {
+    document.getElementById('manageSubAdminsBtn').style.display = 'none';
+  }
+}
+
+// Open sub-admins modal
+function openSubAdminsModal() {
+  document.getElementById('subAdminsModal').style.display = 'block';
+  loadSubAdmins();
+  resetSubAdminForm();
+}
+
+// Close sub-admins modal
+function closeSubAdminsModal() {
+  document.getElementById('subAdminsModal').style.display = 'none';
+}
+
+// Load sub-admins
+function loadSubAdmins() {
+  fetch(`${API_BASE}/api/subadmins`, {
+    headers: {
+      'Authorization': `Bearer ${authToken}`
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    subAdmins = data;
+    renderSubAdmins();
+  })
+  .catch(error => {
+    console.error('Error loading sub-admins:', error);
+    showAlert('ordersAlert', 'error', 'فشل في تحميل بيانات المساعدين');
+  });
+}
+
+// Render sub-admins list
+function renderSubAdmins() {
+  const container = document.getElementById('subAdminsContainer');
+  container.innerHTML = '';
+  
+  if (subAdmins.length === 0) {
+    container.innerHTML = '<p>لا توجد سجلات للمساعدين</p>';
+    return;
+  }
+  
+  subAdmins.forEach(subAdmin => {
+    const subAdminElement = document.createElement('div');
+    subAdminElement.style.background = 'white';
+    subAdminElement.style.padding = '15px';
+    subAdminElement.style.margin = '10px 0';
+    subAdminElement.style.borderRadius = '5px';
+    subAdminElement.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
+    
+    subAdminElement.innerHTML = `
+      <strong>${subAdmin.username}</strong> - ${subAdmin.city}
+      <div>النقاط: ${subAdmin.score || 0}</div>
+      <div style="margin-top: 10px;">
+        <button onclick="editSubAdmin('${subAdmin._id}')" style="background: var(--secondary); color: white; border: none; padding: 5px 10px; border-radius: 3px; margin-right: 5px; cursor: pointer;">
+          تعديل
+        </button>
+        <button onclick="deleteSubAdmin('${subAdmin._id}')" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">
+          حذف
+        </button>
+      </div>
+    `;
+    
+    container.appendChild(subAdminElement);
+  });
+}
+
+// Edit sub-admin
+function editSubAdmin(subAdminId) {
+  const subAdmin = subAdmins.find(sa => sa._id === subAdminId);
+  if (subAdmin) {
+    currentEditingSubAdminId = subAdminId;
+    document.getElementById('subAdminUsername').value = subAdmin.username;
+    document.getElementById('subAdminPassword').value = '';
+    document.getElementById('subAdminCity').value = subAdmin.city;
+    document.getElementById('subAdminScore').value = subAdmin.score;
+  }
+}
+
+// Delete sub-admin
+function deleteSubAdmin(subAdminId) {
+  if (confirm('هل أنت متأكد من حذف هذا المساعد؟')) {
+    fetch(`${API_BASE}/api/subadmins/${subAdminId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${authToken}`
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      showAlert('ordersAlert', 'success', 'تم حذف المساعد بنجاح');
+      loadSubAdmins();
+    })
+    .catch(error => {
+      console.error('Error deleting sub-admin:', error);
+      showAlert('ordersAlert', 'error', 'فشل في حذف المساعد');
+    });
+  }
+}
+
+// Save sub-admin (create or update)
+document.getElementById('saveSubAdminBtn').addEventListener('click', function() {
+  const username = document.getElementById('subAdminUsername').value;
+  const password = document.getElementById('subAdminPassword').value;
+  const city = document.getElementById('subAdminCity').value;
+  const score = document.getElementById('subAdminScore').value;
+  
+  if (!username || !city) {
+    alert('يرجى ملء جميع الحقول المطلوبة');
+    return;
+  }
+  
+  // For new sub-admin, password is required
+  if (!currentEditingSubAdminId && !password) {
+    alert('كلمة المرور مطلوبة للمساعد الجديد');
+    return;
+  }
+  
+  const url = currentEditingSubAdminId ? 
+    `${API_BASE}/api/subadmins/${currentEditingSubAdminId}` : 
+    `${API_BASE}/api/subadmins`;
+  
+  const method = currentEditingSubAdminId ? 'PUT' : 'POST';
+  
+  fetch(url, {
+    method: method,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${authToken}`
+    },
+    body: JSON.stringify({
+      username,
+      password: password || undefined,
+      city,
+      score: parseInt(score) || 0
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.message) {
+      showAlert('ordersAlert', 'success', currentEditingSubAdminId ? 
+        'تم تحديث المساعد بنجاح' : 'تم إنشاء المساعد بنجاح');
+      loadSubAdmins();
+      resetSubAdminForm();
+    } else {
+      showAlert('ordersAlert', 'error', data.message || 'فشل في حفظ المساعد');
+    }
+  })
+  .catch(error => {
+    console.error('Error saving sub-admin:', error);
+    showAlert('ordersAlert', 'error', 'خطأ في الاتصال بالخادم');
+  });
+});
+
+// Reset sub-admin form
+function resetSubAdminForm() {
+  currentEditingSubAdminId = null;
+  document.getElementById('subAdminUsername').value = '';
+  document.getElementById('subAdminPassword').value = '';
+  document.getElementById('subAdminCity').value = '';
+  document.getElementById('subAdminScore').value = '';
+}
+
+// Add event listeners
+document.getElementById('manageSubAdminsBtn').addEventListener('click', openSubAdminsModal);
 
 function calculateDistance(lat1, lon1, lat2, lon2) {
     const R = 6371; // Earth's radius in kilometers
