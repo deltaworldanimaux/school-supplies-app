@@ -401,23 +401,40 @@ app.post('/api/admin/login', async (req, res) => {
   }
 });
 
-app.get('/api/orders/events', authenticateAdmin, (req, res) => {
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  res.flushHeaders();
+app.get('/api/orders/events', async (req, res) => {
+  try {
+    const token = req.query.token;
+    
+    if (!token) {
+      return res.status(401).json({ message: 'No token provided' });
+    }
+    
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+    const admin = await Admin.findById(decoded.id);
+    
+    if (!admin) {
+      return res.status(401).json({ message: 'Invalid token' });
+    }
+    
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
 
-  const clientId = Date.now();
-  const newClient = {
-    id: clientId,
-    res
-  };
-  clients.push(newClient);
+    const clientId = Date.now();
+    const newClient = {
+      id: clientId,
+      res
+    };
+    clients.push(newClient);
 
-  req.on('close', () => {
-    console.log(`${clientId} Connection closed`);
-    clients = clients.filter(client => client.id !== clientId);
-  });
+    req.on('close', () => {
+      console.log(`${clientId} Connection closed`);
+      clients = clients.filter(client => client.id !== clientId);
+    });
+  } catch (error) {
+    res.status(400).json({ message: 'Invalid token' });
+  }
 });
 
 // Function to send events to all connected clients
@@ -1146,6 +1163,19 @@ app.post('/api/orders/:id/assign-delivery', authenticateAdmin, async (req, res) 
   }
 });
 
+// Add this endpoint to get admin profile
+app.get('/api/admin/profile', authenticateAdmin, async (req, res) => {
+  try {
+    res.json({ 
+      admin: { 
+        id: req.admin._id, 
+        username: req.admin.username 
+      } 
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching admin profile', error: error.message });
+  }
+});
 // Get available orders for delivery (status: ready)
 app.get('/api/delivery/available-orders', authenticateDeliveryMan, async (req, res) => {
   try {

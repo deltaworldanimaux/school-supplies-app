@@ -854,13 +854,18 @@
         
         // Check if user is already logged in
         if (authToken) {
-            document.getElementById('loginPage').classList.add('hidden');
-            document.getElementById('adminPage').classList.remove('hidden');
-            loadOrders();
-        } else {
-            document.getElementById('loginPage').classList.remove('hidden');
-            document.getElementById('adminPage').classList.add('hidden');
-        }
+  document.getElementById('loginPage').classList.add('hidden');
+  document.getElementById('adminPage').classList.remove('hidden');
+  
+  fetchAdminInfo().then(() => {
+    checkAdminType(); // Check admin type on page load
+    loadOrders();
+    setupEventSource();
+  });
+} else {
+  document.getElementById('loginPage').classList.remove('hidden');
+  document.getElementById('adminPage').classList.add('hidden');
+}
         
         // Login functionality
         document.getElementById('adminLoginBtn').addEventListener('click', function() {
@@ -886,20 +891,21 @@
                 return response.json();
             })
             .then(data => {
-                if (data.token) {
-                    localStorage.setItem('adminToken', data.token);
-                    authToken = data.token;
-                    document.getElementById('loginPage').classList.add('hidden');
-                    document.getElementById('adminPage').classList.remove('hidden');
-                    document.getElementById('adminName').textContent = data.admin.username;
-                    checkAdminType();
-                    loadOrders();
-                    setupEventSource();
-
-                } else {
-                    showAlert('loginAlert', 'error', data.message || 'فشل تسجيل الدخول');
-                }
-            })
+  if (data.token) {
+    localStorage.setItem('adminToken', data.token);
+    authToken = data.token;
+    document.getElementById('loginPage').classList.add('hidden');
+    document.getElementById('adminPage').classList.remove('hidden');
+    document.getElementById('adminName').textContent = data.admin.username;
+    
+    checkAdminType(); // Check if user is main admin or sub-admin
+    
+    loadOrders();
+    setupEventSource();
+  } else {
+    showAlert('loginAlert', 'error', data.message || 'فشل تسجيل الدخول');
+  }
+})
             .catch(error => {
                 showAlert('loginAlert', 'error', 'خطأ في الاتصال بالخادم');
                 console.error('Login error:', error);
@@ -965,10 +971,8 @@
 }
 
 function setupEventSource() {
-  const eventSource = new EventSource(`${API_BASE}/api/orders/events`, {
-    headers: {
-      'Authorization': `Bearer ${authToken}`
-    }
+  const eventSource = new EventSource(`${API_BASE}/api/orders/events?token=${authToken}`, {
+    withCredentials: true
   });
 
   eventSource.addEventListener('new-order', function(event) {
@@ -1204,7 +1208,23 @@ function getDeliveryStatusText(status) {
     case 'delivered': return 'تم التوصيل';
     default: return status;
   }
-}        
+}    
+async function fetchAdminInfo() {
+  try {
+    const response = await fetch(`${API_BASE}/api/admin/profile`, {
+      headers: {
+        'Authorization': `Bearer ${authToken}`
+      }
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      document.getElementById('adminName').textContent = data.admin.username;
+    }
+  } catch (error) {
+    console.error('Error fetching admin info:', error);
+  }
+}    
         // Delete order
         function deleteOrder(orderId) {
             if (!confirm('هل أنت متأكد من حذف هذا الطلب؟')) return;
