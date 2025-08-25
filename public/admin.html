@@ -630,7 +630,6 @@
         <span>مرحباً, <span id="adminName">Admin</span></span>
         <button id="manageLibrariesBtn" class="btn" style="margin-left: 10px;">إدارة المكتبات</button>
         <button id="manageDeliveryBtn" class="btn" style="margin-left: 10px;">إدارة مندوبي التوصيل</button>
-        <button id="manageSubAdminsBtn" class="btn" style="margin-left: 10px;">إدارة المسؤولين الفرعيين</button>
         <button id="logoutBtn" class="btn">تسجيل الخروج</button>
     </div>
 </header>
@@ -806,57 +805,13 @@
     </div>
   </div>
 </div>
-<!-- Sub-Admin Management Modal -->
-<div id="subAdminModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
-  <div class="modal-content" style="background-color: #fefefe; margin: 5% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 800px; border-radius: 10px;">
-    <span class="close" onclick="closeSubAdminModal()" style="color: #aaa; float: left; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
-    <h2>إدارة المسؤولين الفرعيين</h2>
-    
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
-      <div>
-        <label>اسم المستخدم:</label>
-        <input type="text" id="subAdminUsername" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
-      </div>
-      <div>
-        <label>كلمة المرور:</label>
-        <input type="password" id="subAdminPassword" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
-      </div>
-      <div>
-        <label>المدينة:</label>
-        <input type="text" id="subAdminCity" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
-      </div>
-      <div>
-        <label>النقاط:</label>
-        <input type="number" id="subAdminScore" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;" value="0">
-      </div>
-      <div>
-        <label>الحالة:</label>
-        <select id="subAdminStatus" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
-          <option value="true">نشط</option>
-          <option value="false">غير نشط</option>
-        </select>
-      </div>
-    </div>
-    
-    <button id="saveSubAdminBtn" style="background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
-      حفظ المسؤول الفرعي
-    </button>
-    
-    <div id="subAdminList" style="margin-top: 20px;">
-      <h3>المسؤولون الفرعيون</h3>
-      <div id="subAdminContainer"></div>
-    </div>
-  </div>
-</div>
     <script>
         let authToken = localStorage.getItem('adminToken');
         const API_BASE = window.location.origin;
         let currentOrder = null;
         let deliveryMap, deliveryMarker;
         let deliveryMen = [];
-        let currentEditingDeliveryManId = null;
-        let currentEditingSubAdminId = null;
-        let subAdmins = [];
+        let currentEditingDeliveryManId = null
         
         // Check if user is already logged in
         if (authToken) {
@@ -870,77 +825,46 @@
         
         // Login functionality
         document.getElementById('adminLoginBtn').addEventListener('click', function() {
-  const username = document.getElementById('adminUsername').value;
-  const password = document.getElementById('adminPassword').value;
-  
-  if (!username || !password) {
-    showAlert('loginAlert', 'error', 'يرجى ملء جميع الحقول');
-    return;
-  }
-  
-  // Try admin login first
-  fetch(`${API_BASE}/api/admin/login`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({username, password})
-  })
-  .then(response => {
-    if (response.ok) {
-      return response.json().then(data => {
-        localStorage.setItem('adminToken', data.token);
-        localStorage.setItem('userType', 'admin');
-        authToken = data.token;
-        userType = 'admin';
-        document.getElementById('loginPage').classList.add('hidden');
-        document.getElementById('adminPage').classList.remove('hidden');
-        document.getElementById('adminName').textContent = data.admin.username;
-        loadOrders();
-        setupEventSource();
-      });
-    }
-    
-    // If admin login fails, try sub-admin login
-    return fetch(`${API_BASE}/api/sub-admin/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({username, password})
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      return response.json();
-    })
-    .then(data => {
-      if (data.token) {
-        localStorage.setItem('adminToken', data.token);
-        localStorage.setItem('userType', 'subadmin');
-        authToken = data.token;
-        userType = 'subadmin';
-        document.getElementById('loginPage').classList.add('hidden');
-        document.getElementById('adminPage').classList.remove('hidden');
-        document.getElementById('adminName').textContent = data.subAdmin.username;
-        
-        // Hide management sections for sub-admins
-        document.getElementById('manageLibrariesBtn').style.display = 'none';
-        document.getElementById('manageDeliveryBtn').style.display = 'none';
-        document.getElementById('manageSubAdminsBtn').style.display = 'none';
-        
-        loadOrders();
-      } else {
-        showAlert('loginAlert', 'error', data.message || 'فشل تسجيل الدخول');
-      }
-    });
-  })
-  .catch(error => {
-    showAlert('loginAlert', 'error', 'خطأ في الاتصال بالخادم');
-    console.error('Login error:', error);
-  });
-});
+            const username = document.getElementById('adminUsername').value;
+            const password = document.getElementById('adminPassword').value;
+            
+            if (!username || !password) {
+                showAlert('loginAlert', 'error', 'يرجى ملء جميع الحقول');
+                return;
+            }
+            
+            fetch(`${API_BASE}/api/admin/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({username, password})
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.token) {
+                    localStorage.setItem('adminToken', data.token);
+                    authToken = data.token;
+                    document.getElementById('loginPage').classList.add('hidden');
+                    document.getElementById('adminPage').classList.remove('hidden');
+                    document.getElementById('adminName').textContent = data.admin.username;
+                    loadOrders();
+                    setupEventSource();
+
+                } else {
+                    showAlert('loginAlert', 'error', data.message || 'فشل تسجيل الدخول');
+                }
+            })
+            .catch(error => {
+                showAlert('loginAlert', 'error', 'خطأ في الاتصال بالخادم');
+                console.error('Login error:', error);
+            });
+        });
         
         // Logout functionality
         document.getElementById('logoutBtn').addEventListener('click', function() {
@@ -951,47 +875,41 @@
         });
         
         // Load orders from server
-       function loadOrders() {
-  document.getElementById('ordersLoading').classList.remove('hidden');
-  
-  // Determine the endpoint based on user type
-  const endpoint = userType === 'subadmin' ? 
-    `${API_BASE}/api/sub-admin/orders` : 
-    `${API_BASE}/api/orders`;
-  
-  fetch(endpoint, {
-    headers: {
-      'Authorization': `Bearer ${authToken}`
-    }
-  })
-  .then(response => {
-    if (response.status === 401) {
-      // Token expired or invalid
-      localStorage.removeItem('adminToken');
-      localStorage.removeItem('userType');
-      document.getElementById('loginPage').classList.remove('hidden');
-      document.getElementById('adminPage').classList.add('hidden');
-      showAlert('loginAlert', 'error', 'انتهت جلسة العمل، يرجى تسجيل الدخول مرة أخرى');
-      return Promise.reject('Unauthorized');
-    }
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-    return response.json();
-  })
-  .then(orders => {
+        function loadOrders() {
+            document.getElementById('ordersLoading').classList.remove('hidden');
+            
+            fetch(`${API_BASE}/api/orders`, {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            })
+            .then(response => {
+                if (response.status === 401) {
+                    // Token expired or invalid
+                    localStorage.removeItem('adminToken');
+                    document.getElementById('loginPage').classList.remove('hidden');
+                    document.getElementById('adminPage').classList.add('hidden');
+                    showAlert('loginAlert', 'error', 'انتهت جلسة العمل، يرجى تسجيل الدخول مرة أخرى');
+                    return Promise.reject('Unauthorized');
+                }
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(orders => {
     document.getElementById('ordersLoading').classList.add('hidden');
     allOrders = orders;
-    applyFilters();
-  })
-  .catch(error => {
-    document.getElementById('ordersLoading').classList.add('hidden');
-    if (error !== 'Unauthorized') {
-      showAlert('ordersAlert', 'error', 'فشل في تحميل الطلبات');
-      console.error('Error loading orders:', error);
-    }
-  });
-}
+    applyFilters(); // Apply initial filters
+})
+            .catch(error => {
+                document.getElementById('ordersLoading').classList.add('hidden');
+                if (error !== 'Unauthorized') {
+                    showAlert('ordersAlert', 'error', 'فشل في تحميل الطلبات');
+                    console.error('Error loading orders:', error);
+                }
+            });
+        }
         
         // Update statistics
         function updateStats(orders) {
@@ -1556,173 +1474,6 @@ function resetDeliveryForm() {
     document.getElementById('deliveryUsername').value = '';
     document.getElementById('deliveryPassword').value = '';
 }
-
-// Open sub-admin modal
-function openSubAdminModal() {
-  document.getElementById('subAdminModal').style.display = 'block';
-  loadSubAdmins();
-  resetSubAdminForm();
-}
-
-// Close sub-admin modal
-function closeSubAdminModal() {
-  document.getElementById('subAdminModal').style.display = 'none';
-}
-
-// Load sub-admins
-function loadSubAdmins() {
-  fetch(`${API_BASE}/api/sub-admins`, {
-    headers: {
-      'Authorization': `Bearer ${authToken}`
-    }
-  })
-  .then(response => response.json())
-  .then(data => {
-    subAdmins = data;
-    renderSubAdmins();
-  })
-  .catch(error => {
-    console.error('Error loading sub-admins:', error);
-    showAlert('ordersAlert', 'error', 'فشل في تحميل بيانات المسؤولين الفرعيين');
-  });
-}
-
-// Render sub-admins list
-function renderSubAdmins() {
-  const container = document.getElementById('subAdminContainer');
-  container.innerHTML = '';
-  
-  if (subAdmins.length === 0) {
-    container.innerHTML = '<p>لا توجد سجلات للمسؤولين الفرعيين</p>';
-    return;
-  }
-  
-  subAdmins.forEach(subAdmin => {
-    const subAdminElement = document.createElement('div');
-    subAdminElement.style.background = 'white';
-    subAdminElement.style.padding = '15px';
-    subAdminElement.style.margin = '10px 0';
-    subAdminElement.style.borderRadius = '5px';
-    subAdminElement.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
-    
-    subAdminElement.innerHTML = `
-      <strong>${subAdmin.username}</strong> - ${subAdmin.city}
-      <div>النقاط: ${subAdmin.score || 0}</div>
-      <div>الحالة: ${subAdmin.isActive ? 'نشط' : 'غير نشط'}</div>
-      <div style="margin-top: 10px;">
-        <button onclick="editSubAdmin('${subAdmin._id}')" style="background: var(--secondary); color: white; border: none; padding: 5px 10px; border-radius: 3px; margin-right: 5px; cursor: pointer;">
-          تعديل
-        </button>
-        <button onclick="deleteSubAdmin('${subAdmin._id}')" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">
-          حذف
-        </button>
-      </div>
-    `;
-    
-    container.appendChild(subAdminElement);
-  });
-}
-
-// Edit sub-admin
-function editSubAdmin(subAdminId) {
-  const subAdmin = subAdmins.find(sa => sa._id === subAdminId);
-  if (subAdmin) {
-    currentEditingSubAdminId = subAdminId;
-    document.getElementById('subAdminUsername').value = subAdmin.username;
-    document.getElementById('subAdminPassword').value = '';
-    document.getElementById('subAdminCity').value = subAdmin.city;
-    document.getElementById('subAdminScore').value = subAdmin.score || 0;
-    document.getElementById('subAdminStatus').value = subAdmin.isActive ? 'true' : 'false';
-  }
-}
-
-// Delete sub-admin
-function deleteSubAdmin(subAdminId) {
-  if (confirm('هل أنت متأكد من حذف هذا المسؤول الفرعي؟')) {
-    fetch(`${API_BASE}/api/sub-admins/${subAdminId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${authToken}`
-      }
-    })
-    .then(response => response.json())
-    .then(data => {
-      showAlert('ordersAlert', 'success', 'تم حذف المسؤول الفرعي بنجاح');
-      loadSubAdmins();
-    })
-    .catch(error => {
-      console.error('Error deleting sub-admin:', error);
-      showAlert('ordersAlert', 'error', 'فشل في حذف المسؤول الفرعي');
-    });
-  }
-}
-
-// Save sub-admin (create or update)
-document.getElementById('saveSubAdminBtn').addEventListener('click', function() {
-  const username = document.getElementById('subAdminUsername').value;
-  const password = document.getElementById('subAdminPassword').value;
-  const city = document.getElementById('subAdminCity').value;
-  const score = parseInt(document.getElementById('subAdminScore').value) || 0;
-  const isActive = document.getElementById('subAdminStatus').value === 'true';
-  
-  if (!username || !city) {
-    alert('يرجى ملء جميع الحقول المطلوبة');
-    return;
-  }
-  
-  // For new sub-admin, password is required
-  if (!currentEditingSubAdminId && !password) {
-    alert('كلمة المرور مطلوبة للمسؤول الفرعي الجديد');
-    return;
-  }
-  
-  const url = currentEditingSubAdminId ? 
-    `${API_BASE}/api/sub-admins/${currentEditingSubAdminId}` : 
-    `${API_BASE}/api/sub-admins`;
-  
-  const method = currentEditingSubAdminId ? 'PUT' : 'POST';
-  
-  const body = currentEditingSubAdminId ? 
-    { username, city, score, isActive } : 
-    { username, password, city, score, isActive };
-  
-  fetch(url, {
-    method: method,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${authToken}`
-    },
-    body: JSON.stringify(body)
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.message) {
-      showAlert('ordersAlert', 'success', currentEditingSubAdminId ? 
-        'تم تحديث المسؤول الفرعي بنجاح' : 'تم إنشاء المسؤول الفرعي بنجاح');
-      loadSubAdmins();
-      resetSubAdminForm();
-    } else {
-      showAlert('ordersAlert', 'error', data.message || 'فشل في حفظ المسؤول الفرعي');
-    }
-  })
-  .catch(error => {
-    console.error('Error saving sub-admin:', error);
-    showAlert('ordersAlert', 'error', 'خطأ في الاتصال بالخادم');
-  });
-});
-
-// Reset sub-admin form
-function resetSubAdminForm() {
-  currentEditingSubAdminId = null;
-  document.getElementById('subAdminUsername').value = '';
-  document.getElementById('subAdminPassword').value = '';
-  document.getElementById('subAdminCity').value = '';
-  document.getElementById('subAdminScore').value = '0';
-  document.getElementById('subAdminStatus').value = 'true';
-}
-
-// Add event listener for sub-admin management button
-document.getElementById('manageSubAdminsBtn').addEventListener('click', openSubAdminModal);
 
 // Assign order to delivery man
 function assignOrderToDelivery(orderId) {

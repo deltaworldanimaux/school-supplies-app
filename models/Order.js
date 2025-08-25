@@ -33,8 +33,6 @@ deliveryStatus: {
   default: 'pending',
   enum: ['pending', 'assigned', 'picked_up', 'delivered']
 },
-city: { type: String, required: true },
-subAdmin: { type: mongoose.Schema.Types.ObjectId, ref: 'SubAdmin' },
 deliveryCost: { type: Number, default: null },
 rejectedBy: [{
     type: mongoose.Schema.Types.ObjectId,

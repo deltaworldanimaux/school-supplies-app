@@ -259,32 +259,26 @@ app.post('/api/orders', upload.single('suppliesList'), async (req, res) => {
       return res.status(400).json({ message: 'جميع الحقول مطلوبة بما في ذلك الملف والموقع' });
     }
     
-    // Detect city from coordinates
-    const city = await getCityFromCoordinates(latitude, longitude);
-    
-    // Find sub-admin for this city
-    const subAdmin = await SubAdmin.findOne({ city, isActive: true });
-    
     let fileUrl;
-    try {
-      // Check if file is PDF
-      const isPDF = req.file.originalname.toLowerCase().endsWith('.pdf');
-      
-      if (isPDF) {
-        // Upload PDF to GitHub
-        fileUrl = await uploadToGitHub(req.file.path, req.file.originalname);
-        
-        // Delete local file after successful upload
-        fs.unlinkSync(req.file.path);
-      } else {
-        // For images, use ImgBB as before
-        fileUrl = await uploadToImgBB(req.file.path);
-      }
-    } catch (uploadError) {
-      console.error('File upload error:', uploadError);
-      // Fallback to local file path
-      fileUrl = `uploads/${req.file.filename}`;
-    }
+        try {
+            // Check if file is PDF
+            const isPDF = req.file.originalname.toLowerCase().endsWith('.pdf');
+            
+            if (isPDF) {
+                // Upload PDF to GitHub
+                fileUrl = await uploadToGitHub(req.file.path, req.file.originalname);
+                
+                // Delete local file after successful upload
+                fs.unlinkSync(req.file.path);
+            } else {
+                // For images, use ImgBB as before
+                fileUrl = await uploadToImgBB(req.file.path);
+            }
+        } catch (uploadError) {
+            console.error('File upload error:', uploadError);
+            // Fallback to local file path
+            fileUrl = `uploads/${req.file.filename}`;
+        }
     
     // Generate a proper order number (format: ORD-YYYYMMDD-XXXX)
     const now = new Date();
@@ -303,29 +297,24 @@ app.post('/api/orders', upload.single('suppliesList'), async (req, res) => {
       },
       suppliesList: fileUrl,
       status: 'pending',
-      orderNumber: orderNumber,
-      city: city, // Add city to order
-      subAdmin: subAdmin ? subAdmin._id : null // Assign to sub-admin if exists
+      orderNumber: orderNumber // Store the order number
     });
     
     await order.save();
-    
     // Send Telegram notification for new order
-    const newOrderMessage = `🆕 New Order Received!\nOrder Number: ${orderNumber}\nParent: ${parentName}\nStudent: ${studentName}\nGrade: ${grade}\nPhone: ${phone}\nCity: ${city}`;
-    sendTelegramNotification(newOrderMessage);
-    
-    // Send event to all connected admin clients
-    sendEventToClients('new-order', { 
-      message: 'New order placed', 
-      orderId: order._id,
-      orderNumber: orderNumber,
-      city: city
-    });
-    
+const newOrderMessage = `🆕 New Order Received!\nOrder Number: ${orderNumber}\nParent: ${parentName}\nStudent: ${studentName}\nGrade: ${grade}\nPhone: ${phone}`;
+sendTelegramNotification(newOrderMessage);
+
+// Send event to all connected admin clients
+sendEventToClients('new-order', { 
+  message: 'New order placed', 
+  orderId: order._id,
+  orderNumber: orderNumber
+});
     res.status(201).json({ 
       message: 'تم إرسال الطلب بنجاح!', 
       orderId: order._id,
-      orderNumber: orderNumber
+      orderNumber: orderNumber // Return the order number
     });
   } catch (error) {
     if (req.file) {
@@ -358,29 +347,7 @@ const authenticateDeliveryMan = async (req, res, next) => {
     res.status(400).json({ message: 'Invalid token' });
   }
 };
-const authenticateSubAdmin = async (req, res, next) => {
-  try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
-    if (!token) return res.status(401).json({ message: 'Access denied' });
-    
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
-    
-    if (decoded.type !== 'subadmin') {
-      return res.status(401).json({ message: 'Invalid token type' });
-    }
-    
-    const subAdmin = await SubAdmin.findById(decoded.id);
-    
-    if (!subAdmin || !subAdmin.isActive) {
-      return res.status(401).json({ message: 'Invalid token' });
-    }
-    
-    req.subAdmin = subAdmin;
-    next();
-  } catch (error) {
-    res.status(400).json({ message: 'Invalid token' });
-  }
-};
+
 // Admin login
 app.post('/api/admin/login', async (req, res) => {
   try {
@@ -449,116 +416,7 @@ app.get('/api/orders', authenticateAdmin, async (req, res) => {
     res.status(500).json({ message: 'Error fetching orders', error: error.message });
   }
 });
-app.post('/api/sub-admin/login', async (req, res) => {
-  try {
-    const { username, password } = req.body;
-    const subAdmin = await SubAdmin.findOne({ username, isActive: true });
-    
-    if (!subAdmin || !(await bcrypt.compare(password, subAdmin.password))) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
-    
-    const token = jwt.sign(
-      { id: subAdmin._id, type: 'subadmin' },
-      process.env.JWT_SECRET || 'fallback_secret',
-      { expiresIn: '24h' }
-    );
-    
-    res.json({ 
-      token, 
-      subAdmin: { 
-        id: subAdmin._id, 
-        username: subAdmin.username,
-        city: subAdmin.city,
-        score: subAdmin.score
-      } 
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'Login error', error: error.message });
-  }
-});
-app.get('/api/sub-admin/orders', authenticateSubAdmin, async (req, res) => {
-  try {
-    const orders = await Order.find({ city: req.subAdmin.city }).sort({ createdAt: -1 }).populate('deliveryMan', 'name phone');
-    res.json(orders);
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching orders', error: error.message });
-  }
-});
-// Get all sub-admins (admin only)
-app.get('/api/sub-admins', authenticateAdmin, async (req, res) => {
-  try {
-    const subAdmins = await SubAdmin.find().select('-password');
-    res.json(subAdmins);
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching sub-admins', error: error.message });
-  }
-});
 
-// Create sub-admin (admin only)
-app.post('/api/sub-admins', authenticateAdmin, async (req, res) => {
-  try {
-    const { username, password, city } = req.body;
-    
-    const hashedPassword = await bcrypt.hash(password, 12);
-    
-    const subAdmin = new SubAdmin({
-      username,
-      password: hashedPassword,
-      city
-    });
-    
-    await subAdmin.save();
-    
-    res.status(201).json({
-      message: 'Sub-admin created successfully',
-      subAdmin: {
-        _id: subAdmin._id,
-        username: subAdmin.username,
-        city: subAdmin.city,
-        score: subAdmin.score
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'Error creating sub-admin', error: error.message });
-  }
-});
-
-// Update sub-admin (admin only)
-app.put('/api/sub-admins/:id', authenticateAdmin, async (req, res) => {
-  try {
-    const { username, city, isActive, score } = req.body;
-    
-    const subAdmin = await SubAdmin.findByIdAndUpdate(
-      req.params.id,
-      { username, city, isActive, score },
-      { new: true }
-    ).select('-password');
-    
-    if (!subAdmin) {
-      return res.status(404).json({ message: 'Sub-admin not found' });
-    }
-    
-    res.json({ message: 'Sub-admin updated successfully', subAdmin });
-  } catch (error) {
-    res.status(500).json({ message: 'Error updating sub-admin', error: error.message });
-  }
-});
-
-// Delete sub-admin (admin only)
-app.delete('/api/sub-admins/:id', authenticateAdmin, async (req, res) => {
-  try {
-    const subAdmin = await SubAdmin.findByIdAndDelete(req.params.id);
-    
-    if (!subAdmin) {
-      return res.status(404).json({ message: 'Sub-admin not found' });
-    }
-    
-    res.json({ message: 'Sub-admin deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ message: 'Error deleting sub-admin', error: error.message });
-  }
-});
 app.get('/api/delivery/profile', authenticateDeliveryMan, async (req, res) => {
   const deliveryMan = await DeliveryMan.findById(req.deliveryMan._id)
     .populate('currentOrder', 'orderNumber');
@@ -1075,22 +933,6 @@ app.post('/api/delivery/login', async (req, res) => {
   }
 });
 
-async function getCityFromCoordinates(lat, lng) {
-  try {
-    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
-    const data = await response.json();
-    
-    if (data && data.address) {
-      // Try to get city from different possible fields
-      return data.address.city || data.address.town || data.address.village || 
-             data.address.municipality || data.address.county || 'Unknown';
-    }
-    return 'Unknown';
-  } catch (error) {
-    console.error('Reverse geocoding error:', error);
-    return 'Unknown';
-  }
-}
 // Assign order to delivery man
 app.post('/api/orders/:id/assign-delivery', authenticateAdmin, async (req, res) => {
   try {
