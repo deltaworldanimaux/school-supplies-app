@@ -221,31 +221,6 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
-const uploadToImgBB = async (filePath) => {
-  try {
-    const formData = new FormData();
-    const imageBuffer = fs.readFileSync(filePath);
-    formData.append('image', imageBuffer.toString('base64'));
-    
-    const response = await fetch(`https://api.imgbb.com/1/upload?key=4398dfbf7f2440db0ca2089e394b4166`, {
-      method: 'POST',
-      body: formData
-    });
-    
-    const data = await response.json();
-    
-    if (data.success) {
-      return data.data.url;
-    } else {
-      throw new Error(data.error.message || 'ImgBB upload failed');
-    }
-  } catch (error) {
-    console.error('ImgBB upload error:', error);
-    // Fallback to local storage if ImgBB fails
-    return `uploads/${path.basename(filePath)}`;
-  }
-};
-
 // Submit order
 app.post('/api/orders', upload.single('suppliesList'), async (req, res) => {
   try {
@@ -259,26 +234,26 @@ app.post('/api/orders', upload.single('suppliesList'), async (req, res) => {
       return res.status(400).json({ message: 'جميع الحقول مطلوبة بما في ذلك الملف والموقع' });
     }
     
-    let fileUrl;
+let fileUrl;
+try {
+    // Always use local file path for both images and PDFs
+    fileUrl = `uploads/${req.file.filename}`;
+    
+    // For PDFs, we'll still upload to GitHub but keep local copy
+    const isPDF = req.file.originalname.toLowerCase().endsWith('.pdf');
+    if (isPDF) {
+        // Upload PDF to GitHub but keep local file
         try {
-            // Check if file is PDF
-            const isPDF = req.file.originalname.toLowerCase().endsWith('.pdf');
-            
-            if (isPDF) {
-                // Upload PDF to GitHub
-                fileUrl = await uploadToGitHub(req.file.path, req.file.originalname);
-                
-                // Delete local file after successful upload
-                fs.unlinkSync(req.file.path);
-            } else {
-                // For images, use ImgBB as before
-                fileUrl = await uploadToImgBB(req.file.path);
-            }
-        } catch (uploadError) {
-            console.error('File upload error:', uploadError);
-            // Fallback to local file path
-            fileUrl = `uploads/${req.file.filename}`;
+            await uploadToGitHub(req.file.path, req.file.originalname);
+        } catch (githubError) {
+            console.error('GitHub upload failed, keeping local file:', githubError);
         }
+    }
+} catch (uploadError) {
+    console.error('File upload error:', uploadError);
+    // Use local file path as fallback
+    fileUrl = `uploads/${req.file.filename}`;
+}
     
     // Generate a proper order number (format: ORD-YYYYMMDD-XXXX)
     const now = new Date();
