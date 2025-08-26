@@ -658,13 +658,19 @@ async function detectCityFromCoordinates(lat, lng) {
                             data.address.village || 
                             data.address.municipality || 
                             data.address.county || 
+                            data.address.state || 
                             '';
             
+            // Normalize the detected city name
             const normalizedCity = normalizeCityName(detectedCity);
             
-            // Check if the detected city is in our supported list
-            if (majorMoroccanCities.includes(normalizedCity)) {
-                return normalizedCity;
+            // Check if any of the major cities includes the normalized city name
+            const foundCity = majorMoroccanCities.find(city => 
+                normalizeCityName(city) === normalizedCity
+            );
+            
+            if (foundCity) {
+                return foundCity; // Return the standardized city name from our list
             } else {
                 return null; // Not a supported city
             }
