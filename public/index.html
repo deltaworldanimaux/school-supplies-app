@@ -819,35 +819,7 @@ function initMap() {
         marker.setLatLng(e.latlng);
     });
 }
-// List of supported Moroccan cities with their coordinates and radius
-const supportedCities = [
-    { name: "Tetouan", lat: 35.5881, lng: -5.3626, radius: 15 },
-    { name: "Tangier", lat: 35.7595, lng: -5.8340, radius: 20 },
-    // Add more cities as needed
-];
 
-// Function to calculate distance between two points
-function calculateDistance(lat1, lng1, lat2, lng2) {
-    const R = 6371; // Earth's radius in km
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLng = (lng2 - lng1) * Math.PI / 180;
-    const a = 
-        Math.sin(dLat/2) * Math.sin(dLat/2) +
-        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-        Math.sin(dLng/2) * Math.sin(dLng/2);
-    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
-}
-
-// Function to check if location is supported
-function isLocationSupported(lat, lng) {
-    for (const city of supportedCities) {
-        const distance = calculateDistance(lat, lng, city.lat, city.lng);
-        if (distance <= city.radius) {
-            return city.name;
-        }
-    }
-    return null;
-}
 function showToast(message, type = 'success') {
     const toast = document.createElement('div');
     toast.className = `toast ${type === 'error' ? 'error' : ''}`;
@@ -945,12 +917,7 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
   const grade = document.getElementById('grade').value;
   const file = document.getElementById('fileInput').files[0];
   const latlng = marker.getLatLng();
-    const city = isLocationSupported(latlng.lat, latlng.lng);
-    
-    if (!city) {
-        showToast('عذراً، لا نقدم الخدمة في هذه المنطقة حالياً', 'error');
-        return;
-    }
+
   if (!parentName || !phone || !studentName || !grade || !file || !latlng) {
     showToast('يرجى ملء جميع الحقول المطلوبة بما في ذلك تحميل الملف وتحديد الموقع', 'error');
     return;
@@ -967,7 +934,6 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
   formData.append('latitude', latlng.lat);
   formData.append('longitude', latlng.lng);
   formData.append('suppliesList', file);
-  formData.append('city', city);
 
   try {
     const response = await fetch('/api/orders', {

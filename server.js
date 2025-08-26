@@ -30,6 +30,18 @@ const GITHUB_REPO = 'deltaworldanimaux/myproject3';
 const GITHUB_BRANCH = 'main';
 const TelegramBot = require('node-telegram-bot-api');
 const TELEGRAM_BOT_TOKEN = '8282280616:AAEILrAJbJ_HnSjPO01HENUYrMHNuoU4cTs';
+// Supported Moroccan cities with coordinates and radius (in km)
+const supportedCities = [
+  { name: "Tetouan", lat: 35.5881, lng: -5.3626, radius: 15 },
+  { name: "Tangier", lat: 35.7595, lng: -5.8340, radius: 20 },
+  { name: "Casablanca", lat: 33.5731, lng: -7.5898, radius: 30 },
+  { name: "Rabat", lat: 34.0209, lng: -6.8417, radius: 25 },
+  { name: "Fes", lat: 34.0181, lng: -5.0078, radius: 20 },
+  { name: "Meknes", lat: 33.8959, lng: -5.5547, radius: 15 },
+  { name: "Marrakech", lat: 31.6295, lng: -7.9811, radius: 25 },
+  { name: "Agadir", lat: 30.4278, lng: -9.5981, radius: 20 },
+  // Add more cities as needed
+];
 const TELEGRAM_CHAT_ID = '7779679746';
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
 bot.on('message', async (msg) => {
@@ -279,7 +291,15 @@ app.post('/api/orders', upload.single('suppliesList'), async (req, res) => {
             // Fallback to local file path
             fileUrl = `uploads/${req.file.filename}`;
         }
-    
+    const city = getSupportedCity(parseFloat(latitude), parseFloat(longitude));
+    if (!city) {
+      if (req.file) {
+        fs.unlinkSync(req.file.path);
+      }
+      return res.status(400).json({ 
+        message: 'نأسف، لا نغطي موقعك الحالي. نحن نعمل حالياً في المدن الكبرى فقط.' 
+      });
+    }
     // Generate a proper order number (format: ORD-YYYYMMDD-XXXX)
     const now = new Date();
     const datePart = now.toISOString().slice(0, 10).replace(/-/g, '');
@@ -297,8 +317,8 @@ app.post('/api/orders', upload.single('suppliesList'), async (req, res) => {
       },
       suppliesList: fileUrl,
       status: 'pending',
-      orderNumber: orderNumber, 
-      city: req.body.city
+      orderNumber: orderNumber, // Store the order number
+      city: city
     });
     
     await order.save();
@@ -902,6 +922,29 @@ app.delete('/api/delivery-men/:id', authenticateAdmin, async (req, res) => {
   }
 });
 
+// Helper function to calculate distance between two coordinates
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Earth's radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
+
+// Check if location is in supported city
+function getSupportedCity(lat, lng) {
+  for (const city of supportedCities) {
+    const distance = calculateDistance(lat, lng, city.lat, city.lng);
+    if (distance <= city.radius) {
+      return city.name;
+    }
+  }
+  return null;
+}
 // Delivery man login
 app.post('/api/delivery/login', async (req, res) => {
   try {
