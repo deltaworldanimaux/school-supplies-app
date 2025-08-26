@@ -623,7 +623,7 @@ printWindow.document.close();
     console.error('Error refusing order:', error);
   });
 }      
-        function viewOrderFile(orderId) {
+function viewOrderFile(orderId) {
   fetch(`${API_BASE}/api/library/orders/${orderId}`, {
     headers: {
       'Authorization': `Bearer ${authToken}`
@@ -638,6 +638,7 @@ printWindow.document.close();
   .then(order => {
     if (order.suppliesList) {
       const isFullUrl = order.suppliesList.startsWith('http');
+      // Construct URL properly - add 'uploads/' only for local files
       const fileUrl = isFullUrl ? order.suppliesList : `${API_BASE}/uploads/${order.suppliesList}`;
       window.open(fileUrl, '_blank');
     }

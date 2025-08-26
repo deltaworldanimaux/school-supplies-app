@@ -236,8 +236,8 @@ app.post('/api/orders', upload.single('suppliesList'), async (req, res) => {
     
 let fileUrl;
 try {
-    // Always use local file path for both images and PDFs
-    fileUrl = `uploads/${req.file.filename}`;
+    // Store just the filename, not the full path
+    fileUrl = req.file.filename;
     
     // For PDFs, we'll still upload to GitHub but keep local copy
     const isPDF = req.file.originalname.toLowerCase().endsWith('.pdf');
@@ -251,8 +251,8 @@ try {
     }
 } catch (uploadError) {
     console.error('File upload error:', uploadError);
-    // Use local file path as fallback
-    fileUrl = `uploads/${req.file.filename}`;
+    // Use just filename as fallback
+    fileUrl = req.file.filename;
 }
     
     // Generate a proper order number (format: ORD-YYYYMMDD-XXXX)
@@ -515,10 +515,10 @@ app.delete('/api/orders/:id', authenticateAdmin, async (req, res) => {
     
     // Delete associated file only if it exists locally (not ImgBB URL)
     if (order.suppliesList && !order.suppliesList.startsWith('http')) {
-      fs.unlink(path.join(__dirname, order.suppliesList), (err) => {
+    fs.unlink(path.join(__dirname, 'uploads', order.suppliesList), (err) => {
         if (err) console.error('Error deleting file:', err);
-      });
-    }
+    });
+}
     
     res.json({ message: 'Order deleted successfully' });
   } catch (error) {

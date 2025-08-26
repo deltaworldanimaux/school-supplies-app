@@ -1053,28 +1053,29 @@ function renderOrdersTable(orders) {
                 
                 // File link if exists
                 let fileLink = 'لا يوجد ملف';
-                if (order.suppliesList) {
-                    const isFullUrl = order.suppliesList.startsWith('http');
-                    const fileUrl = isFullUrl ? order.suppliesList : `${API_BASE}/uploads/${order.suppliesList}`;
-                    fileLink = `<a href="${fileUrl}" target="_blank" class="file-link">عرض الملف على ImgBB</a>`;
-                    
-                    // Set up view image button
-                    viewImageBtn.style.display = 'inline-block';
-                    viewImageBtn.onclick = function() {
-                        window.open(fileUrl, '_blank');
-                    };
-                    
-                    // Show image preview if it's an image
-                    if (fileUrl.match(/\.(jpeg|jpg|png|gif)$/i)) {
-                        imagePreview.src = fileUrl;
-                        imagePreview.style.display = 'block';
-                    } else {
-                        imagePreview.style.display = 'none';
-                    }
-                } else {
-                    viewImageBtn.style.display = 'none';
-                    imagePreview.style.display = 'none';
-                }
+if (order.suppliesList) {
+    const isFullUrl = order.suppliesList.startsWith('http');
+    // Construct URL properly - add 'uploads/' only for local files
+    const fileUrl = isFullUrl ? order.suppliesList : `${API_BASE}/uploads/${order.suppliesList}`;
+    fileLink = `<a href="${fileUrl}" target="_blank" class="file-link">عرض الملف</a>`;
+    
+    // Set up view image button
+    viewImageBtn.style.display = 'inline-block';
+    viewImageBtn.onclick = function() {
+        window.open(fileUrl, '_blank');
+    };
+    
+    // Show image preview if it's an image
+    if (fileUrl.match(/\.(jpeg|jpg|png|gif)$/i)) {
+        imagePreview.src = fileUrl;
+        imagePreview.style.display = 'block';
+    } else {
+        imagePreview.style.display = 'none';
+    }
+} else {
+    viewImageBtn.style.display = 'none';
+    imagePreview.style.display = 'none';
+}
                 
                 // Location link if exists
                 let locationLink = 'غير متوفر';
