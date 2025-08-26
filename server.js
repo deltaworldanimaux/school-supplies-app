@@ -297,7 +297,8 @@ app.post('/api/orders', upload.single('suppliesList'), async (req, res) => {
       },
       suppliesList: fileUrl,
       status: 'pending',
-      orderNumber: orderNumber // Store the order number
+      orderNumber: orderNumber, 
+      city: req.body.city
     });
     
     await order.save();
