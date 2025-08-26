@@ -221,6 +221,7 @@ const authenticateAdmin = async (req, res, next) => {
     
     next();
   } catch (error) {
+    console.error('Auth error:', error);
     res.status(400).json({ message: 'Invalid token.' });
   }
 };
@@ -383,15 +384,24 @@ const authenticateSubAdmin = async (req, res, next) => {
 // Admin login
 app.post('/api/admin/login', async (req, res) => {
   try {
+    console.log('Login attempt:', req.body.username);
+    
     const { username, password } = req.body;
+    
+    if (!username || !password) {
+      console.log('Missing username or password');
+      return res.status(400).json({ message: 'اسم المستخدم وكلمة المرور مطلوبان' });
+    }
     
     // Check if admin exists
     const admin = await Admin.findOne({ username });
     if (admin) {
+      console.log('Admin found:', admin.username);
       // Check password
       const isMatch = await bcrypt.compare(password, admin.password);
       if (!isMatch) {
-        return res.status(400).json({ message: 'Invalid credentials' });
+        console.log('Admin password mismatch');
+        return res.status(400).json({ message: 'بيانات الاعتماد غير صحيحة' });
       }
       
       // Generate token
@@ -401,20 +411,23 @@ app.post('/api/admin/login', async (req, res) => {
         { expiresIn: '24h' }
       );
       
+      console.log('Admin login successful:', admin.username);
       return res.json({ 
         token, 
         admin: { id: admin._id, username: admin.username, type: 'admin' },
-        message: 'Login successful'
+        message: 'تم تسجيل الدخول بنجاح'
       });
     }
     
     // If not an admin, check if it's a sub-admin
     const subAdmin = await SubAdmin.findOne({ username });
     if (subAdmin) {
+      console.log('Sub-admin found:', subAdmin.username);
       // Check password
       const isMatch = await bcrypt.compare(password, subAdmin.password);
       if (!isMatch) {
-        return res.status(400).json({ message: 'Invalid credentials' });
+        console.log('Sub-admin password mismatch');
+        return res.status(400).json({ message: 'بيانات الاعتماد غير صحيحة' });
       }
       
       // Generate token
@@ -424,18 +437,24 @@ app.post('/api/admin/login', async (req, res) => {
         { expiresIn: '24h' }
       );
       
+      console.log('Sub-admin login successful:', subAdmin.username);
       return res.json({ 
         token, 
-        admin: { id: subAdmin._id, username: subAdmin.username, type: 'subadmin', city: subAdmin.city },
-        message: 'Login successful'
+        admin: { 
+          id: subAdmin._id, 
+          username: subAdmin.username, 
+          type: 'subadmin',
+          city: subAdmin.city 
+        },
+        message: 'تم تسجيل الدخول بنجاح'
       });
     }
     
-    // If neither admin nor sub-admin found
-    return res.status(400).json({ message: 'Invalid credentials' });
+    console.log('User not found:', username);
+    return res.status(400).json({ message: 'بيانات الاعتماد غير صحيحة' });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'خطأ في الخادم', error: error.message });
   }
 });
 

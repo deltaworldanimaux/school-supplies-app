@@ -952,9 +952,17 @@ if (authToken) {
   }
 })
             .catch(error => {
-                showAlert('loginAlert', 'error', 'خطأ في الاتصال بالخادم');
-                console.error('Login error:', error);
-            });
+  // Try to get more details about the error
+  console.error('Login error details:', error);
+  
+  // Check if it's a network error or server error
+  if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+    showAlert('loginAlert', 'error', 'خطأ في الاتصال بالخادم. يرجى التحقق من اتصال الشبكة.');
+  } else {
+    showAlert('loginAlert', 'error', error.message || 'خطأ في الاتصال بالخادم');
+  }
+  console.error('Login error:', error);
+});
         });
         
         // Logout functionality
