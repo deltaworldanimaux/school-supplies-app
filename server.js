@@ -399,6 +399,8 @@ app.post('/api/admin/login', async (req, res) => {
       console.log('Admin found:', admin.username);
       // Check password
       const isMatch = await bcrypt.compare(password, admin.password);
+      console.log('Password match result:', isMatch);
+      
       if (!isMatch) {
         console.log('Admin password mismatch');
         return res.status(400).json({ message: 'بيانات الاعتماد غير صحيحة' });
@@ -425,6 +427,8 @@ app.post('/api/admin/login', async (req, res) => {
       console.log('Sub-admin found:', subAdmin.username);
       // Check password
       const isMatch = await bcrypt.compare(password, subAdmin.password);
+      console.log('Sub-admin password match result:', isMatch);
+      
       if (!isMatch) {
         console.log('Sub-admin password mismatch');
         return res.status(400).json({ message: 'بيانات الاعتماد غير صحيحة' });
@@ -830,11 +834,10 @@ app.post('/api/subadmins', authenticateAdmin, async (req, res) => {
     
     const { username, password, city } = req.body;
     
-    const hashedPassword = await bcrypt.hash(password, 12);
-    
+    // Create sub-admin with plain password - the pre-save hook will hash it
     const subAdmin = new SubAdmin({
       username,
-      password: hashedPassword,
+      password, // This will be hashed by the pre-save hook
       city,
       score: 0
     });
@@ -851,6 +854,7 @@ app.post('/api/subadmins', authenticateAdmin, async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Error creating sub-admin:', error);
     res.status(500).json({ message: 'Error creating sub-admin', error: error.message });
   }
 });
