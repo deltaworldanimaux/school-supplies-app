@@ -260,25 +260,24 @@ app.post('/api/orders', upload.single('suppliesList'), async (req, res) => {
     }
     
     let fileUrl;
-        try {
-            // Check if file is PDF
-            const isPDF = req.file.originalname.toLowerCase().endsWith('.pdf');
+    try {
+        // Check if file is PDF
+        const isPDF = req.file.originalname.toLowerCase().endsWith('.pdf');
+        
+        if (isPDF) {
+            // Upload PDF to GitHub
+            fileUrl = await uploadToGitHub(req.file.path, req.file.originalname);
             
-            if (isPDF) {
-                // Upload PDF to GitHub
-                fileUrl = await uploadToGitHub(req.file.path, req.file.originalname);
-                
-                // Delete local file after successful upload
-                fs.unlinkSync(req.file.path);
-            } else {
-                // For images, use ImgBB as before
-                fileUrl = await uploadToImgBB(req.file.path);
-            }
-        } catch (uploadError) {
-            console.error('File upload error:', uploadError);
-            // Fallback to local file path
-            fileUrl = `uploads/${req.file.filename}`;
+            // Delete local file after successful upload
+            fs.unlinkSync(req.file.path);
+        } else {
+            // For images, use ImgBB as before
+            fileUrl = await uploadToImgBB(req.file.path);
         }
+    } catch (uploadError) {
+        console.error('File upload error:', uploadError);
+        fileUrl = req.file.filename;  // Changed from `uploads/${req.file.filename}`
+    }
     
     // Generate a proper order number (format: ORD-YYYYMMDD-XXXX)
     const now = new Date();
