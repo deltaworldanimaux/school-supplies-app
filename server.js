@@ -675,72 +675,77 @@ async function detectCityFromCoordinates(lat, lng) {
         return null;
     }
 }
-
+const cityMappings = {
+  "casablanca": "الدار البيضاء",
+  "rabat": "الرباط", 
+  "fes": "فاس",
+  "marrakech": "مراكش",
+  "tangier": "طنجة",
+  "meknes": "مكناس",
+  "agadir": "أكادير",
+  "tetouan": "تطوان",
+  "oujda": "وجدة",
+  "kenitra": "القنيطرة",
+  "el jadida": "الجديدة",
+  "taza": "تازة",
+  "essaouira": "الصويرة",
+  "beni mellal": "بني ملال",
+  "khouribga": "خريبكة",
+  "larache": "العرائش",
+  "ouezzane": "وزان",
+  "sale": "سلا",
+  "berrechid": "برشيد",
+  "khenifra": "خنيفرة",
+  "taourirt": "تاوريرت",
+  "tiznit": "تيزنيت",
+  "safi": "آسفي",
+  "nador": "الناضور",
+  "sidi kacem": "سيدي قاسم",
+  "taroudant": "تارودانت",
+  "sefrou": "صفرو",
+  "youssoufia": "اليوسفية",
+  "chefchaouen": "شفشاون",
+  "ben slimane": "بنسليمان",
+  "azilal": "أزيلال",
+  "midelt": "ميدلت",
+  "sidi ifni": "سيدي إفني",
+  "skhirat": "صخيرات",
+  "témara": "تمارة",
+  "laayoune": "العيون",
+  "dakhla": "الداخلة",
+  "mohammedia": "المحمدية"
+};
 // Add a function to normalize city names
 function normalizeCityName(cityName) {
   if (!cityName) return 'غير معروف';
   
-  // Convert to Arabic if needed and remove diacritics
+  // Convert to lowercase and remove diacritics
   const normalized = cityName
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Remove diacritics
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
     .trim();
   
-  // Map common variations to standard names
-  const cityMappings = {
-    "casablanca": "الدار البيضاء",
-    "dar el beida": "الدار البيضاء",
-    "marrakech": "مراكش",
-    "marrakesh": "مراكش",
-    "tanger": "طنجة",
-    "tangier": "طنجة",
-    "rabat": "الرباط",
-    "fes": "فاس",
-    "fez": "فاس",
-    "meknes": "مكناس",
-    "agadir": "أكادير",
-    "tetouan": "تطوان",
-    "oujda": "وجدة",
-    "kenitra": "القنيطرة",
-    "el jadida": "الجديدة",
-    "taza": "تازة",
-    "essaouira": "الصويرة",
-    "beni mellal": "بني ملال",
-    "khouribga": "خريبكة",
-    "larache": "العرائش",
-    "ouezzane": "وزان",
-    "sale": "سلا",
-    "berrechid": "برشيد",
-    "khenifra": "خنيفرة",
-    "taourirt": "تاوريرت",
-    "tiznit": "تيزنيت",
-    "safi": "آسفي",
-    "nador": "الناضور",
-    "sidi kacem": "سيدي قاسم",
-    "taroudant": "تارودانت",
-    "sefrou": "صفرو",
-    "youssoufia": "اليوسفية",
-    "chefchaouen": "شفشاون",
-    "ben slimane": "بنسليمان",
-    "azilal": "أزيلال",
-    "midelt": "ميدلت",
-    "sidi ifni": "سيدي إفني",
-    "skhirat": "صخيرات",
-    "témara": "تمارة",
-    "laayoune": "العيون",
-    "dakhla": "الداخلة",
-    "mohammedia": "المحمدية"
-  };
+  // Check if it's already an English key in our mapping
+  if (cityMappings[normalized]) {
+    return cityMappings[normalized];
+  }
   
-  // Check if the normalized city name matches any of our mappings
-  const lowerCaseCity = normalized.toLowerCase();
+  // Check if it's an Arabic value in our mapping
   for (const [key, value] of Object.entries(cityMappings)) {
-    if (lowerCaseCity.includes(key)) {
+    if (value === cityName) {
+      return value; // Return the standardized Arabic name
+    }
+  }
+  
+  // If no mapping found, try to find by partial match in Arabic values
+  for (const [key, value] of Object.entries(cityMappings)) {
+    if (cityName.includes(value) || value.includes(cityName)) {
       return value;
     }
   }
   
-  // If no mapping found, return the original city name
-  return normalized;
+  // If still not found, return the original city name
+  return cityName;
 }
 
 // Delete order (admin only)
@@ -851,43 +856,38 @@ app.get('/api/subadmins', authenticateAdmin, async (req, res) => {
 
 // Create sub-admin (main admin only)
 app.post('/api/subadmins', authenticateAdmin, async (req, res) => {
-try {
-if (req.admin.username !== 'admin') {
-return res.status(403).json({ message: 'Only main admin can access this resource' });
-}
+  try {
+    if (req.admin.username !== 'admin') {
+      return res.status(403).json({ message: 'Only main admin can access this resource' });
+    }
 
+    const { username, password, city } = req.body;
+    
+    // Normalize city name using the mapping
+    const normalizedCity = cityMappings[city] || normalizeCityName(city);
+    
+    const subAdmin = new SubAdmin({
+      username,
+      password, // password will be hashed in the model
+      city: normalizedCity,
+      score: 0
+    });
 
-const { username, password, city } = req.body;
+    await subAdmin.save();
 
-
-// Normalize city name to match stored orders
-const normalizedCity = normalizeCityName(city);
-
-
-const subAdmin = new SubAdmin({
-username,
-password, // password will be hashed in the model
-city: normalizedCity,
-score: 0
-});
-
-
-await subAdmin.save();
-
-
-res.status(201).json({
-message: 'Sub-admin created successfully',
-subAdmin: {
-_id: subAdmin._id,
-username: subAdmin.username,
-city: subAdmin.city,
-score: subAdmin.score
-}
-});
-} catch (error) {
-console.error('Error creating sub-admin:', error);
-res.status(500).json({ message: 'Error creating sub-admin', error: error.message });
-}
+    res.status(201).json({
+      message: 'Sub-admin created successfully',
+      subAdmin: {
+        _id: subAdmin._id,
+        username: subAdmin.username,
+        city: subAdmin.city,
+        score: subAdmin.score
+      }
+    });
+  } catch (error) {
+    console.error('Error creating sub-admin:', error);
+    res.status(500).json({ message: 'Error creating sub-admin', error: error.message });
+  }
 });
 
 // Update sub-admin (main admin only)

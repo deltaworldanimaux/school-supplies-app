@@ -822,11 +822,48 @@
         <label>كلمة المرور:</label>
         <input type="password" id="subAdminPassword" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
       </div>
-      <div>
+     <div>
   <label>المدينة:</label>
-  <select id="subAdminCity" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+  <select id="subAdminCity" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;" required>
     <option value="">اختر المدينة</option>
-    <!-- Options will be populated by JavaScript -->
+    <option value="casablanca">الدار البيضاء</option>
+    <option value="rabat">الرباط</option>
+    <option value="fes">فاس</option>
+    <option value="marrakech">مراكش</option>
+    <option value="tangier">طنجة</option>
+    <option value="meknes">مكناس</option>
+    <option value="agadir">أكادير</option>
+    <option value="tetouan">تطوان</option>
+    <option value="oujda">وجدة</option>
+    <option value="kenitra">القنيطرة</option>
+    <option value="el jadida">الجديدة</option>
+    <option value="taza">تازة</option>
+    <option value="essaouira">الصويرة</option>
+    <option value="beni mellal">بني ملال</option>
+    <option value="khouribga">خريبكة</option>
+    <option value="larache">العرائش</option>
+    <option value="ouezzane">وزان</option>
+    <option value="sale">سلا</option>
+    <option value="berrechid">برشيد</option>
+    <option value="khenifra">خنيفرة</option>
+    <option value="taourirt">تاوريرت</option>
+    <option value="tiznit">تيزنيت</option>
+    <option value="safi">آسفي</option>
+    <option value="nador">الناضور</option>
+    <option value="sidi kacem">سيدي قاسم</option>
+    <option value="taroudant">تارودانت</option>
+    <option value="sefrou">صفرو</option>
+    <option value="youssoufia">اليوسفية</option>
+    <option value="chefchaouen">شفشاون</option>
+    <option value="ben slimane">بنسليمان</option>
+    <option value="azilal">أزيلال</option>
+    <option value="midelt">ميدلت</option>
+    <option value="sidi ifni">سيدي إفني</option>
+    <option value="skhirat">صخيرات</option>
+    <option value="témara">تمارة</option>
+    <option value="laayoune">العيون</option>
+    <option value="dakhla">الداخلة</option>
+    <option value="mohammedia">المحمدية</option>
   </select>
 </div>
       <div>
@@ -1886,20 +1923,52 @@ function populateCityDropdown() {
         citySelect.remove(1);
     }
     
-    // Add only major Moroccan cities
-    const majorCities = [
-        "الدار البيضاء", "الرباط", "فاس", "مراكش", "طنجة", "مكناس", "أكادير",
-        "تطوان", "وجدة", "القنيطرة", "الجديدة", "تازة", "الصويرة", "بني ملال",
-        "خريبكة", "العرائش", "وزان", "سلا", "برشيد", "خنيفرة", "تاوريرت",
-        "تيزنيت", "آسفي", "الناضور", "سيدي قاسم", "تارودانت", "صفرو", "اليوسفية",
-        "شفشاون", "بنسليمان", "أزيلال", "ميدلت", "سيدي إفني", "صخيرات", "تمارة",
-        "العيون", "الداخلة", "المحمدية"
+    // Add cities from our mapping
+    const cityOptions = [
+        { value: 'casablanca', text: 'الدار البيضاء' },
+        { value: 'rabat', text: 'الرباط' },
+        { value: 'fes', text: 'فاس' },
+        { value: 'marrakech', text: 'مراكش' },
+        { value: 'tangier', text: 'طنجة' },
+        { value: 'meknes', text: 'مكناس' },
+        { value: 'agadir', text: 'أكادير' },
+        { value: 'tetouan', text: 'تطوان' },
+        { value: 'oujda', text: 'وجدة' },
+        { value: 'kenitra', text: 'القنيطرة' },
+        { value: 'el jadida', text: 'الجديدة' },
+        { value: 'taza', text: 'تازة' },
+        { value: 'essaouira', text: 'الصويرة' },
+        { value: 'beni mellal', text: 'بني ملال' },
+        { value: 'khouribga', text: 'خريبكة' },
+        { value: 'larache', text: 'العرائش' },
+        { value: 'ouezzane', text: 'وزان' },
+        { value: 'sale', text: 'سلا' },
+        { value: 'berrechid', text: 'برشيد' },
+        { value: 'khenifra', text: 'خنيفرة' },
+        { value: 'taourirt', text: 'تاوريرت' },
+        { value: 'tiznit', text: 'تيزنيت' },
+        { value: 'safi', text: 'آسفي' },
+        { value: 'nador', text: 'الناضور' },
+        { value: 'sidi kacem', text: 'سيدي قاسم' },
+        { value: 'taroudant', text: 'تارودانت' },
+        { value: 'sefrou', text: 'صفرو' },
+        { value: 'youssoufia', text: 'اليوسفية' },
+        { value: 'chefchaouen', text: 'شفشاون' },
+        { value: 'ben slimane', text: 'بنسليمان' },
+        { value: 'azilal', text: 'أزيلال' },
+        { value: 'midelt', text: 'ميدلت' },
+        { value: 'sidi ifni', text: 'سيدي إفني' },
+        { value: 'skhirat', text: 'صخيرات' },
+        { value: 'témara', text: 'تمارة' },
+        { value: 'laayoune', text: 'العيون' },
+        { value: 'dakhla', text: 'الداخلة' },
+        { value: 'mohammedia', text: 'المحمدية' }
     ];
     
-    majorCities.sort().forEach(city => {
+    cityOptions.forEach(city => {
         const option = document.createElement('option');
-        option.value = city;
-        option.textContent = city;
+        option.value = city.value;
+        option.textContent = city.text;
         citySelect.appendChild(option);
     });
 }
