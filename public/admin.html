@@ -2148,33 +2148,32 @@ if (normalized.includes(key)) return value;
 // Save sub-admin (create or update)
 const saveSubAdminBtn = document.getElementById('saveSubAdminBtn');
 if (saveSubAdminBtn) {
-saveSubAdminBtn.addEventListener('click', () => {
-const username = document.getElementById('subAdminUsername').value;
-const password = document.getElementById('subAdminPassword').value;
-const rawCity = document.getElementById('subAdminCity').value;
-const city = rawCity; 
-const score = parseInt(document.getElementById('subAdminScore').value || '0');
+    saveSubAdminBtn.addEventListener('click', () => {
+        const username = document.getElementById('subAdminUsername').value;
+        const password = document.getElementById('subAdminPassword').value;
+        const rawCity = document.getElementById('subAdminCity').value;
+        const normalizedCity = normalizeCityName(rawCity); // Add this line
+        const score = parseInt(document.getElementById('subAdminScore').value || '0');
 
-
-fetch(`${API_BASE}/api/subadmins`, {
-method: 'POST',
-headers: {
-'Content-Type': 'application/json',
-'Authorization': `Bearer ${authToken}`
-},
-body: JSON.stringify({ username, password, city: normalizedCity, score })
-})
-.then(res => res.json())
-.then(data => {
-if (data.subAdmin) {
-alert(`✅ تم إنشاء المساعد لمدينة ${data.subAdmin.city}`);
-loadSubAdmins();
-} else {
-alert('❌ فشل إنشاء المساعد');
-}
-})
-.catch(err => console.error('Error saving sub-admin:', err));
-});
+        fetch(`${API_BASE}/api/subadmins`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify({ username, password, city: normalizedCity, score }) // Use normalizedCity here
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.subAdmin) {
+                alert(`✅ تم إنشاء المساعد لمدينة ${data.subAdmin.city}`);
+                loadSubAdmins();
+            } else {
+                alert('❌ فشل إنشاء المساعد');
+            }
+        })
+        .catch(err => console.error('Error saving sub-admin:', err));
+    });
 }
 
 // Reset sub-admin form
