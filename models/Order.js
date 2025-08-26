@@ -34,7 +34,6 @@ deliveryStatus: {
   enum: ['pending', 'assigned', 'picked_up', 'delivered']
 },
 deliveryCost: { type: Number, default: null },
-city: { type: String, required: true },
 rejectedBy: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'DeliveryMan'
