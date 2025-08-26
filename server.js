@@ -424,6 +424,8 @@ app.post('/api/admin/login', async (req, res) => {
     // If not an admin, check if it's a sub-admin
     const subAdmin = await SubAdmin.findOne({ username });
     if (subAdmin) {
+      subAdmin.city = normalizeCityName(subAdmin.city);
+      await subAdmin.save();
       console.log('Sub-admin found:', subAdmin.username);
       // Check password
       const isMatch = await bcrypt.compare(password, subAdmin.password);
@@ -826,37 +828,43 @@ app.get('/api/subadmins', authenticateAdmin, async (req, res) => {
 
 // Create sub-admin (main admin only)
 app.post('/api/subadmins', authenticateAdmin, async (req, res) => {
-  try {
-    // Check if main admin
-    if (req.admin.username !== 'admin') {
-      return res.status(403).json({ message: 'Only main admin can access this resource' });
-    }
-    
-    const { username, password, city } = req.body;
-    
-    // Create sub-admin with plain password - the pre-save hook will hash it
-    const subAdmin = new SubAdmin({
-      username,
-      password, // This will be hashed by the pre-save hook
-      city,
-      score: 0
-    });
-    
-    await subAdmin.save();
-    
-    res.status(201).json({
-      message: 'Sub-admin created successfully',
-      subAdmin: {
-        _id: subAdmin._id,
-        username: subAdmin.username,
-        city: subAdmin.city,
-        score: subAdmin.score
-      }
-    });
-  } catch (error) {
-    console.error('Error creating sub-admin:', error);
-    res.status(500).json({ message: 'Error creating sub-admin', error: error.message });
-  }
+try {
+if (req.admin.username !== 'admin') {
+return res.status(403).json({ message: 'Only main admin can access this resource' });
+}
+
+
+const { username, password, city } = req.body;
+
+
+// Normalize city name to match stored orders
+const normalizedCity = normalizeCityName(city);
+
+
+const subAdmin = new SubAdmin({
+username,
+password, // password will be hashed in the model
+city: normalizedCity,
+score: 0
+});
+
+
+await subAdmin.save();
+
+
+res.status(201).json({
+message: 'Sub-admin created successfully',
+subAdmin: {
+_id: subAdmin._id,
+username: subAdmin.username,
+city: subAdmin.city,
+score: subAdmin.score
+}
+});
+} catch (error) {
+console.error('Error creating sub-admin:', error);
+res.status(500).json({ message: 'Error creating sub-admin', error: error.message });
+}
 });
 
 // Update sub-admin (main admin only)

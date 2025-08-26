@@ -2008,59 +2008,96 @@ function deleteSubAdmin(subAdminId) {
   }
 }
 
+function normalizeCityName(cityName) {
+if (!cityName) return 'غير معروف';
+
+
+const normalized = cityName
+.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+.trim().toLowerCase();
+
+
+const cityMappings = {
+"casablanca": "الدار البيضاء",
+"dar el beida": "الدار البيضاء",
+"marrakech": "مراكش",
+"marrakesh": "مراكش",
+"tanger": "طنجة",
+"tangier": "طنجة",
+"rabat": "الرباط",
+"fes": "فاس",
+"fez": "فاس",
+"meknes": "مكناس",
+"agadir": "أكادير",
+"tetouan": "تطوان",
+"oujda": "وجدة",
+"kenitra": "القنيطرة",
+"el jadida": "الجديدة",
+"taza": "تازة",
+"essaouira": "الصويرة",
+"beni mellal": "بني ملال",
+"khouribga": "خريبكة",
+"larache": "العرائش",
+"ouezzane": "وزان",
+"sale": "سلا",
+"berrechid": "برشيد",
+"khenifra": "خنيفرة",
+"taourirt": "تاوريرت",
+"tiznit": "تيزنيت",
+"safi": "آسفي",
+"nador": "الناضور",
+"sidi kacem": "سيدي قاسم",
+"taroudant": "تارودانت",
+"sefrou": "صفرو",
+"youssoufia": "اليوسفية",
+"chefchaouen": "شفشاون",
+"ben slimane": "بنسليمان",
+"azilal": "أزيلال",
+"midelt": "ميدلت",
+"sidi ifni": "سيدي إفني",
+"skhirat": "صخيرات",
+"témara": "تمارة",
+"laayoune": "العيون",
+"dakhla": "الداخلة",
+"mohammedia": "المحمدية"
+};
+
+
+for (const [key, value] of Object.entries(cityMappings)) {
+if (normalized.includes(key)) return value;
+}
+}
 // Save sub-admin (create or update)
-document.getElementById('saveSubAdminBtn').addEventListener('click', function() {
-  const username = document.getElementById('subAdminUsername').value;
-  const password = document.getElementById('subAdminPassword').value;
-  const city = document.getElementById('subAdminCity').value; 
-  const score = document.getElementById('subAdminScore').value;
-  
-  if (!username || !city) { 
-    showAlert('يرجى ملء جميع الحقول المطلوبة');
-    return;
-  }
-  
-  // For new sub-admin, password is required
-  if (!currentEditingSubAdminId && !password) {
-    showAlert('كلمة المرور مطلوبة للمساعد الجديد');
-    return;
-  }
-  
-  const url = currentEditingSubAdminId ? 
-    `${API_BASE}/api/subadmins/${currentEditingSubAdminId}` : 
-    `${API_BASE}/api/subadmins`;
-  
-  const method = currentEditingSubAdminId ? 'PUT' : 'POST';
-  
-  fetch(url, {
-    method: method,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${authToken}`
-    },
-    body: JSON.stringify({
-      username,
-      password: password || undefined,
-      city,
-      score: parseInt(score) || 0
-    })
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.message) {
-      showAlert('ordersAlert', 'success', currentEditingSubAdminId ? 
-        'تم تحديث المساعد بنجاح' : 'تم إنشاء المساعد بنجاح');
-      loadSubAdmins();
-      resetSubAdminForm();
-    } else {
-      showAlert('ordersAlert', 'error', data.message || 'فشل في حفظ المساعد');
-    }
-  })
-  .catch(error => {
-    console.error('Error saving sub-admin:', error);
-    showAlert('ordersAlert', 'error', 'خطأ في الاتصال بالخادم');
-  });
+const saveSubAdminBtn = document.getElementById('saveSubAdminBtn');
+if (saveSubAdminBtn) {
+saveSubAdminBtn.addEventListener('click', () => {
+const username = document.getElementById('subAdminUsername').value;
+const password = document.getElementById('subAdminPassword').value;
+const rawCity = document.getElementById('subAdminCity').value;
+const normalizedCity = normalizeCityName(rawCity);
+const score = parseInt(document.getElementById('subAdminScore').value || '0');
+
+
+fetch(`${API_BASE}/api/subadmins`, {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json',
+'Authorization': `Bearer ${authToken}`
+},
+body: JSON.stringify({ username, password, city: normalizedCity, score })
+})
+.then(res => res.json())
+.then(data => {
+if (data.subAdmin) {
+alert(`✅ تم إنشاء المساعد لمدينة ${data.subAdmin.city}`);
+loadSubAdmins();
+} else {
+alert('❌ فشل إنشاء المساعد');
+}
+})
+.catch(err => console.error('Error saving sub-admin:', err));
 });
+}
 
 // Reset sub-admin form
 function resetSubAdminForm() {
