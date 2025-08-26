@@ -1055,9 +1055,7 @@ function renderOrdersTable(orders) {
                 let fileLink = 'لا يوجد ملف';
                 if (order.suppliesList) {
                     const isFullUrl = order.suppliesList.startsWith('http');
-                    const fileUrl = order.suppliesList.startsWith('http') ? 
-    order.suppliesList : 
-    `${API_BASE}/uploads/${order.suppliesList}`;
+                    const fileUrl = isFullUrl ? order.suppliesList : `${API_BASE}/uploads/${order.suppliesList}`;
                     fileLink = `<a href="${fileUrl}" target="_blank" class="file-link">عرض الملف على ImgBB</a>`;
                     
                     // Set up view image button

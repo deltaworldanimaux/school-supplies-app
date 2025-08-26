@@ -638,9 +638,7 @@ printWindow.document.close();
   .then(order => {
     if (order.suppliesList) {
       const isFullUrl = order.suppliesList.startsWith('http');
-      const fileUrl = order.suppliesList.startsWith('http') ? 
-    order.suppliesList : 
-    `${API_BASE}/uploads/${order.suppliesList}`;
+      const fileUrl = isFullUrl ? order.suppliesList : `${API_BASE}/uploads/${order.suppliesList}`;
       window.open(fileUrl, '_blank');
     }
   })
