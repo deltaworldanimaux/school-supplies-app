@@ -606,23 +606,93 @@ app.get('/api/orders/:id', authenticateAdmin, async (req, res) => {
 
 async function detectCityFromCoordinates(lat, lng) {
   try {
-    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
+    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=ar`);
     const data = await response.json();
     
     if (data && data.address) {
       // Try to get the city from various possible fields
-      return data.address.city || 
-             data.address.town || 
-             data.address.village || 
-             data.address.municipality || 
-             data.address.county || 
-             'Unknown City';
+      let detectedCity = data.address.city || 
+                        data.address.town || 
+                        data.address.village || 
+                        data.address.municipality || 
+                        data.address.county || 
+                        '';
+      
+      // Normalize the city name to match our dropdown
+      return normalizeCityName(detectedCity);
     }
-    return 'Unknown City';
+    return 'غير معروف';
   } catch (error) {
     console.error('Error detecting city from coordinates:', error);
-    return 'Unknown City';
+    return 'غير معروف';
   }
+}
+
+// Add a function to normalize city names
+function normalizeCityName(cityName) {
+  if (!cityName) return 'غير معروف';
+  
+  // Convert to Arabic if needed and remove diacritics
+  const normalized = cityName
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Remove diacritics
+    .trim();
+  
+  // Map common variations to standard names
+  const cityMappings = {
+    "casablanca": "الدار البيضاء",
+    "dar el beida": "الدار البيضاء",
+    "marrakech": "مراكش",
+    "marrakesh": "مراكش",
+    "tanger": "طنجة",
+    "tangier": "طنجة",
+    "rabat": "الرباط",
+    "fes": "فاس",
+    "fez": "فاس",
+    "meknes": "مكناس",
+    "agadir": "أكادير",
+    "tetouan": "تطوان",
+    "oujda": "وجدة",
+    "kenitra": "القنيطرة",
+    "el jadida": "الجديدة",
+    "taza": "تازة",
+    "essaouira": "الصويرة",
+    "beni mellal": "بني ملال",
+    "khouribga": "خريبكة",
+    "larache": "العرائش",
+    "ouezzane": "وزان",
+    "sale": "سلا",
+    "berrechid": "برشيد",
+    "khenifra": "خنيفرة",
+    "taourirt": "تاوريرت",
+    "tiznit": "تيزنيت",
+    "safi": "آسفي",
+    "nador": "الناضور",
+    "sidi kacem": "سيدي قاسم",
+    "taroudant": "تارودانت",
+    "sefrou": "صفرو",
+    "youssoufia": "اليوسفية",
+    "chefchaouen": "شفشاون",
+    "ben slimane": "بنسليمان",
+    "azilal": "أزيلال",
+    "midelt": "ميدلت",
+    "sidi ifni": "سيدي إفني",
+    "skhirat": "صخيرات",
+    "témara": "تمارة",
+    "laayoune": "العيون",
+    "dakhla": "الداخلة",
+    "mohammedia": "المحمدية"
+  };
+  
+  // Check if the normalized city name matches any of our mappings
+  const lowerCaseCity = normalized.toLowerCase();
+  for (const [key, value] of Object.entries(cityMappings)) {
+    if (lowerCaseCity.includes(key)) {
+      return value;
+    }
+  }
+  
+  // If no mapping found, return the original city name
+  return normalized;
 }
 
 // Delete order (admin only)

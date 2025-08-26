@@ -823,9 +823,12 @@
         <input type="password" id="subAdminPassword" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
       </div>
       <div>
-        <label>المدينة:</label>
-        <input type="text" id="subAdminCity" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
-      </div>
+  <label>المدينة:</label>
+  <select id="subAdminCity" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+    <option value="">اختر المدينة</option>
+    <!-- Options will be populated by JavaScript -->
+  </select>
+</div>
       <div>
         <label>النقاط:</label>
         <input type="number" id="subAdminScore" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
@@ -851,7 +854,28 @@
         let currentEditingDeliveryManId = null;
         let currentEditingSubAdminId = null;
         let subAdmins = [];
-        
+        // Add this array of Moroccan cities at the top of your script
+const moroccanCities = [
+  "الدار البيضاء", "الرباط", "فاس", "مراكش", "طنجة", "مكناس", "أكادير", 
+  "تطوان", "وجدة", "القنيطرة", "الجديدة", "تازة", "الصويرة", "بني ملال",
+  "خريبكة", "العرائش", "وزان", "سلا", "برشيد", "خنيفرة", "تاوريرت", 
+  "تيزنيت", "آسفي", "الناضور", "سيدي قاسم", "تارودانت", "صفرو", "بني انصار",
+  "الفقيه بن صالح", "سيدي سليمان", "الرشيدية", "خنيفرة", "بركان", "اليوسفية",
+  "شفشاون", "بنسليمان", "أزيلال", "ميدلت", "سيدي إفني", "صخيرات", "تمارة",
+  "العيون", "الداخلة", "العرفان", "المحمدية", "الدار البيضاء أنفا", "عين حرودة",
+  "سيدي بنور", "الزمامرة", "مولاي عبد الله", "بوسكورة", "برشيد", "مديونة",
+  "المنصورية", "لحسان", "عين الشق", "الفداء", "مرس السلطان", "مولاي رشيد",
+  "سيدي عثمان", "السبتات", "المعاريف", "عين السبع", "حي المحمدي", "سيدي مومن",
+  "معسكر", "سيدي البرنوصي", "ابن امسيك", "الرويبة", "سيدي يوسف بن علي", 
+  "مدينة القصر الكبير", "وادي زم", "بوفكران", "صافي", "أسني", "إيموزار كندر", 
+  "أحفير", "السعيدية", "بركان", "الناظور", "الدريوش", "جرسيف", "تاوريرت", 
+  "جرادة", "فكيك", "بوعرفة", "Figuig", "بني تاجيت", "ميدلت", "الراشيدية", 
+  "ورزازات", "زاكورة", "تنغير", "طاطا", "كلميم", "طانطان", "العيون", "السمارة",
+  "بوجدور", "الداخلة", "الكويرة", "طرفاية", "سيدي إفني", "تيزنيت", "تارودانت",
+  "أولاد تايمة", "تيسة", "تازة", "تاهلة", "صافرو", "إفران", "أزرو", "خنيفرة",
+  "ميدلت", "الرشيدية", "ورزازات", "زاكورة", "تنغير", "طاطا", "كلميم", "طانطان",
+  "العيون", "السمارة", "بوجدور", "الداخلة", "الكويرة", "طرفاية", "سيدي إفني"
+];
         // Check if user is already logged in
 if (authToken) {
   document.getElementById('loginPage').classList.add('hidden');
@@ -1500,13 +1524,13 @@ document.getElementById('saveDeliveryBtn').addEventListener('click', function() 
     const password = document.getElementById('deliveryPassword').value;
     
     if (!name || !phone || !username) {
-        alert('يرجى ملء جميع الحقول المطلوبة');
+        showAlert('يرجى ملء جميع الحقول المطلوبة');
         return;
     }
     
     // For new delivery man, password is required
     if (!currentEditingDeliveryManId && !password) {
-        alert('كلمة المرور مطلوبة لمندوب التوصيل الجديد');
+        showAlert('كلمة المرور مطلوبة لمندوب التوصيل الجديد');
         return;
     }
     
@@ -1567,7 +1591,7 @@ function assignOrderToDelivery(orderId) {
     .then(response => response.json())
     .then(deliveryMen => {
         if (deliveryMen.length === 0) {
-            alert('لا توجد مناديب توصيل متاحين. يرجى إضافة مناديب توصيل أولاً.');
+            showAlert('لا توجد مناديب توصيل متاحين. يرجى إضافة مناديب توصيل أولاً.');
             return;
         }
         
@@ -1723,7 +1747,7 @@ function deleteLibrary(libraryId) {
     })
     .then(response => response.json())
     .then(data => {
-      alert('تم حذف المكتبة بنجاح');
+      showAlert('تم حذف المكتبة بنجاح');
       loadLibraries();
     })
     .catch(error => console.error('Error deleting library:', error));
@@ -1737,7 +1761,7 @@ document.getElementById('saveLibraryBtn').addEventListener('click', function() {
     const password = document.getElementById('libraryPassword').value;
     
     if (!name || !phone || !username || !password || !marker) {
-        alert('يرجى ملء جميع الحقول وتحديد موقع على الخريطة');
+        showAlert('يرجى ملء جميع الحقول وتحديد موقع على الخريطة');
         return;
     }
     
@@ -1760,7 +1784,7 @@ document.getElementById('saveLibraryBtn').addEventListener('click', function() {
     })
     .then(response => response.json())
     .then(data => {
-        alert(`تم إنشاء المكتبة بنجاح. بيانات الدخول: ${data.credentials.username} / ${data.credentials.password}`);
+        showAlert(`تم إنشاء المكتبة بنجاح. بيانات الدخول: ${data.credentials.username} / ${data.credentials.password}`);
         loadLibraries();
     })
     .catch(error => console.error('Error creating library:', error));
@@ -1774,7 +1798,7 @@ document.getElementById('saveLibraryBtn').addEventListener('click', function() {
   const password = document.getElementById('libraryPassword').value;
   
   if (!name || !phone || !username || !password || !marker) {
-    alert('يرجى ملء جميع الحقول وتحديد موقع على الخريطة');
+    showAlert('يرجى ملء جميع الحقول وتحديد موقع على الخريطة');
     return;
   }
   
@@ -1803,7 +1827,7 @@ document.getElementById('saveLibraryBtn').addEventListener('click', function() {
   })
   .then(response => response.json())
   .then(data => {
-    alert(currentEditingLibraryId ? 'تم تحديث المكتبة بنجاح' : 'تم إنشاء المكتبة بنجاح');
+    showAlert(currentEditingLibraryId ? 'تم تحديث المكتبة بنجاح' : 'تم إنشاء المكتبة بنجاح');
     loadLibraries();
     resetLibraryForm();
   })
@@ -1845,9 +1869,28 @@ function checkAdminType() {
   }
 }
 
+function populateCityDropdown() {
+  const citySelect = document.getElementById('subAdminCity');
+  if (!citySelect) return;
+  
+  // Clear existing options except the first one
+  while (citySelect.options.length > 1) {
+    citySelect.remove(1);
+  }
+  
+  // Add Moroccan cities to the dropdown
+  moroccanCities.sort().forEach(city => {
+    const option = document.createElement('option');
+    option.value = city;
+    option.textContent = city;
+    citySelect.appendChild(option);
+  });
+}
+
 // Open sub-admins modal
 function openSubAdminsModal() {
   document.getElementById('subAdminsModal').style.display = 'block';
+  populateCityDropdown(); // Populate the dropdown
   loadSubAdmins();
   resetSubAdminForm();
 }
@@ -1931,7 +1974,7 @@ function editSubAdmin(subAdminId) {
     currentEditingSubAdminId = subAdminId;
     document.getElementById('subAdminUsername').value = subAdmin.username;
     document.getElementById('subAdminPassword').value = '';
-    document.getElementById('subAdminCity').value = subAdmin.city;
+    document.getElementById('subAdminCity').value = subAdmin.city; // Set dropdown value
     document.getElementById('subAdminScore').value = subAdmin.score;
   }
 }
@@ -1961,17 +2004,17 @@ function deleteSubAdmin(subAdminId) {
 document.getElementById('saveSubAdminBtn').addEventListener('click', function() {
   const username = document.getElementById('subAdminUsername').value;
   const password = document.getElementById('subAdminPassword').value;
-  const city = document.getElementById('subAdminCity').value;
+  const city = document.getElementById('subAdminCity').value; 
   const score = document.getElementById('subAdminScore').value;
   
-  if (!username || !city) {
-    alert('يرجى ملء جميع الحقول المطلوبة');
+  if (!username || !city) { 
+    showAlert('يرجى ملء جميع الحقول المطلوبة');
     return;
   }
   
   // For new sub-admin, password is required
   if (!currentEditingSubAdminId && !password) {
-    alert('كلمة المرور مطلوبة للمساعد الجديد');
+    showAlert('كلمة المرور مطلوبة للمساعد الجديد');
     return;
   }
   
@@ -2045,7 +2088,7 @@ function openAssignOrderModal(orderId) {
     
     if (!order) {
         console.error('Order not found in allOrders:', orderId);
-        alert('تعذر العثور على الطلب. يرجى تحديث الصفحة والمحاولة مرة أخرى.');
+        showAlert('تعذر العثور على الطلب. يرجى تحديث الصفحة والمحاولة مرة أخرى.');
         return;
     }
     
@@ -2158,12 +2201,12 @@ function assignOrderToLibrary(libraryId) {
   })
   .then(response => response.json())
   .then(data => {
-    alert('تم تعيين الطلب إلى المكتبة');
+    showAlert('تم تعيين الطلب إلى المكتبة');
     closeAssignOrderModal();
     loadOrders(); // Reload orders to update the status
   })
   .catch(error => {
-    alert('خطأ في تعيين الطلب');
+    showAlert('خطأ في تعيين الطلب');
     console.error('Error assigning order:', error);
   });
 }
