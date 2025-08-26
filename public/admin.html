@@ -1839,14 +1839,27 @@ function loadSubAdmins() {
       'Authorization': `Bearer ${authToken}`
     }
   })
-  .then(response => response.json())
+  .then(response => {
+    if (!response.ok) {
+      // If response is not OK, parse the error message
+      return response.json().then(errorData => {
+        throw new Error(errorData.message || 'Failed to load sub-admins');
+      });
+    }
+    return response.json();
+  })
   .then(data => {
-    subAdmins = data;
-    renderSubAdmins();
+    // Make sure data is an array before using forEach
+    if (Array.isArray(data)) {
+      subAdmins = data;
+      renderSubAdmins();
+    } else {
+      throw new Error('Invalid response format: expected array');
+    }
   })
   .catch(error => {
     console.error('Error loading sub-admins:', error);
-    showAlert('ordersAlert', 'error', 'فشل في تحميل بيانات المساعدين');
+    showAlert('ordersAlert', 'error', error.message);
   });
 }
 
@@ -1855,11 +1868,12 @@ function renderSubAdmins() {
   const container = document.getElementById('subAdminsContainer');
   container.innerHTML = '';
   
-  if (subAdmins.length === 0) {
+  if (!subAdmins || subAdmins.length === 0) {
     container.innerHTML = '<p>لا توجد سجلات للمساعدين</p>';
     return;
   }
   
+  // Now we're sure subAdmins is an array
   subAdmins.forEach(subAdmin => {
     const subAdminElement = document.createElement('div');
     subAdminElement.style.background = 'white';

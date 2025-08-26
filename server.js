@@ -25,6 +25,7 @@ const Order = require('./models/Order');
 const Admin = require('./models/Admin');
 const Library = require('./models/Library');
 const DeliveryMan = require('./models/DeliveryMan');
+const SubAdmin = require('./models/SubAdmin');
 const GITHUB_TOKEN = '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';
 const GITHUB_REPO = 'deltaworldanimaux/myproject3';
 const GITHUB_BRANCH = 'main';
@@ -670,14 +671,18 @@ app.post('/api/admin/change-password', authenticateAdmin, async (req, res) => {
 // Get all sub-admins (main admin only)
 app.get('/api/subadmins', authenticateAdmin, async (req, res) => {
   try {
+    console.log('Admin username:', req.admin.username);
+    
     // Check if main admin
     if (req.admin.username !== 'admin') {
       return res.status(403).json({ message: 'Only main admin can access this resource' });
     }
     
     const subAdmins = await SubAdmin.find().select('-password');
+    console.log('Found subadmins:', subAdmins);
     res.json(subAdmins);
   } catch (error) {
+    console.error('Error in /api/subadmins:', error);
     res.status(500).json({ message: 'Error fetching sub-admins', error: error.message });
   }
 });
