@@ -1878,21 +1878,30 @@ function checkAdminType() {
 }
 
 function populateCityDropdown() {
-  const citySelect = document.getElementById('subAdminCity');
-  if (!citySelect) return;
-  
-  // Clear existing options except the first one
-  while (citySelect.options.length > 1) {
-    citySelect.remove(1);
-  }
-  
-  // Add Moroccan cities to the dropdown
-  moroccanCities.sort().forEach(city => {
-    const option = document.createElement('option');
-    option.value = city;
-    option.textContent = city;
-    citySelect.appendChild(option);
-  });
+    const citySelect = document.getElementById('subAdminCity');
+    if (!citySelect) return;
+    
+    // Clear existing options except the first one
+    while (citySelect.options.length > 1) {
+        citySelect.remove(1);
+    }
+    
+    // Add only major Moroccan cities
+    const majorCities = [
+        "الدار البيضاء", "الرباط", "فاس", "مراكش", "طنجة", "مكناس", "أكادير",
+        "تطوان", "وجدة", "القنيطرة", "الجديدة", "تازة", "الصويرة", "بني ملال",
+        "خريبكة", "العرائش", "وزان", "سلا", "برشيد", "خنيفرة", "تاوريرت",
+        "تيزنيت", "آسفي", "الناضور", "سيدي قاسم", "تارودانت", "صفرو", "اليوسفية",
+        "شفشاون", "بنسليمان", "أزيلال", "ميدلت", "سيدي إفني", "صخيرات", "تمارة",
+        "العيون", "الداخلة", "المحمدية"
+    ];
+    
+    majorCities.sort().forEach(city => {
+        const option = document.createElement('option');
+        option.value = city;
+        option.textContent = city;
+        citySelect.appendChild(option);
+    });
 }
 
 // Open sub-admins modal

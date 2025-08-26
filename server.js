@@ -301,6 +301,15 @@ app.post('/api/orders', upload.single('suppliesList'), async (req, res) => {
     const randomPart = Math.floor(1000 + Math.random() * 9000);
     const orderNumber = `ORD-${datePart}-${randomPart}`;
     const city = await detectCityFromCoordinates(parseFloat(latitude), parseFloat(longitude));
+        
+        if (!city) {
+            if (req.file) {
+                fs.unlinkSync(req.file.path);
+            }
+            return res.status(400).json({ 
+                message: 'عذراً، الخدمة غير متاحة في منطقتك حالياً. نحن نغطي المدن الكبرى والمتوسطة في المغرب فقط.' 
+            });
+        }
     
     const order = new Order({
       parentName,
@@ -506,20 +515,20 @@ function sendEventToClients(event, data) {
 }
 // Get all orders (admin only)
 app.get('/api/orders', authenticateAdmin, async (req, res) => {
-  try {
-    let query = {};
-    
-    // If user is a sub-admin, only show orders from their city
-    if (req.userType === 'subadmin') {
-      query = { city: req.admin.city };
+    try {
+        let query = {};
+        
+        // If user is a sub-admin, only show orders from their city
+        if (req.userType === 'subadmin') {
+            query = { city: req.admin.city };
+        }
+        
+        const orders = await Order.find(query).sort({ createdAt: -1 }).populate('deliveryMan', 'name phone');
+        res.json(orders);
+    } catch (error) {
+        console.error('Fetch orders error:', error);
+        res.status(500).json({ message: 'Error fetching orders', error: error.message });
     }
-    
-    const orders = await Order.find(query).sort({ createdAt: -1 }).populate('deliveryMan', 'name phone');
-    res.json(orders);
-  } catch (error) {
-    console.error('Fetch orders error:', error);
-    res.status(500).json({ message: 'Error fetching orders', error: error.message });
-  }
 });
 
 app.get('/api/delivery/profile', authenticateDeliveryMan, async (req, res) => {
@@ -629,28 +638,42 @@ app.get('/api/orders/:id', authenticateAdmin, async (req, res) => {
   }
 });
 
+const majorMoroccanCities = [
+    "الدار البيضاء", "الرباط", "فاس", "مراكش", "طنجة", "مكناس", "أكادير",
+    "تطوان", "وجدة", "القنيطرة", "الجديدة", "تازة", "الصويرة", "بني ملال",
+    "خريبكة", "العرائش", "وزان", "سلا", "برشيد", "خنيفرة", "تاوريرت",
+    "تيزنيت", "آسفي", "الناضور", "سيدي قاسم", "تارودانت", "صفرو", "اليوسفية",
+    "شفشاون", "بنسليمان", "أزيلال", "ميدلت", "سيدي إفني", "صخيرات", "تمارة",
+    "العيون", "الداخلة", "المحمدية"
+];
+
 async function detectCityFromCoordinates(lat, lng) {
-  try {
-    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=ar`);
-    const data = await response.json();
-    
-    if (data && data.address) {
-      // Try to get the city from various possible fields
-      let detectedCity = data.address.city || 
-                        data.address.town || 
-                        data.address.village || 
-                        data.address.municipality || 
-                        data.address.county || 
-                        '';
-      
-      // Normalize the city name to match our dropdown
-      return normalizeCityName(detectedCity);
+    try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=ar`);
+        const data = await response.json();
+        
+        if (data && data.address) {
+            let detectedCity = data.address.city || 
+                            data.address.town || 
+                            data.address.village || 
+                            data.address.municipality || 
+                            data.address.county || 
+                            '';
+            
+            const normalizedCity = normalizeCityName(detectedCity);
+            
+            // Check if the detected city is in our supported list
+            if (majorMoroccanCities.includes(normalizedCity)) {
+                return normalizedCity;
+            } else {
+                return null; // Not a supported city
+            }
+        }
+        return null;
+    } catch (error) {
+        console.error('Error detecting city from coordinates:', error);
+        return null;
     }
-    return 'غير معروف';
-  } catch (error) {
-    console.error('Error detecting city from coordinates:', error);
-    return 'غير معروف';
-  }
 }
 
 // Add a function to normalize city names
