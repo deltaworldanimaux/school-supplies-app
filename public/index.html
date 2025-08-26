@@ -937,21 +937,11 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
 
   try {
     const response = await fetch('/api/orders', {
-    method: 'POST',
-    body: formData
-});
-
-const data = await response.json();
-
-if (!response.ok) {
-    if (response.status === 400 && data.message.includes('غير متاحة')) {
-        // Show location not supported error
-        showToast('عذراً، الخدمة غير متاحة في منطقتك حالياً. نحن نغطي المدن الكبرى والمتوسطة في المغرب فقط.', 'error');
-    } else {
-        showToast('فشل إرسال الطلب: ' + data.message, 'error');
-    }
-    return;
-}
+      method: 'POST',
+      body: formData
+    });
+    
+    const data = await response.json();
     document.getElementById('loadingOverlay').style.display = 'none';
 
     if (response.ok) {

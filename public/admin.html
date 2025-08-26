@@ -6,7 +6,6 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <title>لوحة تحكم مدرستي - إدارة الطلبات</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>">
     <style>
         :root {
             --primary: #4CAF50;
@@ -631,7 +630,6 @@
         <span>مرحباً, <span id="adminName">Admin</span></span>
         <button id="manageLibrariesBtn" class="btn" style="margin-left: 10px;">إدارة المكتبات</button>
         <button id="manageDeliveryBtn" class="btn" style="margin-left: 10px;">إدارة مندوبي التوصيل</button>
-        <button id="manageSubAdminsBtn" class="btn" style="margin-left: 10px; display: none;">إدارة المساعدين</button>
         <button id="logoutBtn" class="btn">تسجيل الخروج</button>
     </div>
 </header>
@@ -807,144 +805,23 @@
     </div>
   </div>
 </div>
-
-<div id="subAdminsModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
-  <div class="modal-content" style="background-color: #fefefe; margin: 5% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 800px; border-radius: 10px;">
-    <span class="close">&times;</span>
-    <h2>إدارة المساعدين</h2>
-    
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
-      <div>
-        <label>اسم المستخدم:</label>
-        <input type="text" id="subAdminUsername" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
-      </div>
-      <div>
-        <label>كلمة المرور:</label>
-        <input type="password" id="subAdminPassword" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
-      </div>
-     <div>
-  <label>المدينة:</label>
-  <select id="subAdminCity" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;" required>
-    <option value="">اختر المدينة</option>
-    <option value="casablanca">الدار البيضاء</option>
-    <option value="rabat">الرباط</option>
-    <option value="fes">فاس</option>
-    <option value="marrakech">مراكش</option>
-    <option value="tangier">طنجة</option>
-    <option value="meknes">مكناس</option>
-    <option value="agadir">أكادير</option>
-    <option value="tetouan">تطوان</option>
-    <option value="oujda">وجدة</option>
-    <option value="kenitra">القنيطرة</option>
-    <option value="el jadida">الجديدة</option>
-    <option value="taza">تازة</option>
-    <option value="essaouira">الصويرة</option>
-    <option value="beni mellal">بني ملال</option>
-    <option value="khouribga">خريبكة</option>
-    <option value="larache">العرائش</option>
-    <option value="ouezzane">وزان</option>
-    <option value="sale">سلا</option>
-    <option value="berrechid">برشيد</option>
-    <option value="khenifra">خنيفرة</option>
-    <option value="taourirt">تاوريرت</option>
-    <option value="tiznit">تيزنيت</option>
-    <option value="safi">آسفي</option>
-    <option value="nador">الناضور</option>
-    <option value="sidi kacem">سيدي قاسم</option>
-    <option value="taroudant">تارودانت</option>
-    <option value="sefrou">صفرو</option>
-    <option value="youssoufia">اليوسفية</option>
-    <option value="chefchaouen">شفشاون</option>
-    <option value="ben slimane">بنسليمان</option>
-    <option value="azilal">أزيلال</option>
-    <option value="midelt">ميدلت</option>
-    <option value="sidi ifni">سيدي إفني</option>
-    <option value="skhirat">صخيرات</option>
-    <option value="témara">تمارة</option>
-    <option value="laayoune">العيون</option>
-    <option value="dakhla">الداخلة</option>
-    <option value="mohammedia">المحمدية</option>
-  </select>
-</div>
-      <div>
-        <label>النقاط:</label>
-        <input type="number" id="subAdminScore" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
-      </div>
-    </div>
-    
-    <button id="saveSubAdminBtn" style="background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
-      حفظ المساعد
-    </button>
-    
-    <div id="subAdminsList" style="margin-top: 20px;">
-      <h3>المساعدون</h3>
-      <div id="subAdminsContainer"></div>
-    </div>
-  </div>
-</div>
     <script>
         let authToken = localStorage.getItem('adminToken');
         const API_BASE = window.location.origin;
         let currentOrder = null;
         let deliveryMap, deliveryMarker;
         let deliveryMen = [];
-        let currentEditingDeliveryManId = null;
-        let currentEditingSubAdminId = null;
-        let subAdmins = [];
-        // Add this array of Moroccan cities at the top of your script
-const moroccanCities = [
-  "الدار البيضاء", "الرباط", "فاس", "مراكش", "طنجة", "مكناس", "أكادير", 
-  "تطوان", "وجدة", "القنيطرة", "الجديدة", "تازة", "الصويرة", "بني ملال",
-  "خريبكة", "العرائش", "وزان", "سلا", "برشيد", "خنيفرة", "تاوريرت", 
-  "تيزنيت", "آسفي", "الناضور", "سيدي قاسم", "تارودانت", "صفرو", "بني انصار",
-  "الفقيه بن صالح", "سيدي سليمان", "الرشيدية", "خنيفرة", "بركان", "اليوسفية",
-  "شفشاون", "بنسليمان", "أزيلال", "ميدلت", "سيدي إفني", "صخيرات", "تمارة",
-  "العيون", "الداخلة", "العرفان", "المحمدية", "الدار البيضاء أنفا", "عين حرودة",
-  "سيدي بنور", "الزمامرة", "مولاي عبد الله", "بوسكورة", "برشيد", "مديونة",
-  "المنصورية", "لحسان", "عين الشق", "الفداء", "مرس السلطان", "مولاي رشيد",
-  "سيدي عثمان", "السبتات", "المعاريف", "عين السبع", "حي المحمدي", "سيدي مومن",
-  "معسكر", "سيدي البرنوصي", "ابن امسيك", "الرويبة", "سيدي يوسف بن علي", 
-  "مدينة القصر الكبير", "وادي زم", "بوفكران", "صافي", "أسني", "إيموزار كندر", 
-  "أحفير", "السعيدية", "بركان", "الناظور", "الدريوش", "جرسيف", "تاوريرت", 
-  "جرادة", "فكيك", "بوعرفة", "Figuig", "بني تاجيت", "ميدلت", "الراشيدية", 
-  "ورزازات", "زاكورة", "تنغير", "طاطا", "كلميم", "طانطان", "العيون", "السمارة",
-  "بوجدور", "الداخلة", "الكويرة", "طرفاية", "سيدي إفني", "تيزنيت", "تارودانت",
-  "أولاد تايمة", "تيسة", "تازة", "تاهلة", "صافرو", "إفران", "أزرو", "خنيفرة",
-  "ميدلت", "الرشيدية", "ورزازات", "زاكورة", "تنغير", "طاطا", "كلميم", "طانطان",
-  "العيون", "السمارة", "بوجدور", "الداخلة", "الكويرة", "طرفاية", "سيدي إفني"
-];
+        let currentEditingDeliveryManId = null
+        
         // Check if user is already logged in
-if (authToken) {
-  document.getElementById('loginPage').classList.add('hidden');
-  document.getElementById('adminPage').classList.remove('hidden');
-  
-  // Load admin info to determine type
-  fetch(`${API_BASE}/api/admin/me`, {
-    headers: {
-      'Authorization': `Bearer ${authToken}`
-    }
-  })
-  .then(response => response.json())
-  .then(data => {
-    document.getElementById('adminName').textContent = data.admin.username;
-    localStorage.setItem('userType', data.admin.type);
-    if (data.admin.city) {
-      localStorage.setItem('adminCity', data.admin.city);
-    }
-    checkAdminType();
-    loadOrders();
-    setupEventSource();
-  })
-  .catch(error => {
-    console.error('Error fetching admin info:', error);
-    // If failed, try to load orders anyway
-    loadOrders();
-    setupEventSource();
-  });
-} else {
-  document.getElementById('loginPage').classList.remove('hidden');
-  document.getElementById('adminPage').classList.add('hidden');
-}
+        if (authToken) {
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('adminPage').classList.remove('hidden');
+            loadOrders();
+        } else {
+            document.getElementById('loginPage').classList.remove('hidden');
+            document.getElementById('adminPage').classList.add('hidden');
+        }
         
         // Login functionality
         document.getElementById('adminLoginBtn').addEventListener('click', function() {
@@ -969,37 +846,24 @@ if (authToken) {
                 }
                 return response.json();
             })
-.then(data => {
-  if (data.token) {
-    localStorage.setItem('adminToken', data.token);
-    localStorage.setItem('userType', data.admin.type); // Store user type
-    if (data.admin.city) {
-      localStorage.setItem('adminCity', data.admin.city); // Store city for sub-admins
-    }
-    authToken = data.token;
-    document.getElementById('loginPage').classList.add('hidden');
-    document.getElementById('adminPage').classList.remove('hidden');
-    document.getElementById('adminName').textContent = data.admin.username;
-    
-    checkAdminType();
-    loadOrders();
-    setupEventSource();
-  } else {
-    showAlert('loginAlert', 'error', data.message || 'فشل تسجيل الدخول');
-  }
-})
+            .then(data => {
+                if (data.token) {
+                    localStorage.setItem('adminToken', data.token);
+                    authToken = data.token;
+                    document.getElementById('loginPage').classList.add('hidden');
+                    document.getElementById('adminPage').classList.remove('hidden');
+                    document.getElementById('adminName').textContent = data.admin.username;
+                    loadOrders();
+                    setupEventSource();
+
+                } else {
+                    showAlert('loginAlert', 'error', data.message || 'فشل تسجيل الدخول');
+                }
+            })
             .catch(error => {
-  // Try to get more details about the error
-  console.error('Login error details:', error);
-  
-  // Check if it's a network error or server error
-  if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
-    showAlert('loginAlert', 'error', 'خطأ في الاتصال بالخادم. يرجى التحقق من اتصال الشبكة.');
-  } else {
-    showAlert('loginAlert', 'error', error.message || 'خطأ في الاتصال بالخادم');
-  }
-  console.error('Login error:', error);
-});
+                showAlert('loginAlert', 'error', 'خطأ في الاتصال بالخادم');
+                console.error('Login error:', error);
+            });
         });
         
         // Logout functionality
@@ -1061,8 +925,10 @@ if (authToken) {
 }
 
 function setupEventSource() {
-  const eventSource = new EventSource(`${API_BASE}/api/orders/events?token=${authToken}`, {
-    withCredentials: true
+  const eventSource = new EventSource(`${API_BASE}/api/orders/events`, {
+    headers: {
+      'Authorization': `Bearer ${authToken}`
+    }
   });
 
   eventSource.addEventListener('new-order', function(event) {
@@ -1298,23 +1164,7 @@ function getDeliveryStatusText(status) {
     case 'delivered': return 'تم التوصيل';
     default: return status;
   }
-}    
-async function fetchAdminInfo() {
-  try {
-    const response = await fetch(`${API_BASE}/api/admin/profile`, {
-      headers: {
-        'Authorization': `Bearer ${authToken}`
-      }
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      document.getElementById('adminName').textContent = data.admin.username;
-    }
-  } catch (error) {
-    console.error('Error fetching admin info:', error);
-  }
-}    
+}        
         // Delete order
         function deleteOrder(orderId) {
             if (!confirm('هل أنت متأكد من حذف هذا الطلب؟')) return;
@@ -1569,13 +1419,13 @@ document.getElementById('saveDeliveryBtn').addEventListener('click', function() 
     const password = document.getElementById('deliveryPassword').value;
     
     if (!name || !phone || !username) {
-        showAlert('يرجى ملء جميع الحقول المطلوبة');
+        alert('يرجى ملء جميع الحقول المطلوبة');
         return;
     }
     
     // For new delivery man, password is required
     if (!currentEditingDeliveryManId && !password) {
-        showAlert('كلمة المرور مطلوبة لمندوب التوصيل الجديد');
+        alert('كلمة المرور مطلوبة لمندوب التوصيل الجديد');
         return;
     }
     
@@ -1636,7 +1486,7 @@ function assignOrderToDelivery(orderId) {
     .then(response => response.json())
     .then(deliveryMen => {
         if (deliveryMen.length === 0) {
-            showAlert('لا توجد مناديب توصيل متاحين. يرجى إضافة مناديب توصيل أولاً.');
+            alert('لا توجد مناديب توصيل متاحين. يرجى إضافة مناديب توصيل أولاً.');
             return;
         }
         
@@ -1792,7 +1642,7 @@ function deleteLibrary(libraryId) {
     })
     .then(response => response.json())
     .then(data => {
-      showAlert('تم حذف المكتبة بنجاح');
+      alert('تم حذف المكتبة بنجاح');
       loadLibraries();
     })
     .catch(error => console.error('Error deleting library:', error));
@@ -1806,7 +1656,7 @@ document.getElementById('saveLibraryBtn').addEventListener('click', function() {
     const password = document.getElementById('libraryPassword').value;
     
     if (!name || !phone || !username || !password || !marker) {
-        showAlert('يرجى ملء جميع الحقول وتحديد موقع على الخريطة');
+        alert('يرجى ملء جميع الحقول وتحديد موقع على الخريطة');
         return;
     }
     
@@ -1829,7 +1679,7 @@ document.getElementById('saveLibraryBtn').addEventListener('click', function() {
     })
     .then(response => response.json())
     .then(data => {
-        showAlert(`تم إنشاء المكتبة بنجاح. بيانات الدخول: ${data.credentials.username} / ${data.credentials.password}`);
+        alert(`تم إنشاء المكتبة بنجاح. بيانات الدخول: ${data.credentials.username} / ${data.credentials.password}`);
         loadLibraries();
     })
     .catch(error => console.error('Error creating library:', error));
@@ -1843,7 +1693,7 @@ document.getElementById('saveLibraryBtn').addEventListener('click', function() {
   const password = document.getElementById('libraryPassword').value;
   
   if (!name || !phone || !username || !password || !marker) {
-    showAlert('يرجى ملء جميع الحقول وتحديد موقع على الخريطة');
+    alert('يرجى ملء جميع الحقول وتحديد موقع على الخريطة');
     return;
   }
   
@@ -1872,7 +1722,7 @@ document.getElementById('saveLibraryBtn').addEventListener('click', function() {
   })
   .then(response => response.json())
   .then(data => {
-    showAlert(currentEditingLibraryId ? 'تم تحديث المكتبة بنجاح' : 'تم إنشاء المكتبة بنجاح');
+    alert(currentEditingLibraryId ? 'تم تحديث المكتبة بنجاح' : 'تم إنشاء المكتبة بنجاح');
     loadLibraries();
     resetLibraryForm();
   })
@@ -1900,294 +1750,6 @@ function resetLibraryForm() {
   map.setView([35.5762, -5.3684], 13);
 }
 
-// Show/hide management buttons based on admin type
-function checkAdminType() {
-  const userType = localStorage.getItem('userType');
-  if (userType === 'admin') {
-    document.getElementById('manageSubAdminsBtn').style.display = 'inline-block';
-    document.getElementById('manageLibrariesBtn').style.display = 'inline-block';
-    document.getElementById('manageDeliveryBtn').style.display = 'inline-block';
-  } else {
-    document.getElementById('manageSubAdminsBtn').style.display = 'none';
-    document.getElementById('manageLibrariesBtn').style.display = 'none';
-    document.getElementById('manageDeliveryBtn').style.display = 'none';
-  }
-}
-
-function populateCityDropdown() {
-    const citySelect = document.getElementById('subAdminCity');
-    if (!citySelect) return;
-    
-    // Clear existing options except the first one
-    while (citySelect.options.length > 1) {
-        citySelect.remove(1);
-    }
-    
-    // Add cities from our mapping
-    const cityOptions = [
-        { value: 'casablanca', text: 'الدار البيضاء' },
-        { value: 'rabat', text: 'الرباط' },
-        { value: 'fes', text: 'فاس' },
-        { value: 'marrakech', text: 'مراكش' },
-        { value: 'tangier', text: 'طنجة' },
-        { value: 'meknes', text: 'مكناس' },
-        { value: 'agadir', text: 'أكادير' },
-        { value: 'tetouan', text: 'تطوان' },
-        { value: 'oujda', text: 'وجدة' },
-        { value: 'kenitra', text: 'القنيطرة' },
-        { value: 'el jadida', text: 'الجديدة' },
-        { value: 'taza', text: 'تازة' },
-        { value: 'essaouira', text: 'الصويرة' },
-        { value: 'beni mellal', text: 'بني ملال' },
-        { value: 'khouribga', text: 'خريبكة' },
-        { value: 'larache', text: 'العرائش' },
-        { value: 'ouezzane', text: 'وزان' },
-        { value: 'sale', text: 'سلا' },
-        { value: 'berrechid', text: 'برشيد' },
-        { value: 'khenifra', text: 'خنيفرة' },
-        { value: 'taourirt', text: 'تاوريرت' },
-        { value: 'tiznit', text: 'تيزنيت' },
-        { value: 'safi', text: 'آسفي' },
-        { value: 'nador', text: 'الناضور' },
-        { value: 'sidi kacem', text: 'سيدي قاسم' },
-        { value: 'taroudant', text: 'تارودانت' },
-        { value: 'sefrou', text: 'صفرو' },
-        { value: 'youssoufia', text: 'اليوسفية' },
-        { value: 'chefchaouen', text: 'شفشاون' },
-        { value: 'ben slimane', text: 'بنسليمان' },
-        { value: 'azilal', text: 'أزيلال' },
-        { value: 'midelt', text: 'ميدلت' },
-        { value: 'sidi ifni', text: 'سيدي إفني' },
-        { value: 'skhirat', text: 'صخيرات' },
-        { value: 'témara', text: 'تمارة' },
-        { value: 'laayoune', text: 'العيون' },
-        { value: 'dakhla', text: 'الداخلة' },
-        { value: 'mohammedia', text: 'المحمدية' }
-    ];
-    
-    cityOptions.forEach(city => {
-        const option = document.createElement('option');
-        option.value = city.value;
-        option.textContent = city.text;
-        citySelect.appendChild(option);
-    });
-}
-
-// Open sub-admins modal
-function openSubAdminsModal() {
-  document.getElementById('subAdminsModal').style.display = 'block';
-  populateCityDropdown(); // Populate the dropdown
-  loadSubAdmins();
-  resetSubAdminForm();
-}
-
-// Close sub-admins modal
-function closeSubAdminsModal() {
-  document.getElementById('subAdminsModal').style.display = 'none';
-}
-
-// Load sub-admins
-function loadSubAdmins() {
-  fetch(`${API_BASE}/api/subadmins`, {
-    headers: {
-      'Authorization': `Bearer ${authToken}`
-    }
-  })
-  .then(response => {
-    if (!response.ok) {
-      // If response is not OK, parse the error message
-      return response.json().then(errorData => {
-        throw new Error(errorData.message || 'Failed to load sub-admins');
-      });
-    }
-    return response.json();
-  })
-  .then(data => {
-    // Make sure data is an array before using forEach
-    if (Array.isArray(data)) {
-      subAdmins = data;
-      renderSubAdmins();
-    } else {
-      throw new Error('Invalid response format: expected array');
-    }
-  })
-  .catch(error => {
-    console.error('Error loading sub-admins:', error);
-    showAlert('ordersAlert', 'error', error.message);
-  });
-}
-
-// Render sub-admins list
-function renderSubAdmins() {
-  const container = document.getElementById('subAdminsContainer');
-  container.innerHTML = '';
-  
-  if (!subAdmins || subAdmins.length === 0) {
-    container.innerHTML = '<p>لا توجد سجلات للمساعدين</p>';
-    return;
-  }
-  
-  // Now we're sure subAdmins is an array
-  subAdmins.forEach(subAdmin => {
-    const subAdminElement = document.createElement('div');
-    subAdminElement.style.background = 'white';
-    subAdminElement.style.padding = '15px';
-    subAdminElement.style.margin = '10px 0';
-    subAdminElement.style.borderRadius = '5px';
-    subAdminElement.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
-    
-    subAdminElement.innerHTML = `
-      <strong>${subAdmin.username}</strong> - ${subAdmin.city}
-      <div>النقاط: ${subAdmin.score || 0}</div>
-      <div style="margin-top: 10px;">
-        <button onclick="editSubAdmin('${subAdmin._id}')" style="background: var(--secondary); color: white; border: none; padding: 5px 10px; border-radius: 3px; margin-right: 5px; cursor: pointer;">
-          تعديل
-        </button>
-        <button onclick="deleteSubAdmin('${subAdmin._id}')" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">
-          حذف
-        </button>
-      </div>
-    `;
-    
-    container.appendChild(subAdminElement);
-  });
-}
-
-// Edit sub-admin
-function editSubAdmin(subAdminId) {
-  const subAdmin = subAdmins.find(sa => sa._id === subAdminId);
-  if (subAdmin) {
-    currentEditingSubAdminId = subAdminId;
-    document.getElementById('subAdminUsername').value = subAdmin.username;
-    document.getElementById('subAdminPassword').value = '';
-    document.getElementById('subAdminCity').value = subAdmin.city; // Set dropdown value
-    document.getElementById('subAdminScore').value = subAdmin.score;
-  }
-}
-
-// Delete sub-admin
-function deleteSubAdmin(subAdminId) {
-  if (confirm('هل أنت متأكد من حذف هذا المساعد؟')) {
-    fetch(`${API_BASE}/api/subadmins/${subAdminId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${authToken}`
-      }
-    })
-    .then(response => response.json())
-    .then(data => {
-      showAlert('ordersAlert', 'success', 'تم حذف المساعد بنجاح');
-      loadSubAdmins();
-    })
-    .catch(error => {
-      console.error('Error deleting sub-admin:', error);
-      showAlert('ordersAlert', 'error', 'فشل في حذف المساعد');
-    });
-  }
-}
-
-function normalizeCityName(cityName) {
-if (!cityName) return 'غير معروف';
-
-
-const normalized = cityName
-.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-.trim().toLowerCase();
-
-
-const cityMappings = {
-"casablanca": "الدار البيضاء",
-"dar el beida": "الدار البيضاء",
-"marrakech": "مراكش",
-"marrakesh": "مراكش",
-"tanger": "طنجة",
-"tangier": "طنجة",
-"rabat": "الرباط",
-"fes": "فاس",
-"fez": "فاس",
-"meknes": "مكناس",
-"agadir": "أكادير",
-"tetouan": "تطوان",
-"oujda": "وجدة",
-"kenitra": "القنيطرة",
-"el jadida": "الجديدة",
-"taza": "تازة",
-"essaouira": "الصويرة",
-"beni mellal": "بني ملال",
-"khouribga": "خريبكة",
-"larache": "العرائش",
-"ouezzane": "وزان",
-"sale": "سلا",
-"berrechid": "برشيد",
-"khenifra": "خنيفرة",
-"taourirt": "تاوريرت",
-"tiznit": "تيزنيت",
-"safi": "آسفي",
-"nador": "الناضور",
-"sidi kacem": "سيدي قاسم",
-"taroudant": "تارودانت",
-"sefrou": "صفرو",
-"youssoufia": "اليوسفية",
-"chefchaouen": "شفشاون",
-"ben slimane": "بنسليمان",
-"azilal": "أزيلال",
-"midelt": "ميدلت",
-"sidi ifni": "سيدي إفني",
-"skhirat": "صخيرات",
-"témara": "تمارة",
-"laayoune": "العيون",
-"dakhla": "الداخلة",
-"mohammedia": "المحمدية"
-};
-
-
-for (const [key, value] of Object.entries(cityMappings)) {
-if (normalized.includes(key)) return value;
-}
-}
-// Save sub-admin (create or update)
-const saveSubAdminBtn = document.getElementById('saveSubAdminBtn');
-if (saveSubAdminBtn) {
-    saveSubAdminBtn.addEventListener('click', () => {
-        const username = document.getElementById('subAdminUsername').value;
-        const password = document.getElementById('subAdminPassword').value;
-        const rawCity = document.getElementById('subAdminCity').value;
-        const normalizedCity = normalizeCityName(rawCity); // Add this line
-        const score = parseInt(document.getElementById('subAdminScore').value || '0');
-
-        fetch(`${API_BASE}/api/subadmins`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${authToken}`
-            },
-            body: JSON.stringify({ username, password, city: normalizedCity, score }) // Use normalizedCity here
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.subAdmin) {
-                alert(`✅ تم إنشاء المساعد لمدينة ${data.subAdmin.city}`);
-                loadSubAdmins();
-            } else {
-                alert('❌ فشل إنشاء المساعد');
-            }
-        })
-        .catch(err => console.error('Error saving sub-admin:', err));
-    });
-}
-
-// Reset sub-admin form
-function resetSubAdminForm() {
-  currentEditingSubAdminId = null;
-  document.getElementById('subAdminUsername').value = '';
-  document.getElementById('subAdminPassword').value = '';
-  document.getElementById('subAdminCity').value = '';
-  document.getElementById('subAdminScore').value = '';
-}
-
-// Add event listeners
-document.getElementById('manageSubAdminsBtn').addEventListener('click', openSubAdminsModal);
-
 function calculateDistance(lat1, lon1, lat2, lon2) {
     const R = 6371; // Earth's radius in kilometers
     const dLat = deg2rad(lat2 - lat1);
@@ -2210,7 +1772,7 @@ function openAssignOrderModal(orderId) {
     
     if (!order) {
         console.error('Order not found in allOrders:', orderId);
-        showAlert('تعذر العثور على الطلب. يرجى تحديث الصفحة والمحاولة مرة أخرى.');
+        alert('تعذر العثور على الطلب. يرجى تحديث الصفحة والمحاولة مرة أخرى.');
         return;
     }
     
@@ -2323,12 +1885,12 @@ function assignOrderToLibrary(libraryId) {
   })
   .then(response => response.json())
   .then(data => {
-    showAlert('تم تعيين الطلب إلى المكتبة');
+    alert('تم تعيين الطلب إلى المكتبة');
     closeAssignOrderModal();
     loadOrders(); // Reload orders to update the status
   })
   .catch(error => {
-    showAlert('خطأ في تعيين الطلب');
+    alert('خطأ في تعيين الطلب');
     console.error('Error assigning order:', error);
   });
 }

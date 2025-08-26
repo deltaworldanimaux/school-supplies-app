@@ -25,7 +25,6 @@ const Order = require('./models/Order');
 const Admin = require('./models/Admin');
 const Library = require('./models/Library');
 const DeliveryMan = require('./models/DeliveryMan');
-const SubAdmin = require('./models/SubAdmin');
 const GITHUB_TOKEN = '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';
 const GITHUB_REPO = 'deltaworldanimaux/myproject3';
 const GITHUB_BRANCH = 'main';
@@ -199,29 +198,15 @@ const authenticateAdmin = async (req, res, next) => {
     }
     
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+    const admin = await Admin.findById(decoded.id);
     
-    // Check if it's an admin or sub-admin
-    if (decoded.type === 'admin') {
-      const admin = await Admin.findById(decoded.id);
-      if (!admin) {
-        return res.status(401).json({ message: 'Invalid token.' });
-      }
-      req.admin = admin;
-      req.userType = 'admin';
-    } else if (decoded.type === 'subadmin') {
-      const subAdmin = await SubAdmin.findById(decoded.id);
-      if (!subAdmin) {
-        return res.status(401).json({ message: 'Invalid token.' });
-      }
-      req.admin = subAdmin;
-      req.userType = 'subadmin';
-    } else {
+    if (!admin) {
       return res.status(401).json({ message: 'Invalid token.' });
     }
     
+    req.admin = admin;
     next();
   } catch (error) {
-    console.error('Auth error:', error);
     res.status(400).json({ message: 'Invalid token.' });
   }
 };
@@ -300,16 +285,6 @@ app.post('/api/orders', upload.single('suppliesList'), async (req, res) => {
     const datePart = now.toISOString().slice(0, 10).replace(/-/g, '');
     const randomPart = Math.floor(1000 + Math.random() * 9000);
     const orderNumber = `ORD-${datePart}-${randomPart}`;
-    const city = await detectCityFromCoordinates(parseFloat(latitude), parseFloat(longitude));
-        
-        if (!city) {
-            if (req.file) {
-                fs.unlinkSync(req.file.path);
-            }
-            return res.status(400).json({ 
-                message: 'عذراً، الخدمة غير متاحة في منطقتك حالياً. نحن نغطي المدن الكبرى والمتوسطة في المغرب فقط.' 
-            });
-        }
     
     const order = new Order({
       parentName,
@@ -322,7 +297,6 @@ app.post('/api/orders', upload.single('suppliesList'), async (req, res) => {
       },
       suppliesList: fileUrl,
       status: 'pending',
-      city: city,
       orderNumber: orderNumber // Store the order number
     });
     
@@ -374,139 +348,58 @@ const authenticateDeliveryMan = async (req, res, next) => {
   }
 };
 
-const authenticateSubAdmin = async (req, res, next) => {
-  try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
-    if (!token) return res.status(401).json({ message: 'Access denied' });
-    
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
-    const subAdmin = await SubAdmin.findById(decoded.id);
-    
-    if (!subAdmin) return res.status(401).json({ message: 'Invalid token' });
-    
-    req.subAdmin = subAdmin;
-    next();
-  } catch (error) {
-    res.status(400).json({ message: 'Invalid token' });
-  }
-};
 // Admin login
 app.post('/api/admin/login', async (req, res) => {
   try {
-    console.log('Login attempt:', req.body.username);
-    
     const { username, password } = req.body;
-    
-    if (!username || !password) {
-      console.log('Missing username or password');
-      return res.status(400).json({ message: 'اسم المستخدم وكلمة المرور مطلوبان' });
-    }
     
     // Check if admin exists
     const admin = await Admin.findOne({ username });
-    if (admin) {
-      console.log('Admin found:', admin.username);
-      // Check password
-      const isMatch = await bcrypt.compare(password, admin.password);
-      console.log('Password match result:', isMatch);
-      
-      if (!isMatch) {
-        console.log('Admin password mismatch');
-        return res.status(400).json({ message: 'بيانات الاعتماد غير صحيحة' });
-      }
-      
-      // Generate token
-      const token = jwt.sign(
-        { id: admin._id, type: 'admin' }, 
-        process.env.JWT_SECRET || 'fallback_secret',
-        { expiresIn: '24h' }
-      );
-      
-      console.log('Admin login successful:', admin.username);
-      return res.json({ 
-        token, 
-        admin: { id: admin._id, username: admin.username, type: 'admin' },
-        message: 'تم تسجيل الدخول بنجاح'
-      });
+    if (!admin) {
+      return res.status(400).json({ message: 'Invalid credentials' });
     }
     
-    // If not an admin, check if it's a sub-admin
-    const subAdmin = await SubAdmin.findOne({ username });
-    if (subAdmin) {
-      subAdmin.city = normalizeCityName(subAdmin.city);
-      await subAdmin.save();
-      console.log('Sub-admin found:', subAdmin.username);
-      // Check password
-      const isMatch = await bcrypt.compare(password, subAdmin.password);
-      console.log('Sub-admin password match result:', isMatch);
-      
-      if (!isMatch) {
-        console.log('Sub-admin password mismatch');
-        return res.status(400).json({ message: 'بيانات الاعتماد غير صحيحة' });
-      }
-      
-      // Generate token
-      const token = jwt.sign(
-        { id: subAdmin._id, type: 'subadmin' }, 
-        process.env.JWT_SECRET || 'fallback_secret',
-        { expiresIn: '24h' }
-      );
-      
-      console.log('Sub-admin login successful:', subAdmin.username);
-      return res.json({ 
-        token, 
-        admin: { 
-          id: subAdmin._id, 
-          username: subAdmin.username, 
-          type: 'subadmin',
-          city: subAdmin.city 
-        },
-        message: 'تم تسجيل الدخول بنجاح'
-      });
+    // Check password
+    const isMatch = await bcrypt.compare(password, admin.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid credentials' });
     }
     
-    console.log('User not found:', username);
-    return res.status(400).json({ message: 'بيانات الاعتماد غير صحيحة' });
+    // Generate token
+    const token = jwt.sign(
+      { id: admin._id }, 
+      process.env.JWT_SECRET || 'fallback_secret',
+      { expiresIn: '24h' }
+    );
+    
+    res.json({ 
+      token, 
+      admin: { id: admin._id, username: admin.username },
+      message: 'Login successful'
+    });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ message: 'خطأ في الخادم', error: error.message });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
-app.get('/api/orders/events', async (req, res) => {
-  try {
-    const token = req.query.token;
-    
-    if (!token) {
-      return res.status(401).json({ message: 'No token provided' });
-    }
-    
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
-    const admin = await Admin.findById(decoded.id);
-    
-    if (!admin) {
-      return res.status(401).json({ message: 'Invalid token' });
-    }
-    
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    res.flushHeaders();
+app.get('/api/orders/events', authenticateAdmin, (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
 
-    const clientId = Date.now();
-    const newClient = {
-      id: clientId,
-      res
-    };
-    clients.push(newClient);
+  const clientId = Date.now();
+  const newClient = {
+    id: clientId,
+    res
+  };
+  clients.push(newClient);
 
-    req.on('close', () => {
-      console.log(`${clientId} Connection closed`);
-      clients = clients.filter(client => client.id !== clientId);
-    });
-  } catch (error) {
-    res.status(400).json({ message: 'Invalid token' });
-  }
+  req.on('close', () => {
+    console.log(`${clientId} Connection closed`);
+    clients = clients.filter(client => client.id !== clientId);
+  });
 });
 
 // Function to send events to all connected clients
@@ -515,20 +408,13 @@ function sendEventToClients(event, data) {
 }
 // Get all orders (admin only)
 app.get('/api/orders', authenticateAdmin, async (req, res) => {
-    try {
-        let query = {};
-        
-        // If user is a sub-admin, only show orders from their city
-        if (req.userType === 'subadmin') {
-            query = { city: req.admin.city };
-        }
-        
-        const orders = await Order.find(query).sort({ createdAt: -1 }).populate('deliveryMan', 'name phone');
-        res.json(orders);
-    } catch (error) {
-        console.error('Fetch orders error:', error);
-        res.status(500).json({ message: 'Error fetching orders', error: error.message });
-    }
+  try {
+    const orders = await Order.find().sort({ createdAt: -1 }).populate('deliveryMan', 'name phone');
+    res.json(orders);
+  } catch (error) {
+    console.error('Fetch orders error:', error);
+    res.status(500).json({ message: 'Error fetching orders', error: error.message });
+  }
 });
 
 app.get('/api/delivery/profile', authenticateDeliveryMan, async (req, res) => {
@@ -638,122 +524,6 @@ app.get('/api/orders/:id', authenticateAdmin, async (req, res) => {
   }
 });
 
-const majorMoroccanCities = [
-    "الدار البيضاء", "الرباط", "فاس", "مراكش", "طنجة", "مكناس", "أكادير",
-    "تطوان", "وجدة", "القنيطرة", "الجديدة", "تازة", "الصويرة", "بني ملال",
-    "خريبكة", "العرائش", "وزان", "سلا", "برشيد", "خنيفرة", "تاوريرت",
-    "تيزنيت", "آسفي", "الناضور", "سيدي قاسم", "تارودانت", "صفرو", "اليوسفية",
-    "شفشاون", "بنسليمان", "أزيلال", "ميدلت", "سيدي إفني", "صخيرات", "تمارة",
-    "العيون", "الداخلة", "المحمدية"
-];
-
-async function detectCityFromCoordinates(lat, lng) {
-    try {
-        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=ar`);
-        const data = await response.json();
-        
-        if (data && data.address) {
-            let detectedCity = data.address.city || 
-                            data.address.town || 
-                            data.address.village || 
-                            data.address.municipality || 
-                            data.address.county || 
-                            data.address.state || 
-                            '';
-            
-            // Normalize the detected city name
-            const normalizedCity = normalizeCityName(detectedCity);
-            
-            // Check if any of the major cities includes the normalized city name
-            const foundCity = majorMoroccanCities.find(city => 
-                normalizeCityName(city) === normalizedCity
-            );
-            
-            if (foundCity) {
-                return foundCity; // Return the standardized city name from our list
-            } else {
-                return null; // Not a supported city
-            }
-        }
-        return null;
-    } catch (error) {
-        console.error('Error detecting city from coordinates:', error);
-        return null;
-    }
-}
-const cityMappings = {
-  "casablanca": "الدار البيضاء",
-  "rabat": "الرباط", 
-  "fes": "فاس",
-  "marrakech": "مراكش",
-  "tangier": "طنجة",
-  "meknes": "مكناس",
-  "agadir": "أكادير",
-  "tetouan": "تطوان",
-  "oujda": "وجدة",
-  "kenitra": "القنيطرة",
-  "el jadida": "الجديدة",
-  "taza": "تازة",
-  "essaouira": "الصويرة",
-  "beni mellal": "بني ملال",
-  "khouribga": "خريبكة",
-  "larache": "العرائش",
-  "ouezzane": "وزان",
-  "sale": "سلا",
-  "berrechid": "برشيد",
-  "khenifra": "خنيفرة",
-  "taourirt": "تاوريرت",
-  "tiznit": "تيزنيت",
-  "safi": "آسفي",
-  "nador": "الناضور",
-  "sidi kacem": "سيدي قاسم",
-  "taroudant": "تارودانت",
-  "sefrou": "صفرو",
-  "youssoufia": "اليوسفية",
-  "chefchaouen": "شفشاون",
-  "ben slimane": "بنسليمان",
-  "azilal": "أزيلال",
-  "midelt": "ميدلت",
-  "sidi ifni": "سيدي إفني",
-  "skhirat": "صخيرات",
-  "témara": "تمارة",
-  "laayoune": "العيون",
-  "dakhla": "الداخلة",
-  "mohammedia": "المحمدية"
-};
-// Add a function to normalize city names
-function normalizeCityName(cityName) {
-  if (!cityName) return 'غير معروف';
-  
-  // Convert to lowercase and remove diacritics
-  const normalized = cityName
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .trim();
-  
-  // Check if it's already an English key in our mapping
-  if (cityMappings[normalized]) {
-    return cityMappings[normalized];
-  }
-  
-  // Check if it's an Arabic value in our mapping
-  for (const [key, value] of Object.entries(cityMappings)) {
-    if (value === cityName) {
-      return value; // Return the standardized Arabic name
-    }
-  }
-  
-  // If no mapping found, try to find by partial match in Arabic values
-  for (const [key, value] of Object.entries(cityMappings)) {
-    if (cityName.includes(value) || value.includes(cityName)) {
-      return value;
-    }
-  }
-  
-  // If still not found, return the original city name
-  return cityName;
-}
-
 // Delete order (admin only)
 app.delete('/api/orders/:id', authenticateAdmin, async (req, res) => {
   try {
@@ -841,156 +611,6 @@ app.post('/api/admin/change-password', authenticateAdmin, async (req, res) => {
   }
 });
 
-// Get all sub-admins (main admin only)
-app.get('/api/subadmins', authenticateAdmin, async (req, res) => {
-  try {
-    console.log('Admin username:', req.admin.username);
-    
-    // Check if main admin
-    if (req.admin.username !== 'admin') {
-      return res.status(403).json({ message: 'Only main admin can access this resource' });
-    }
-    
-    const subAdmins = await SubAdmin.find().select('-password');
-    console.log('Found subadmins:', subAdmins);
-    res.json(subAdmins);
-  } catch (error) {
-    console.error('Error in /api/subadmins:', error);
-    res.status(500).json({ message: 'Error fetching sub-admins', error: error.message });
-  }
-});
-
-// Create sub-admin (main admin only)
-app.post('/api/subadmins', authenticateAdmin, async (req, res) => {
-  try {
-    if (req.admin.username !== 'admin') {
-      return res.status(403).json({ message: 'Only main admin can access this resource' });
-    }
-
-    const { username, password, city } = req.body;
-    
-    // Normalize city name using the mapping
-    const normalizedCity = cityMappings[city] || normalizeCityName(city);
-    
-    const subAdmin = new SubAdmin({
-      username,
-      password, // password will be hashed in the model
-      city: normalizedCity,
-      score: 0
-    });
-
-    await subAdmin.save();
-
-    res.status(201).json({
-      message: 'Sub-admin created successfully',
-      subAdmin: {
-        _id: subAdmin._id,
-        username: subAdmin.username,
-        city: subAdmin.city,
-        score: subAdmin.score
-      }
-    });
-  } catch (error) {
-    console.error('Error creating sub-admin:', error);
-    res.status(500).json({ message: 'Error creating sub-admin', error: error.message });
-  }
-});
-
-// Update sub-admin (main admin only)
-app.put('/api/subadmins/:id', authenticateAdmin, async (req, res) => {
-  try {
-    // Check if main admin
-    if (req.admin.username !== 'admin') {
-      return res.status(403).json({ message: 'Only main admin can access this resource' });
-    }
-    
-    const { username, password, city, score } = req.body;
-    
-    const updateData = { username, city, score };
-    
-    if (password) {
-      const hashedPassword = await bcrypt.hash(password, 12);
-      updateData.password = hashedPassword;
-    }
-    
-    const subAdmin = await SubAdmin.findByIdAndUpdate(
-      req.params.id,
-      updateData,
-      { new: true }
-    ).select('-password');
-    
-    if (!subAdmin) {
-      return res.status(404).json({ message: 'Sub-admin not found' });
-    }
-    
-    res.json({ message: 'Sub-admin updated successfully', subAdmin });
-  } catch (error) {
-    res.status(500).json({ message: 'Error updating sub-admin', error: error.message });
-  }
-});
-
-// Delete sub-admin (main admin only)
-app.delete('/api/subadmins/:id', authenticateAdmin, async (req, res) => {
-  try {
-    // Check if main admin
-    if (req.admin.username !== 'admin') {
-      return res.status(403).json({ message: 'Only main admin can access this resource' });
-    }
-    
-    const subAdmin = await SubAdmin.findByIdAndDelete(req.params.id);
-    
-    if (!subAdmin) {
-      return res.status(404).json({ message: 'Sub-admin not found' });
-    }
-    
-    res.json({ message: 'Sub-admin deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ message: 'Error deleting sub-admin', error: error.message });
-  }
-});
-
-// Sub-admin login
-app.post('/api/subadmin/login', async (req, res) => {
-  try {
-    const { username, password } = req.body;
-    const subAdmin = await SubAdmin.findOne({ username });
-    
-    if (!subAdmin || !(await bcrypt.compare(password, subAdmin.password))) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
-    
-    const token = jwt.sign(
-      { id: subAdmin._id },
-      process.env.JWT_SECRET || 'fallback_secret',
-      { expiresIn: '24h' }
-    );
-    
-    res.json({ 
-      token, 
-      subAdmin: { 
-        id: subAdmin._id, 
-        username: subAdmin.username,
-        city: subAdmin.city,
-        score: subAdmin.score
-      } 
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'Login error', error: error.message });
-  }
-});
-
-// Get orders for sub-admin (filtered by city)
-app.get('/api/subadmin/orders', authenticateSubAdmin, async (req, res) => {
-  try {
-    const orders = await Order.find({ 
-      city: req.subAdmin.city 
-    }).sort({ createdAt: -1 }).populate('deliveryMan', 'name phone');
-    
-    res.json(orders);
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching orders', error: error.message });
-  }
-});
 // Library creation endpoint
 app.post('/api/libraries', authenticateAdmin, async (req, res) => {
   try {
@@ -1130,30 +750,6 @@ app.get('/api/library/profile', authenticateLibrary, async (req, res) => {
   });
 });
 
-app.get('/api/admin/me', authenticateAdmin, async (req, res) => {
-  try {
-    let adminData;
-    
-    if (req.userType === 'admin') {
-      adminData = {
-        id: req.admin._id,
-        username: req.admin.username,
-        type: 'admin'
-      };
-    } else if (req.userType === 'subadmin') {
-      adminData = {
-        id: req.admin._id,
-        username: req.admin.username,
-        type: 'subadmin',
-        city: req.admin.city
-      };
-    }
-    
-    res.json({ admin: adminData });
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching admin info', error: error.message });
-  }
-});
 app.get('/api/library/orders/:id', authenticateLibrary, async (req, res) => {
   try {
     const order = await Order.findOne({
@@ -1366,19 +962,6 @@ app.post('/api/orders/:id/assign-delivery', authenticateAdmin, async (req, res) 
   }
 });
 
-// Add this endpoint to get admin profile
-app.get('/api/admin/profile', authenticateAdmin, async (req, res) => {
-  try {
-    res.json({ 
-      admin: { 
-        id: req.admin._id, 
-        username: req.admin.username 
-      } 
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching admin profile', error: error.message });
-  }
-});
 // Get available orders for delivery (status: ready)
 app.get('/api/delivery/available-orders', authenticateDeliveryMan, async (req, res) => {
   try {
