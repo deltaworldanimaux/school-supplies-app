@@ -853,12 +853,30 @@
         let subAdmins = [];
         
         // Check if user is already logged in
-        if (authToken) {
+if (authToken) {
   document.getElementById('loginPage').classList.add('hidden');
   document.getElementById('adminPage').classList.remove('hidden');
   
-  fetchAdminInfo().then(() => {
-    checkAdminType(); // Check admin type on page load
+  // Load admin info to determine type
+  fetch(`${API_BASE}/api/admin/me`, {
+    headers: {
+      'Authorization': `Bearer ${authToken}`
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    document.getElementById('adminName').textContent = data.admin.username;
+    localStorage.setItem('userType', data.admin.type);
+    if (data.admin.city) {
+      localStorage.setItem('adminCity', data.admin.city);
+    }
+    checkAdminType();
+    loadOrders();
+    setupEventSource();
+  })
+  .catch(error => {
+    console.error('Error fetching admin info:', error);
+    // If failed, try to load orders anyway
     loadOrders();
     setupEventSource();
   });
@@ -890,16 +908,19 @@
                 }
                 return response.json();
             })
-            .then(data => {
+.then(data => {
   if (data.token) {
     localStorage.setItem('adminToken', data.token);
+    localStorage.setItem('userType', data.admin.type); // Store user type
+    if (data.admin.city) {
+      localStorage.setItem('adminCity', data.admin.city); // Store city for sub-admins
+    }
     authToken = data.token;
     document.getElementById('loginPage').classList.add('hidden');
     document.getElementById('adminPage').classList.remove('hidden');
     document.getElementById('adminName').textContent = data.admin.username;
     
-    checkAdminType(); // Check if user is main admin or sub-admin
-    
+    checkAdminType();
     loadOrders();
     setupEventSource();
   } else {
@@ -1812,11 +1833,15 @@ function resetLibraryForm() {
 
 // Show/hide management buttons based on admin type
 function checkAdminType() {
-  const adminName = document.getElementById('adminName').textContent;
-  if (adminName === 'admin') {
+  const userType = localStorage.getItem('userType');
+  if (userType === 'admin') {
     document.getElementById('manageSubAdminsBtn').style.display = 'inline-block';
+    document.getElementById('manageLibrariesBtn').style.display = 'inline-block';
+    document.getElementById('manageDeliveryBtn').style.display = 'inline-block';
   } else {
     document.getElementById('manageSubAdminsBtn').style.display = 'none';
+    document.getElementById('manageLibrariesBtn').style.display = 'none';
+    document.getElementById('manageDeliveryBtn').style.display = 'none';
   }
 }
 

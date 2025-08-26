@@ -199,13 +199,26 @@ const authenticateAdmin = async (req, res, next) => {
     }
     
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
-    const admin = await Admin.findById(decoded.id);
     
-    if (!admin) {
+    // Check if it's an admin or sub-admin
+    if (decoded.type === 'admin') {
+      const admin = await Admin.findById(decoded.id);
+      if (!admin) {
+        return res.status(401).json({ message: 'Invalid token.' });
+      }
+      req.admin = admin;
+      req.userType = 'admin';
+    } else if (decoded.type === 'subadmin') {
+      const subAdmin = await SubAdmin.findById(decoded.id);
+      if (!subAdmin) {
+        return res.status(401).json({ message: 'Invalid token.' });
+      }
+      req.admin = subAdmin;
+      req.userType = 'subadmin';
+    } else {
       return res.status(401).json({ message: 'Invalid token.' });
     }
     
-    req.admin = admin;
     next();
   } catch (error) {
     res.status(400).json({ message: 'Invalid token.' });
@@ -374,28 +387,52 @@ app.post('/api/admin/login', async (req, res) => {
     
     // Check if admin exists
     const admin = await Admin.findOne({ username });
-    if (!admin) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+    if (admin) {
+      // Check password
+      const isMatch = await bcrypt.compare(password, admin.password);
+      if (!isMatch) {
+        return res.status(400).json({ message: 'Invalid credentials' });
+      }
+      
+      // Generate token
+      const token = jwt.sign(
+        { id: admin._id, type: 'admin' }, 
+        process.env.JWT_SECRET || 'fallback_secret',
+        { expiresIn: '24h' }
+      );
+      
+      return res.json({ 
+        token, 
+        admin: { id: admin._id, username: admin.username, type: 'admin' },
+        message: 'Login successful'
+      });
     }
     
-    // Check password
-    const isMatch = await bcrypt.compare(password, admin.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+    // If not an admin, check if it's a sub-admin
+    const subAdmin = await SubAdmin.findOne({ username });
+    if (subAdmin) {
+      // Check password
+      const isMatch = await bcrypt.compare(password, subAdmin.password);
+      if (!isMatch) {
+        return res.status(400).json({ message: 'Invalid credentials' });
+      }
+      
+      // Generate token
+      const token = jwt.sign(
+        { id: subAdmin._id, type: 'subadmin' }, 
+        process.env.JWT_SECRET || 'fallback_secret',
+        { expiresIn: '24h' }
+      );
+      
+      return res.json({ 
+        token, 
+        admin: { id: subAdmin._id, username: subAdmin.username, type: 'subadmin', city: subAdmin.city },
+        message: 'Login successful'
+      });
     }
     
-    // Generate token
-    const token = jwt.sign(
-      { id: admin._id }, 
-      process.env.JWT_SECRET || 'fallback_secret',
-      { expiresIn: '24h' }
-    );
-    
-    res.json({ 
-      token, 
-      admin: { id: admin._id, username: admin.username },
-      message: 'Login successful'
-    });
+    // If neither admin nor sub-admin found
+    return res.status(400).json({ message: 'Invalid credentials' });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -445,7 +482,14 @@ function sendEventToClients(event, data) {
 // Get all orders (admin only)
 app.get('/api/orders', authenticateAdmin, async (req, res) => {
   try {
-    const orders = await Order.find().sort({ createdAt: -1 }).populate('deliveryMan', 'name phone');
+    let query = {};
+    
+    // If user is a sub-admin, only show orders from their city
+    if (req.userType === 'subadmin') {
+      query = { city: req.admin.city };
+    }
+    
+    const orders = await Order.find(query).sort({ createdAt: -1 }).populate('deliveryMan', 'name phone');
     res.json(orders);
   } catch (error) {
     console.error('Fetch orders error:', error);
@@ -956,6 +1000,30 @@ app.get('/api/library/profile', authenticateLibrary, async (req, res) => {
   });
 });
 
+app.get('/api/admin/me', authenticateAdmin, async (req, res) => {
+  try {
+    let adminData;
+    
+    if (req.userType === 'admin') {
+      adminData = {
+        id: req.admin._id,
+        username: req.admin.username,
+        type: 'admin'
+      };
+    } else if (req.userType === 'subadmin') {
+      adminData = {
+        id: req.admin._id,
+        username: req.admin.username,
+        type: 'subadmin',
+        city: req.admin.city
+      };
+    }
+    
+    res.json({ admin: adminData });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching admin info', error: error.message });
+  }
+});
 app.get('/api/library/orders/:id', authenticateLibrary, async (req, res) => {
   try {
     const order = await Order.findOne({
