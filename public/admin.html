@@ -359,7 +359,10 @@
             border-radius: 10px;
             font-size: 16px;
         }
-        
+        .reset-btn {
+    background-color: #9c27b0;
+    color: white;
+}
         .login-btn {
             background: var(--primary);
             color: white;
@@ -988,6 +991,7 @@ function renderOrdersTable(orders) {
           '<button class="action-btn assigned-btn" style="background-color: #28ba0b; cursor: default;" disabled>تم الإرسال</button>' : 
           `<button class="action-btn assign-btn" data-order="${orderId}">تعيين إلى مكتبة</button>`
         }
+          <button class="action-btn reset-btn" data-order="${orderId}">إعادة تعيين</button>
         <button class="action-btn delete-btn" data-order="${orderId}">حذف</button>
       </td>
     `;
@@ -1326,7 +1330,33 @@ function loadDeliveryMen() {
         showAlert('ordersAlert', 'error', 'فشل في تحميل بيانات مندوبي التوصيل');
     });
 }
-
+// Reset order function
+function resetOrder(orderId) {
+    if (!confirm('هل أنت متأكد من إعادة تعيين هذا الطلب؟ سيتم إزالة التخصيص من المكتبة ومندوب التوصيل.')) {
+        return;
+    }
+    
+    fetch(`${API_BASE}/api/orders/${orderId}/reset`, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `Bearer ${authToken}`
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        showAlert('ordersAlert', 'success', 'تم إعادة تعيين الطلب بنجاح');
+        loadOrders(); // Reload orders to reflect changes
+    })
+    .catch(error => {
+        showAlert('ordersAlert', 'error', 'خطأ في إعادة تعيين الطلب');
+        console.error('Error resetting order:', error);
+    });
+}
 // Render delivery men list
 function renderDeliveryMen() {
     const container = document.getElementById('deliveryContainer');
@@ -1932,12 +1962,15 @@ document.getElementById('ordersTableBody').addEventListener('click', function(e)
   else if (target.classList.contains('assign-btn')) {
     openAssignOrderModal(orderId);
   } 
+  else if (target.classList.contains('reset-btn')) {
+    resetOrder(orderId);
+  }
   else if (target.classList.contains('delete-btn')) {
     deleteOrder(orderId);
   }
   else if (target.classList.contains('assign-delivery-btn')) {
-        assignOrderToDelivery(orderId);
-    }
+    assignOrderToDelivery(orderId);
+  }
 });
 
 document.getElementById('ordersTableBody').addEventListener('change', function(e) {

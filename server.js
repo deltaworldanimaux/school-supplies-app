@@ -1256,6 +1256,46 @@ app.put('/api/library/orders/:id/deliver', authenticateLibrary, async (req, res)
     res.status(500).json({ message: 'Error delivering order', error: error.message });
   }
 });
+// Reset order (admin only) - remove from library/delivery and reset status
+app.put('/api/orders/:id/reset', authenticateAdmin, async (req, res) => {
+  try {
+    // Check if the ID is a valid ObjectId
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: 'Invalid order ID format' });
+    }
+    
+    const order = await Order.findByIdAndUpdate(
+      req.params.id,
+      { 
+        status: 'pending',
+        assignedTo: null,
+        deliveryMan: null,
+        deliveryStatus: 'pending',
+        cost: undefined,
+        refusalReason: undefined,
+        rejectedBy: [] // Clear rejected delivery men
+      },
+      { new: true }
+    );
+    
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+    
+    // Clear delivery man's current order if it was assigned
+    if (order.deliveryMan) {
+      await DeliveryMan.findByIdAndUpdate(
+        order.deliveryMan,
+        { currentOrder: null }
+      );
+    }
+    
+    res.json({ message: 'Order reset successfully', order });
+  } catch (error) {
+    console.error('Reset order error:', error);
+    res.status(500).json({ message: 'Error resetting order', error: error.message });
+  }
+});
 // Mark order as completed
 app.put('/api/library/orders/:id/complete', authenticateLibrary, async (req, res) => {
   try {
