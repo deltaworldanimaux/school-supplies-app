@@ -608,6 +608,23 @@
 #saveDeliveryBtn:hover {
     background: #3d8b40;
 }
+.late-order {
+    background-color: #fff5f5 !important;
+    border-left: 4px solid #f56565 !important;
+  }
+  
+  .late-order:hover {
+    background-color: #fed7d7 !important;
+  }
+  
+  .late-indicator {
+    background-color: #f56565;
+    color: white;
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-size: 0.8em;
+    margin-left: 10px;
+  }
     </style>
 </head>
 <body>
@@ -947,7 +964,15 @@ function setupEventSource() {
     setTimeout(setupEventSource, 5000);
   };
 }
-        // Render orders table
+// Add this function to check if an order is late
+function isOrderLate(createdAt) {
+  const now = new Date();
+  const orderDate = new Date(createdAt);
+  const hoursDiff = (now - orderDate) / (1000 * 60 * 60);
+  return hoursDiff > 24;
+}
+
+// Update the renderOrdersTable function
 function renderOrdersTable(orders) {
   const tbody = document.getElementById('ordersTableBody');
   if (!tbody) return;
@@ -955,14 +980,33 @@ function renderOrdersTable(orders) {
   tbody.innerHTML = '';
   
   if (orders.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">لا توجد طلبات</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">لا توجد طلبات</td></tr>';
     return;
   }
+  
+  // Sort orders: late orders first, then by date (newest first)
+  orders.sort((a, b) => {
+    const aIsLate = isOrderLate(a.createdAt);
+    const bIsLate = isOrderLate(b.createdAt);
+    
+    if (aIsLate && !bIsLate) return -1;
+    if (!aIsLate && bIsLate) return 1;
+    
+    // If both are late or both are not late, sort by date (newest first)
+    return new Date(b.createdAt) - new Date(a.createdAt);
+  });
   
   orders.forEach(order => {
     const tr = document.createElement('tr');
     const orderId = order._id || order.id;
-    const orderDate = new Date(order.createdAt).toLocaleDateString('ar-MA');
+    const orderDate = new Date(order.createdAt);
+    const formattedDate = orderDate.toLocaleDateString('ar-MA');
+    const formattedTime = orderDate.toLocaleTimeString('ar-MA');
+    const isLate = isOrderLate(order.createdAt);
+    
+    if (isLate) {
+      tr.classList.add('late-order');
+    }
     
     tr.innerHTML = `
       <td>${order.orderNumber || orderId || 'N/A'}</td>
@@ -972,26 +1016,27 @@ function renderOrdersTable(orders) {
       <td>${order.grade || 'غير متوفر'}</td>
       <td>
         <select class="status-select" data-order="${orderId}">
-  <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>قيد المعالجة</option>
-  <option value="confirmed" ${order.status === 'confirmed' ? 'selected' : ''}>تم التأكيد</option>
-  <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>قيد التجهيز</option>
-  <option value="ready" ${order.status === 'ready' ? 'selected' : ''}>جاهز</option> <!-- Changed -->
-  <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>تم التوصيل</option> <!-- New -->
-</select>
+          <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>قيد المعالجة</option>
+          <option value="confirmed" ${order.status === 'confirmed' ? 'selected' : ''}>تم التأكيد</option>
+          <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>قيد التجهيز</option>
+          <option value="ready" ${order.status === 'ready' ? 'selected' : ''}>جاهز</option>
+          <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>تم التوصيل</option>
+        </select>
+        ${isLate ? '<span class="late-indicator">متأخر</span>' : ''}
       </td>
-      <td>${orderDate}</td>
+      <td>${formattedDate}<br>${formattedTime}</td>
       <td>
-  ${order.deliveryMan ? '🚚 مكلف بالتوصيل' : ''}
-  ${order.deliveryStatus === 'picked_up' ? '📦 تم الاستلام' : ''}
-  ${order.deliveryStatus === 'delivered' ? '✅ تم التوصيل' : ''}
-</td>
+        ${order.deliveryMan ? '🚚 مكلف بالتوصيل' : ''}
+        ${order.deliveryStatus === 'picked_up' ? '📦 تم الاستلام' : ''}
+        ${order.deliveryStatus === 'delivered' ? '✅ تم التوصيل' : ''}
+      </td>
       <td>
         <button class="action-btn view-btn" data-order="${orderId}">عرض</button>
         ${order.assignedTo ? 
           '<button class="action-btn assigned-btn" style="background-color: #28ba0b; cursor: default;" disabled>تم الإرسال</button>' : 
           `<button class="action-btn assign-btn" data-order="${orderId}">تعيين إلى مكتبة</button>`
         }
-          <button class="action-btn reset-btn" data-order="${orderId}">إعادة تعيين</button>
+        <button class="action-btn reset-btn" data-order="${orderId}">إعادة تعيين</button>
         <button class="action-btn delete-btn" data-order="${orderId}">حذف</button>
       </td>
     `;
@@ -999,6 +1044,7 @@ function renderOrdersTable(orders) {
     tbody.appendChild(tr);
   });
 }
+
         
         // Update order status
         function updateOrderStatus(orderId, status) {
@@ -1031,136 +1077,139 @@ function renderOrdersTable(orders) {
         }
         
         // View order details
-        function viewOrderDetails(orderId) {
-            fetch(`${API_BASE}/api/orders/${orderId}?populate=assignedTo`, {
-  headers: {
-    'Authorization': `Bearer ${authToken}`
-  }
-})
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(order => {
-                currentOrder = order;
-                const modal = document.getElementById('orderDetailsModal');
-                const content = document.getElementById('orderDetailsContent');
-                const viewImageBtn = document.getElementById('viewImageBtn');
-                const viewLocationBtn = document.getElementById('viewLocationBtn');
-                const imagePreview = document.getElementById('imagePreview');
-                
-                if (!modal || !content) return;
-                
-                // Format date
-                const orderDate = new Date(order.createdAt).toLocaleDateString('ar-MA');
-                
-                // File link if exists
-                let fileLink = 'لا يوجد ملف';
-if (order.suppliesList) {
-    const isFullUrl = order.suppliesList.startsWith('http');
-    // Construct URL properly - add 'uploads/' only for local files
-    const fileUrl = isFullUrl ? order.suppliesList : `${API_BASE}/uploads/${order.suppliesList}`;
-    fileLink = `<a href="${fileUrl}" target="_blank" class="file-link">عرض الملف</a>`;
+function viewOrderDetails(orderId) {
+  fetch(`${API_BASE}/api/orders/${orderId}?populate=assignedTo`, {
+    headers: {
+      'Authorization': `Bearer ${authToken}`
+    }
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    return response.json();
+  })
+  .then(order => {
+    currentOrder = order;
+    const modal = document.getElementById('orderDetailsModal');
+    const content = document.getElementById('orderDetailsContent');
+    const viewImageBtn = document.getElementById('viewImageBtn');
+    const viewLocationBtn = document.getElementById('viewLocationBtn');
+    const imagePreview = document.getElementById('imagePreview');
     
-    // Set up view image button
-    viewImageBtn.style.display = 'inline-block';
-    viewImageBtn.onclick = function() {
+    if (!modal || !content) return;
+    
+    // Format date and time
+    const orderDate = new Date(order.createdAt);
+    const formattedDate = orderDate.toLocaleDateString('ar-MA');
+    const formattedTime = orderDate.toLocaleTimeString('ar-MA');
+    const isLate = isOrderLate(order.createdAt);
+    
+    // File link if exists
+    let fileLink = 'لا يوجد ملف';
+    if (order.suppliesList) {
+      const isFullUrl = order.suppliesList.startsWith('http');
+      const fileUrl = isFullUrl ? order.suppliesList : `${API_BASE}/uploads/${order.suppliesList}`;
+      fileLink = `<a href="${fileUrl}" target="_blank" class="file-link">عرض الملف</a>`;
+      
+      // Set up view image button
+      viewImageBtn.style.display = 'inline-block';
+      viewImageBtn.onclick = function() {
         window.open(fileUrl, '_blank');
-    };
-    
-    // Show image preview if it's an image
-    if (fileUrl.match(/\.(jpeg|jpg|png|gif)$/i)) {
+      };
+      
+      // Show image preview if it's an image
+      if (fileUrl.match(/\.(jpeg|jpg|png|gif)$/i)) {
         imagePreview.src = fileUrl;
         imagePreview.style.display = 'block';
-    } else {
+      } else {
         imagePreview.style.display = 'none';
+      }
+    } else {
+      viewImageBtn.style.display = 'none';
+      imagePreview.style.display = 'none';
     }
-} else {
-    viewImageBtn.style.display = 'none';
-    imagePreview.style.display = 'none';
+    
+    // Location link if exists
+    let locationLink = 'غير متوفر';
+    if (order.location && order.location.coordinates) {
+      const [lng, lat] = order.location.coordinates;
+      const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+      locationLink = `<a href="${mapsUrl}" target="_blank" class="map-link">عرض الموقع على خرائط جوجل</a>`;
+      
+      // Set up view location button
+      viewLocationBtn.style.display = 'inline-block';
+      viewLocationBtn.onclick = function() {
+        window.open(mapsUrl, '_blank');
+      };
+    } else {
+      viewLocationBtn.style.display = 'none';
+    }
+    
+    content.innerHTML = `
+      <div class="detail-row">
+        <div class="detail-label">رقم الطلب:</div>
+        <div class="detail-value">${order.orderNumber || order._id || order.id || 'N/A'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">اسم ولي الأمر:</div>
+        <div class="detail-value">${order.parentName || 'غير متوفر'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">هاتف ولي الأمر:</div>
+        <div class="detail-value">${order.phone || 'غير متوفر'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">اسم التلميذ:</div>
+        <div class="detail-value">${order.studentName || 'غير متوفر'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">المستوى الدراسي:</div>
+        <div class="detail-value">${order.grade || 'غير متوفر'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">الحالة:</div>
+        <div class="detail-value">
+          <span class="status-badge ${getStatusClass(order.status)}">${getStatusText(order.status)}</span>
+          ${isLate ? '<span class="late-indicator">طلب متأخر</span>' : ''}
+        </div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">تاريخ الطلب:</div>
+        <div class="detail-value">${formattedDate} - ${formattedTime}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">المكتبة:</div>
+        <div class="detail-value" id="libraryDetail">${order.assignedTo ? order.assignedTo.name : 'غير معين'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">التكلفة:</div>
+        <div class="detail-value">${order.cost ? order.cost + ' درهم' : 'غير محدد'}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">قائمة اللوازم:</div>
+        <div class="detail-value">${fileLink}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">الموقع:</div>
+        <div class="detail-value">${locationLink}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">مندوب التوصيل:</div>
+        <div class="detail-value">
+          ${order.deliveryMan ? order.deliveryMan.name : 'غير معين'}
+          ${order.deliveryStatus ? `(${getDeliveryStatusText(order.deliveryStatus)})` : ''}
+        </div>
+      </div>
+    `;
+    
+    modal.classList.add('active');
+  })
+  .catch(error => {
+    showAlert('ordersAlert', 'error', 'فشل في تحميل تفاصيل الطلب');
+    console.error('Error loading order details:', error);
+  });
 }
-                
-                // Location link if exists
-                let locationLink = 'غير متوفر';
-                if (order.location && order.location.coordinates) {
-                    const [lng, lat] = order.location.coordinates;
-                    const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
-                    locationLink = `<a href="${mapsUrl}" target="_blank" class="map-link">عرض الموقع على خرائط جوجل</a>`;
-                    
-                    // Set up view location button
-                    viewLocationBtn.style.display = 'inline-block';
-                    viewLocationBtn.onclick = function() {
-                        window.open(mapsUrl, '_blank');
-                    };
-                } else {
-                    viewLocationBtn.style.display = 'none';
-                }
-                
-                content.innerHTML = `
-  <div class="detail-row">
-    <div class="detail-label">رقم الطلب:</div>
-    <div class="detail-value">${order.orderNumber || order._id || order.id || 'N/A'}</div>
-  </div>
-                    <div class="detail-row">
-                        <div class="detail-label">اسم ولي الأمر:</div>
-                        <div class="detail-value">${order.parentName || 'غير متوفر'}</div>
-                    </div>
-                    <div class="detail-row">
-                        <div class="detail-label">هاتف ولي الأمر:</div>
-                        <div class="detail-value">${order.phone || 'غير متوفر'}</div>
-                    </div>
-                    <div class="detail-row">
-                        <div class="detail-label">اسم التلميذ:</div>
-                        <div class="detail-value">${order.studentName || 'غير متوفر'}</div>
-                    </div>
-                    <div class="detail-row">
-                        <div class="detail-label">المستوى الدراسي:</div>
-                        <div class="detail-value">${order.grade || 'غير متوفر'}</div>
-                    </div>
-                    <div class="detail-row">
-                        <div class="detail-label">الحالة:</div>
-                        <div class="detail-value">
-                            <span class="status-badge ${getStatusClass(order.status)}">${getStatusText(order.status)}</span>
-                        </div>
-                    </div>
-                    <div class="detail-row">
-                        <div class="detail-label">تاريخ الطلب:</div>
-                        <div class="detail-value">${orderDate}</div>
-                    </div>
-                    <div class="detail-row">
-  <div class="detail-label">المكتبة:</div>
-  <div class="detail-value" id="libraryDetail">${order.assignedTo ? order.assignedTo.name : 'غير معين'}</div>
-</div>
-<div class="detail-row">
-  <div class="detail-label">التكلفة:</div>
-  <div class="detail-value">${order.cost ? order.cost + ' درهم' : 'غير محدد'}</div>
-</div>
-                    <div class="detail-row">
-                        <div class="detail-label">قائمة اللوازم:</div>
-                        <div class="detail-value">${fileLink}</div>
-                    </div>
-                    <div class="detail-row">
-                        <div class="detail-label">الموقع:</div>
-                        <div class="detail-value">${locationLink}</div>
-                    </div>
-                    <div class="detail-row">
-  <div class="detail-label">مندوب التوصيل:</div>
-  <div class="detail-value">
-    ${order.deliveryMan ? order.deliveryMan.name : 'غير معين'}
-    ${order.deliveryStatus ? `(${getDeliveryStatusText(order.deliveryStatus)})` : ''}
-  </div>
-</div>
-                `;
-                
-                modal.classList.add('active');
-            })
-            .catch(error => {
-                showAlert('ordersAlert', 'error', 'فشل في تحميل تفاصيل الطلب');
-                console.error('Error loading order details:', error);
-            });
-        }
 
 function getDeliveryStatusText(status) {
   switch(status) {
